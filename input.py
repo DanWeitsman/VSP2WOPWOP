@@ -31,6 +31,19 @@ OperMode = 2
 savePickle = 1
 
 # %%
+''''Patch file write directory setup'''
+
+# Directory were you would like to write out the patch and functional data flies. By default this path is configured
+# to be a seperate folder in the 'dirDataFile'.
+dirPatchFile = os.path.abspath(os.path.join(dirDataFile, '220knts'))
+#   Lifting line compact patch file name (without the extension).
+compactGeomFileName = "CompactGeom"
+#   Blade geometry patch file name (without the extension).
+geomFileName = "Geom"
+#   Loading functional data file name (without the extension).
+loadingFileName = "Load"
+
+# %%
 '''Airfoil Cross Section Configuration'''
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
@@ -84,7 +97,7 @@ Ib = 1 / 3 * 217.423 * (5.965 - 1.72985) ** 2
 # hinge offset of the blade (only required for forward flight).
 nuBeta = 1.03
 
-# %%
+#%%
 '''Namelist file configuration'''
 #   Set equal to one in order to write out a namelist file for each case.
 nmlWrite = 1
@@ -93,7 +106,7 @@ NmlFileName = 'AS365N_FF.nam'
 #   Duration of the case, expressed as shaft revolutions
 nRev = 1
 #   Set sample rate (Hz), preferably as a power of two.
-nt = 2 ** 14
+nt = 2**14
 # Observer type set equal to one for a single observer, two for a rectangular observer grid, and three for a
 # spherical grid. Then complete the respective section below.
 obsType = 3
@@ -145,18 +158,8 @@ psimin = -30
 #   Maximum inclination angle of the out-of-plane observers (degrees)
 psimax = 30
 
-# %%     Patch file write parameters Patch file write directory, this is currently configured to create a directory
-
-# titled 'PatchFiles' in dirDataFile, however it can be set to whatever path the user desires.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, '220knts'))
-#   Lifting line compact patch file name
-compactGeomFileName = "CompactGeom"
-#   Blade geometry patch file name
-geomFileName = "Geom"
-#   Loading functional data file name
-loadingFileName = "Load"
-
-# %%     Pegg broadband noise set up
+# %%
+'''Pegg broadband noise set up '''
 
 BBNoise = 0
 #   Pegg Broadband data file name
