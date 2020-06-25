@@ -1,0 +1,210 @@
+ &EnvironmentIn
+   nbSourceContainers   =  1   ! number of aircraft
+    nbObserverContainers =  1   ! one observer grid
+   spectrumFlag =.true.  ! output acoustic spectrum
+   SPLdBFLAG =.true.     ! in SPL dB - narrowband 
+   SPLdBAFlag =.true.    ! and A-weighted SPL in dBA
+   OASPLdBAFlag =.true.  ! and A-weighted OASPLA
+   OASPLdBFlag           =.true.! output OASPL in dB
+   thicknessNoiseFlag    =.true. ! output thickness
+   loadingNoiseFlag      =.true. !  loading and 
+    acousticPressureFlag =.true.  ! and pressure time history
+   totalNoiseFlag        =.true.   !  total noise
+   debugLevel            =           1
+   ASCIIOutputFlag       = .true.  ! grid and function file output in ASCII
+    sigmaflag = .true.   ! no sigma surfaces
+   loadingSigmaFlag    = .true.
+   pressureSigmaFlag   = .true.
+   normalSigmaFlag     = .true.
+   observerSigmaflag   = .true.
+      loadingNoisesigmaFlag = .true.
+   thicknessNoiseSigmaFlag = .true.
+   totalNoiseSigmaFlag = .true.
+   accelerationSigmaFlag = .true.
+   MdotrSigmaFlag = .true.
+   velocitySigmaFlag = .true.
+ /
+ 
+ &EnvironmentConstants
+   rho =   1.224670    
+   c   =   340.2939    
+ /
+ &ObserverIn
+  Title     ='Observers' 
+	!radius = 1.91			! Spherical observer 
+	!nbTheta = 1
+	!nbPsi = 9
+	!thetaMin = 0
+	!thetaMax = 0
+	!psiMin = -1.570796
+	!psiMax = 1.570796
+	
+	nbx = 1			         ! Line observer
+	nby = 1
+	nbz = 3
+	xMin = 0
+	xMax = 0
+	yMin = 14.165447920000007
+	yMax = 14.165447920000007
+	zMin = -1.4888485708273682
+	ZMax = 1.4888485708273682
+
+	!xLoc = 0
+	!yLoc = 14.165447920000007
+	!zLoc =  -3.7956203305891285
+	!fileName = observer_ascii.dat
+	
+   nt =     4096         ! number of times
+   tmin = 0.0
+   tmax =  0.22173861191		! 32 rev time   
+ /
+
+ &ContainerIn
+  Title = 'Rotor 1'
+  nbContainer =  8! 2*NBLADE: thickness & loading
+  nbBase = 1  ! 4 changes of base for the rotor follow
+  dtau = 0.000254237
+ /
+
+		&CB
+			Title ='Rotation'
+			rotation = .true.
+			AngleType = 'KnownFunction'
+			Omega =    141.680  ! rotation rate (rps)
+			Psi0 =     0  ! psi offset (radians)
+			AxisValue =  0.0, 0.0,1.0
+		/
+		
+	!BLADE 1	!BLADE 1	!BLADE 1	!BLADE 1	!BLADE 1
+
+	!THICKNESS	!THICKNESS	!THICKNESS	!THICKNESS	!THICKNESS
+		 &ContainerIn
+			 Title = "Propeller 1 - blade 1 "
+			 patchGeometryFile="Geom.dat"	 !distributed means surface mesh
+			nbBase = 1
+		 /
+			 &CB
+				 Title="Constant Rotation"
+				 AngleType = "Timeindependent"
+				 AxisType = "Timeindependent"
+				 AxisValue = 0.0, 0.0, 1.0
+				 angleValue = 0.000000
+			 /
+
+	!LOADING	!LOADING	!LOADING	!LOADING	!LOADING
+	 &ContainerIn
+		 Title = "Propeller 1 - blade 1 compact "
+		 patchGeometryFile="CompactGeom.dat"	 !compact means lifting line only. Here's where the loading goes. 
+		 patchLoadingFile="load_CT_9.66e-03.dat"	 !there will be periodic key offset since loading is periodic. 
+		 nbBase = 1
+		 !periodicKeyOffset = 0.000000
+	 /
+			 &CB	 !THIS DOESN'T REALLY MEAN ANYTHING. JUST FOR SYMMETRY IN FILE
+				 Title="Constant Rotation"
+				 AngleType = "Timeindependent"
+				 AxisType = "Timeindependent"
+				 AxisValue = 0.0, 0.0, 1.0
+				 angleValue = 0.000000
+			 /
+
+	!BLADE 2	!BLADE 2	!BLADE 2	!BLADE 2	!BLADE 2
+
+	!THICKNESS	!THICKNESS	!THICKNESS	!THICKNESS	!THICKNESS
+		 &ContainerIn
+			 Title = "Propeller 1 - blade 2 "
+			 patchGeometryFile="Geom.dat"	 !distributed means surface mesh
+			nbBase = 1
+		 /
+			 &CB
+				 Title="Constant Rotation"
+				 AngleType = "Timeindependent"
+				 AxisType = "Timeindependent"
+				 AxisValue = 0.0, 0.0, 1.0
+				 angleValue = 1.57079632679
+			 /
+
+	!LOADING	!LOADING	!LOADING	!LOADING	!LOADING
+	 &ContainerIn
+		 Title = "Propeller 1 - blade 2 compact "
+		 patchGeometryFile="CompactGeom.dat"	 !compact means lifting line only. Here's where the loading goes. 
+		 patchLoadingFile="load_CT_9.66e-03.dat"	 !there will be periodic key offset since loading is periodic. 
+		 nbBase = 1
+		! periodicKeyOffset = 120.000000
+	 /
+			 &CB	 !THIS DOESN'T REALLY MEAN ANYTHING. JUST FOR SYMMETRY IN FILE
+				 Title="Constant Rotation"
+				 AngleType = "Timeindependent"
+				 AxisType = "Timeindependent"
+				 AxisValue = 0.0, 0.0, 1.0
+				 angleValue = 1.57079632679
+			 /
+ 
+ 	!BLADE 3	!BLADE 3	!BLADE 3	!BLADE 3	!BLADE 3
+
+	!THICKNESS	!THICKNESS	!THICKNESS	!THICKNESS	!THICKNESS
+		 &ContainerIn
+			 Title = "Propeller 1 - blade 3 "
+			 patchGeometryFile="Geom.dat"	 !distributed means surface mesh
+			nbBase = 1
+		 /
+			 &CB
+				 Title="Constant Rotation"
+				 AngleType = "Timeindependent"
+				 AxisType = "Timeindependent"
+				 AxisValue = 0.0, 0.0, 1.0
+				 angleValue = 3.1415927
+			 /
+
+	!LOADING	!LOADING	!LOADING	!LOADING	!LOADING
+	 &ContainerIn
+		 Title = "Propeller 1 - blade 3 compact "
+		 patchGeometryFile="CompactGeom.dat"	 !compact means lifting line only. Here's where the loading goes. 
+		 patchLoadingFile="load_CT_9.66e-03.dat"	 !there will be periodic key offset since loading is periodic. 
+		 nbBase = 1
+		! periodicKeyOffset = 120.000000
+	 /
+			 &CB	 !THIS DOESN'T REALLY MEAN ANYTHING. JUST FOR SYMMETRY IN FILE
+				 Title="Constant Rotation"
+				 AngleType = "Timeindependent"
+				 AxisType = "Timeindependent"
+				 AxisValue = 0.0, 0.0, 1.0
+				 angleValue = 3.1415927
+			 /
+			 
+	!BLADE 4	!BLADE 4	!BLADE 4	!BLADE 4	!BLADE 4
+
+	!THICKNESS	!THICKNESS	!THICKNESS	!THICKNESS	!THICKNESS
+		 &ContainerIn
+			 Title = "Propeller 1 - blade 4 "
+			 patchGeometryFile="Geom.dat"	 !distributed means surface mesh
+			nbBase = 1
+		 /
+			 &CB
+				 Title="Constant Rotation"
+				 AngleType = "Timeindependent"
+				 AxisType = "Timeindependent"
+				 AxisValue = 0.0, 0.0, 1.0
+				 angleValue = 4.71238898038
+			 /
+
+	!LOADING	!LOADING	!LOADING	!LOADING	!LOADING
+	&ContainerIn
+		 Title = "Propeller 1 - blade 4 compact "
+		 patchGeometryFile="CompactGeom.dat"	 !compact means lifting line only. Here's where the loading goes. 
+		 patchLoadingFile="load_CT_9.66e-03.dat"	 !there will be periodic key offset since loading is periodic. 
+		 nbBase = 1
+		! periodicKeyOffset = 120.000000
+	/
+			 &CB	 !THIS DOESN'T REALLY MEAN ANYTHING. JUST FOR SYMMETRY IN FILE
+				 Title="Constant Rotation"
+				 AngleType = "Timeindependent"
+				 AxisType = "Timeindependent"
+				 AxisValue = 0.0, 0.0, 1.0
+				 angleValue = 4.71238898038
+			 /
+	
+ 
+
+
+
+
