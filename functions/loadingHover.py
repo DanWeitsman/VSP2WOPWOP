@@ -186,7 +186,7 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega):
     # compactArea = np.insert(np.diff(rdim),0,np.diff(rdim)[0])
     compactArea = chordDist
 
-    loadParams = {'Th0':Th0,'CT':CT,'T':T, 'dCT':dCT,'dT':dT, 'CP':CP,'P':P,'Q':Q, 'dCP':dCP,
+    loadParams = {'th':[Th0,0,0],'beta':[0,0,0],'CT':CT,'T':T, 'dCT':dCT,'dT':dT, 'CP':CP,'P':P,'Q':Q, 'dCP':dCP,
                   'dQ':dQ,'dCL':dCL, 'dCD':dCD, 'CL':CL,'CD':CD,'FM':FM, 'AoA':AoA,'Lambda':Lambda,'dFx':dFx,'dFy':dFy,'dFz':dFz,'dFz2':dFz2,'compactArea':compactArea,'omega':omega}
     return loadParams
 

@@ -1,8 +1,25 @@
+'''
+VSP2WOPWOP Namelist File Write
+
+Author: Daniel Weitsman
+
+This function write out a namelist file for each case to its respective directory. If the users wishes to add any
+other entrees to the namelist file or edit any of the default parameters it can be done here. A few things to note:
+by default the 'sigmaflag' is set to '.false.', rho and c are the only environmental constants that the user can vary
+from the input module. If you would like to set other environmental constants to values that differ from their
+default, simply add them to that environmental constants namelist. The same goes for change of bases, if you would
+like to add or omit a 'cb' namelist, simply edit the respective dictionary. If multiple of the same namelists are
+used in a single container the corresponding dictionaries must be placed into a list.
+'''
+
+# %%
 import os
 import numpy as np
-# %%
-def nml_write(UserIn,loadParams,dirSaveFile,i):
 
+
+# %%
+def nml_write(UserIn, loadParams, dirSaveFile, i):
+    # Checks if these quantities are formatted as a list in the input module and selects the appropriate quantitiy.
     if UserIn['radius'] is list:
         radius = UserIn['radius'][i]
     else:
@@ -20,13 +37,18 @@ def nml_write(UserIn,loadParams,dirSaveFile,i):
     else:
         alphaShaft = UserIn['alphaShaft'][0]
 
+    # Determines the sampling rate, as a power of 2, based on the desired sampling rate and the duration of the run
+    # specified in the input module.
+
     nt = 2 ** np.arange(4, 25)
     ntIdeal = UserIn['nt'] * ((nOmega / 60) ** -1 * UserIn['nRev'])
     ind = [np.squeeze(np.where(nt <= ntIdeal))[-1], np.squeeze(np.where(nt >= ntIdeal))[0]]
-    indSelect = np.squeeze([iter for iter, n in enumerate(abs(1 - ntIdeal / nt[ind])) if n == np.min(abs(1 - ntIdeal / nt[ind]))])
+    indSelect = np.squeeze(
+        [iter for iter, n in enumerate(abs(1 - ntIdeal / nt[ind])) if n == np.min(abs(1 - ntIdeal / nt[ind]))])
     nt = nt[ind[indSelect]]
 
-    #%%
+    # %%
+    # Configuration of each namelist.
     environmentin = {
         'environmentin':
             {
@@ -44,16 +66,16 @@ def nml_write(UserIn,loadParams,dirSaveFile,i):
                 'debugLevel': 1,
                 'ASCIIOutputFlag': '.true.',
                 'sigmaflag': '.false.',
-                'loadingSigmaFlag': '.false.',
-                'pressureSigmaFlag': '.false.',
-                'normalSigmaFlag': '.false.',
-                'observerSigmaflag': '.false.',
-                'loadingNoisesigmaFlag': '.false.',
-                'thicknessNoiseSigmaFlag': '.false.',
-                'totalNoiseSigmaFlag': '.false.',
-                'accelerationSigmaFlag': '.false.',
-                'MdotrSigmaFlag': '.false.',
-                'velocitySigmaFlag': '.false.',
+                'loadingSigmaFlag': '.true.',
+                'pressureSigmaFlag': '.true.',
+                'normalSigmaFlag': '.true.',
+                'observerSigmaflag': '.true.',
+                'loadingNoisesigmaFlag': '.true.',
+                'thicknessNoiseSigmaFlag': '.true.',
+                'totalNoiseSigmaFlag': '.true.',
+                'accelerationSigmaFlag': '.true.',
+                'MdotrSigmaFlag': '.true.',
+                'velocitySigmaFlag': '.true.',
             }
     }
 
@@ -65,34 +87,86 @@ def nml_write(UserIn,loadParams,dirSaveFile,i):
             }
     }
 
-    observerin = {
-        'observerin':
-            {
-                'title': "'Observers'",
-                'attachedto': "'Aircraft'",
-                'nt': nt,
-                'tmin': 0.0,
-                'tmax': (nOmega/60)**-1*UserIn['nRev'],
-                'highpassfrequency': 2,
-                'lowpassfrequency': 20000,
-                'radius': radius,
-                'nbtheta': UserIn['nbtheta'],
-                'nbpsi': UserIn['nbpsi'],
-                'thetamin': UserIn['thetamin']*(np.pi/180),
-                'thetamax': UserIn['thetamax']*(np.pi/180),
-                'psimin': UserIn['psimin']*(np.pi/180),
-                'psimax': UserIn['psimax']*(np.pi/180),
-                'nbBase': 0
-            },
-        'cb':
-            {
-                'Title': "'Observer motion'",
-                'TranslationType': "'KnownFunction'",
-                'VH': [nVx, 0, 0],
-            }
-    }
+    if UserIn['obsType'] == 1:
+        observerin = {
+            'observerin':
+                {
+                    'title': "'Observers'",
+                    'attachedto': "'Aircraft'",
+                    'nt': nt,
+                    'tmin': 0.0,
+                    'tmax': (nOmega / 60) ** -1 * UserIn['nRev'],
+                    'highpassfrequency': 10,
+                    'lowpassfrequency': 20000,
+                    'xLoc': UserIn['xLoc'],
+                    'yLoc': UserIn['yLoc'],
+                    'zLoc': UserIn['zLoc'],
+                    'nbBase': 0
+                },
+            'cb':
+                {
+                    'Title': "'Observer motion'",
+                    'TranslationType': "'KnownFunction'",
+                    'VH': [nVx, 0, 0],
+                }
+        }
+    elif UserIn['obsType'] == 2:
+        observerin = {
+            'observerin':
+                {
+                    'title': "'Observers'",
+                    'attachedto': "'Aircraft'",
+                    'nt': nt,
+                    'tmin': 0.0,
+                    'tmax': (nOmega / 60) ** -1 * UserIn['nRev'],
+                    'highpassfrequency': 10,
+                    'lowpassfrequency': 20000,
+                    'nbx': UserIn['nbx'],
+                    'xMin': UserIn['xMin'],
+                    'xMax': UserIn['xMax'],
+                    'nby': UserIn['nby'],
+                    'yMin': UserIn['yMin'],
+                    'yMax': UserIn['yMax'],
+                    'nbz': UserIn['nbz'],
+                    'zMin': UserIn['zMin'],
+                    'zMax': UserIn['zMax'],
+                    'nbBase': 0
+                },
+            'cb':
+                {
+                    'Title': "'Observer motion'",
+                    'TranslationType': "'KnownFunction'",
+                    'VH': [nVx, 0, 0],
+                }
+        }
 
-    # todo add other observer options and make user select and fill in values input module
+    elif UserIn['obsType'] == 3:
+        observerin = {
+            'observerin':
+                {
+                    'title': "'Observers'",
+                    'attachedto': "'Aircraft'",
+                    'nt': nt,
+                    'tmin': 0.0,
+                    'tmax': (nOmega / 60) ** -1 * UserIn['nRev'],
+                    'highpassfrequency': 10,
+                    'lowpassfrequency': 20000,
+                    'radius': radius,
+                    'nbtheta': UserIn['nbtheta'],
+                    'nbpsi': UserIn['nbpsi'],
+                    'thetamin': UserIn['thetamin'] * (np.pi / 180),
+                    'thetamax': UserIn['thetamax'] * (np.pi / 180),
+                    'psimin': UserIn['psimin'] * (np.pi / 180),
+                    'psimax': UserIn['psimax'] * (np.pi / 180),
+                    'nbBase': 0
+                },
+            'cb':
+                {
+                    'Title': "'Observer motion'",
+                    'TranslationType': "'KnownFunction'",
+                    'VH': [nVx, 0, 0],
+                }
+        }
 
     aircraft = {
         'containerin':
@@ -100,57 +174,58 @@ def nml_write(UserIn,loadParams,dirSaveFile,i):
                 'Title': "'Aircraft'",
                 'nbContainer': 1,
                 'nbBase': 1,
-                'dTau': (nOmega / 60)**-1/180,
+                'dTau': (nOmega / 60) ** -1 / 180,
             },
         'cb':
-                {
-                    'Title': "'Aircraft motion'",
-                    'TranslationType': "'KnownFunction'",
-                    'VH': [nVx, 0, 0],
-                }
+            {
+                'Title': "'Aircraft motion'",
+                'TranslationType': "'KnownFunction'",
+                'VH': [nVx, 0, 0],
+            }
     }
 
     rotor = {
         'containerin':
             {
                 'Title': "'Rotor'",
-                'nbContainer': 2*UserIn['Nb'],
+                'nbContainer': 2 * UserIn['Nb'],
                 'nbBase': 3,
             },
         'cb':
-        [
-            {
-                'Title': "'Rotation'",
-                'rotation': '.true.',
-                'AngleType': "'KnownFunction'",
-                'Omega': nOmega/60*2*np.pi,
-                'Psi0': 0,
-                'AxisValue': [0, 0, 1],
-            },
-            {
-                'Title': "'Rotate to align blades with zero azimuth'",
-                'AngleType': "'Timeindependent'",
-                'AxisType': "'Timeindependent'",
-                'AxisValue': [0, 0, 1],
-                'angleValue': -np.pi/2,
-            },
-            {
-                'Title': "'Rotor disk AoA tilt'",
-                'AngleType': "'Timeindependent'",
-                'AxisType': "'Timeindependent'",
-                'AxisValue': [0, 1, 0],
-                'angleValue': - alphaShaft * np.pi / 180,
-            }
-        ]
+            [
+                {
+                    'Title': "'Rotation'",
+                    'rotation': '.true.',
+                    'AngleType': "'KnownFunction'",
+                    'Omega': nOmega / 60 * 2 * np.pi,
+                    'Psi0': 0,
+                    'AxisValue': [0, 0, 1],
+                },
+                {
+                    'Title': "'Rotate to align blades with zero azimuth'",
+                    'AngleType': "'Timeindependent'",
+                    'AxisType': "'Timeindependent'",
+                    'AxisValue': [0, 0, 1],
+                    'angleValue': -np.pi / 2,
+                },
+                {
+                    'Title': "'Rotor disk AoA tilt'",
+                    'AngleType': "'Timeindependent'",
+                    'AxisType': "'Timeindependent'",
+                    'AxisValue': [0, 1, 0],
+                    'angleValue': - alphaShaft * np.pi / 180,
+                }
+            ]
     }
     nml = [environmentin, environmentconstants, observerin, aircraft, rotor]
 
-    for Nb in range(0,UserIn['Nb']):
+    # Loop over the blade count and appends the container of each blade to the nml list.
+    for Nb in range(0, UserIn['Nb']):
         blade_geom = {
             'containerin':
                 {
-                    'Title': "'"+'Thickness - Blade '+ str(Nb+1)+"'",
-                    'patchGeometryFile': "'"+UserIn['geomFileName']+'.dat'+"'",
+                    'Title': "'" + 'Thickness - Blade ' + str(Nb + 1) + "'",
+                    'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
                     'nbBase': 3,
                 },
             'cb':
@@ -160,7 +235,7 @@ def nml_write(UserIn,loadParams,dirSaveFile,i):
                         'AngleType': "'Timeindependent'",
                         'AxisType': "'Timeindependent'",
                         'AxisValue': [0, 0, 1],
-                        'angleValue': 2*np.pi/UserIn['Nb']*Nb,
+                        'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
                     },
                     {
                         'Title': "'Pitch'",
@@ -180,16 +255,14 @@ def nml_write(UserIn,loadParams,dirSaveFile,i):
                 ]
         }
 
-        #todo create zero padded dictionary entree for flap and cyclic pitch for hover cases
-
         nml.append(blade_geom)
         blade_load = {
             'containerin':
                 {
-                    'Title': "'"+'Loading-Blade '+ str(Nb+1)+"'",
-                    'patchGeometryFile': "'"+UserIn['compactGeomFileName']+'.dat'+"'",
-                    'patchLoadingFile': "'"+UserIn['loadingFileName']+'.dat'+"'",
-                    'periodicKeyOffset': 2*np.pi/UserIn['Nb']*Nb,
+                    'Title': "'" + 'Loading-Blade ' + str(Nb + 1) + "'",
+                    'patchGeometryFile': "'" + UserIn['compactGeomFileName'] + '.dat' + "'",
+                    'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
+                    'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb,
                     'nbBase': 1,
                 },
             'cb':
@@ -198,23 +271,28 @@ def nml_write(UserIn,loadParams,dirSaveFile,i):
                     'AngleType': "'Timeindependent'",
                     'AxisType': "'Timeindependent'",
                     'AxisValue': [0, 0, 1],
-                    'angleValue': 2*np.pi/UserIn['Nb']*Nb,
+                    'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
                 }
         }
         nml.append(blade_load)
-
-
-    with open(os.path.expanduser(dirSaveFile+os.path.sep+UserIn['NmlFileName']), 'w') as f:
+#%%
+    #   writes out each namelist to the file
+    with open(os.path.expanduser(dirSaveFile + os.path.sep + UserIn['NmlFileName']), 'w') as f:
+        #   iterates over each container in the nml list
         for nml_iter in nml:
+            # iterates over each namelist in every container
             for i, contents in enumerate(nml_iter.items()):
                 f.write('&' + contents[0] + '\n')
+                #   if there is a single 'cb' namelist per container:
                 if type(contents[1]) is not list:
+                    #   iterates and writes out each entree in each namelist
                     for entry in contents[1].items():
-                            if type(entry[1]) is not list:
-                                f.write(entry[0] + ' = ' + str(entry[1]) + '\n')
-                            else:
-                                f.write(entry[0] + ' = ' + str(entry[1])[1:-1] + '\n')
+                        if type(entry[1]) is not list:
+                            f.write(entry[0] + ' = ' + str(entry[1]) + '\n')
+                        else:
+                            f.write(entry[0] + ' = ' + str(entry[1])[1:-1] + '\n')
                     f.write('/' + '\n' + '\n')
+                #   if there are multiple 'cb' namelist per container:
                 else:
                     for ii, list_nml in enumerate(contents[1]):
                         if ii > 0:
@@ -225,5 +303,3 @@ def nml_write(UserIn,loadParams,dirSaveFile,i):
                             else:
                                 f.write(entry[0] + ' = ' + str(entry[1])[1:-1] + '\n')
                         f.write('/' + '\n' + '\n')
-
-
