@@ -1,13 +1,13 @@
-# %%        VSP2WOPWOP User Input File
+'''
+VSP2WOPWOP User Input File
 
-#      Author: Daniel Weitsman
-"""'' This input file is used to set up the cases for which to generate the patch and functional data files.
-OpenVSP2WOPWOP supports any number of DegenGeom files and loading conditions, which are specified in the
-comma-delimitted lists below (dataFileNames and CT). A folder that corresponds to each DegenGeom file will be
-automatically generated in the user specified directory. This folder will contain the geometry and compact geometry
-files as well as all the loading functional data files, which correspond to the number of set operational conditions
-(CT). '' """
+Author: Daniel Weitsman
 
+This input file is used to configure the cases for which to generate the patch and functional data files. VSP2WOPWOP
+supports any number of DegenGeom files operating at any number of loading conditions, which are specified in the
+comma-delimitted lists below (dataFileNames, Vx, W, omega). A folder that corresponds to each DegenGeom file,
+containing the patch and namelist files for each loading condition, will be generated in the user specified directory.
+'''
 # %% Package import
 import os
 
@@ -34,7 +34,7 @@ savePickle = 1
 ''''Patch file write directory setup'''
 
 # Directory were you would like to write out the patch and functional data flies. By default this path is configured
-# to be a seperate folder in the 'dirDataFile'.
+# to be a separate folder in the 'dirDataFile'.
 dirPatchFile = os.path.abspath(os.path.join(dirDataFile, '220knts'))
 #   Lifting line compact patch file name (without the extension).
 compactGeomFileName = "CompactGeom"
@@ -48,9 +48,7 @@ loadingFileName = "Load"
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
 # number of 'XsecLocation'.
-airfoilPolarFileName = [["oa212Re24E5.dat", "oa209Re24E5.dat"], ["oa212Re24E5.dat", "oa209Re24E5.dat"],
-                        ["oa212Re30E5.dat", "oa209Re30E5.dat"],
-                        ["oa212Re36E5.dat", "oa209Re36E5.dat"], ["oa212Re39E5.dat", "oa209Re39E5.dat"]]
+airfoilPolarFileName = [["oa212Re36E5.dat", "oa209Re36E5.dat"], ["oa212Re39E5.dat", "oa209Re39E5.dat"]]
 #   Non-dimensional radial location of each airfoil cross section
 XsecLocation = [0.29, 0.88]
 # Starting angle of attack over which to evaluate the lift curve slop (degrees). The airfoil properties must have
@@ -78,7 +76,7 @@ alphaShaft = [-12]
 T = [element * 4.44822 * 0.06 for element in [5400, 6000, 8000]]
 # Populate this list with the rotational rates (rpm) of the rotor. If you are running in the design mode ('OperMode'
 # = 1), the length of this list should be equal to the number of geometric cases ('dataFileNames').
-omega = [298, 308]
+omega = [298,308]
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.

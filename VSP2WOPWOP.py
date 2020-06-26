@@ -1,11 +1,14 @@
-# VSP2WOPWOP Main Script
+'''
 
-#   Author: Daniel Weitsman
+VSP2WOPWOP Main Script
 
-#   This is the main script which calls on and coordinates the executes of all the functions comprising the program.
-#   There really shouldn't be a need to edit this script. If the code is ran in a python IDE three dictionaries, titled geomParams,XsecPolar,loadParams
-#   will be returned these contain the analyzed geomtric parameters of the blades, the lift curve characteristics, and the aerodynamic loading/performance information, respectively.
+Author: Daniel Weitsman
 
+This is the main script which calls on and coordinates the executes of all the functions comprising the program.
+There really shouldn't be a need to edit this script. If the code is ran in a python IDE three dictionaries,
+titled geomParams,XsecPolar,loadParams will be returned these contain the analyzed geometric parameters of the
+blades, the lift curve characteristics, and the aerodynamic loading/performance information, respectively.
+'''
 #%%
 
 from input import UserIn
