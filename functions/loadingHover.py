@@ -1,67 +1,30 @@
-#       VSP2WOPWOP Blade Loading Analysis
+#       VSP2WOPWOP Blade Loading Analysis for Hover and Axial Flight
 
 #   Author: Daniel Weitsman
 
-#   This function trims the rotor to the desired thrust condition, which is specified in the input file, and
-#   computes the aerodynamic loads using BEMT. These quantities are then assembled into a dictionary, which is returned to the user.
+# This function trims the rotor to the desired thrust condition, which is specified in the input file, and computes
+# the aerodynamic loads using BEMT. These quantities are then assembled into a dictionary, which is returned to the
+# user.
 
-#%%
+# %%
 import numpy as np
+from scipy.optimize import least_squares,minimize
+
 
 # %%
 def loadingHover(UserIn, geomParams, XsecPolar, T, omega):
 
-    #   Unpacks needed variables from dictionaries
-    # T = UserIn['T'][ii]
-    # omega = UserIn['omega']
-    Nb = UserIn['Nb']
-    R = geomParams['R']
-    e = geomParams['e']
-    chordDist = geomParams['chordDist']
-    twistDist = geomParams['twistDist']
-    solDist = geomParams['solDist']
-    XsecLocation = UserIn['XsecLocation']
-    airfoilName = list(XsecPolar.keys())
-    rho = UserIn['rho']
-    tipLoss = UserIn['tipLoss']
-    rdim = geomParams['rdim']
-    r = geomParams['r']
-    Adisk = geomParams['diskArea']
-    sol = geomParams['solidity']
-
-    #%%
-    twist = twistDist
-    omega = omega / 60 * 2 * np.pi
-
-    TargetCT = T/(rho * Adisk * (omega * R) ** 2)
-
-    Th0 = UserIn['thetaInit'] * (np.pi / 180)
-    thetaDist = Th0 + twist
-    InitLam = np.full(len(chordDist), np.sqrt(TargetCT / 2))
-
-    if len(XsecLocation) > 1:
-        PolarInd = []
-        for ii in range(1, len(XsecLocation)):
-            PolarInd.append(np.squeeze(np.where((XsecLocation[ii - 1] <= np.round(r, 5)) == (XsecLocation[ii] >= np.round(r, 5)))))
-        PolarInd.append(np.arange(PolarInd[-1][-1] + 1, len(r)))
-    else:
-        PolarInd = np.arange(0,len(r))
-
-    a = np.ones((len(r)))
-    a0 = np.ones((len(r)))
-
-    if len(XsecLocation) > 1:
-        for ii in range(0, len(PolarInd)):
-            a[PolarInd[ii]] = XsecPolar[airfoilName[ii]]['Lift Slope']
-            a0[PolarInd[ii]] = XsecPolar[airfoilName[ii]]['Alpha0'] * (np.pi / 180)
-    else:
-        a = a*XsecPolar[airfoilName[0]]['Lift Slope']
-        a0 = a0*XsecPolar[airfoilName[0]]['Alpha0'] * (np.pi / 180)
-
-    # %%
     def TipLoss(lambdaInit, ThetaDist):
-
+        """
+        This function applies the fixed point itteration method to compute the inflow distribution and applies
+        Prandtl's tip loss formulation, if specified for in the input module
+        :param lambdaInit: Initial guess for the inflow ratio
+        :param ThetaDist: Blade twist distribution (rad)
+        :return:
+        :param:  lam: radial inflow distribution
+        """
         if tipLoss == 1:
+
             iter = 0
             err = np.ones(len(lambdaInit))
 
@@ -83,19 +46,40 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega):
         lam[0] = lam[1]
         lam[-1] = lam[-2]
         # return (lam, F, err, iter)
-        return (lam)
+        return lam
 
-    def EvalCT(lam, th):
+    def EvalCT(lamInit, th):
+        """
+        This function computes the radial loading distribution based on the thrust coefficient
+        :param lam: Initial guess for the radial inflow distribution
+        :param th: Radial twist distribution
+        :return:
+        :param CT: Radially integrated thrust coefficient
+        :param dCT: Incremental thrust coefficient
+        :param dCL:  Radial distribution of the lift coefficient
+        :param dCD:  Radial distribution of the drag coefficient
+        :param AoA: Radial angle of attack distribution
+        """
+
+        lam = TipLoss(lamInit, th)
         AoA = th - lam / r
-        [CL, CD] = PolarLookup(AoA)
-        dCT = 0.5 * solDist * CL * r ** 2
+        [dCL, dCD] = PolarLookup(AoA)
+        dCT = 0.5 * solDist * dCL * r ** 2
         CT = np.trapz(dCT, r)
 
-        return CT, dCT, CL, CD, AoA
+        return CT, dCT, dCL, dCD, lam,AoA
 
     def PolarLookup(alpha):
-        CL = np.zeros(len(alpha))
-        CD = np.zeros(len(alpha))
+        """
+        This function looks up the sectional blade loads from the XFoil polar based on the computed angle of attack
+        distribution
+        :param alpha: Angle of attack distribution from EvalCT
+        :return:
+        :param dCL:  Radial distribution of the lift coefficient
+        :param dCD:  Radial distribution of the drag coefficient
+        """
+        dCL = np.zeros(len(alpha))
+        dCD = np.zeros(len(alpha))
 
         for i, n in enumerate(alpha):
             if len(XsecLocation) > 1:
@@ -105,96 +89,172 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega):
                         leftInd = np.squeeze(np.where(polar[:, 0] < n))[-1]
                         rightInd = np.squeeze(np.where(polar[:, 0] > n))[0]
 
-                        CL[i] = polar[leftInd, 1] + (n - polar[leftInd, 0]) * (polar[rightInd, 1] - polar[leftInd, 1]) / \
-                                (polar[rightInd, 0] - polar[leftInd, 0])
-                        CD[i] = polar[leftInd, 2] + (n - polar[leftInd, 0]) * (polar[rightInd, 2] - polar[leftInd, 2]) / \
-                                (polar[rightInd, 0] - polar[leftInd, 0])
+                        dCL[i] = polar[leftInd, 1] + (n - polar[leftInd, 0]) * (
+                                    polar[rightInd, 1] - polar[leftInd, 1]) / \
+                                 (polar[rightInd, 0] - polar[leftInd, 0])
+                        dCD[i] = polar[leftInd, 2] + (n - polar[leftInd, 0]) * (
+                                    polar[rightInd, 2] - polar[leftInd, 2]) / \
+                                 (polar[rightInd, 0] - polar[leftInd, 0])
             else:
                 polar = (XsecPolar[airfoilName[0]]['Polar'])
 
                 leftInd = np.squeeze(np.where(polar[:, 0] < n))[-1]
                 rightInd = np.squeeze(np.where(polar[:, 0] > n))[0]
 
-                CL[i] = polar[leftInd, 1] + (n - polar[leftInd, 0]) * (polar[rightInd, 1] - polar[leftInd, 1]) / \
-                        (polar[rightInd, 0] - polar[leftInd, 0])
-                CD[i] = polar[leftInd, 2] + (n - polar[leftInd, 0]) * (polar[rightInd, 2] - polar[leftInd, 2]) / \
-                        (polar[rightInd, 0] - polar[leftInd, 0])
+                dCL[i] = polar[leftInd, 1] + (n - polar[leftInd, 0]) * (polar[rightInd, 1] - polar[leftInd, 1]) / \
+                         (polar[rightInd, 0] - polar[leftInd, 0])
+                dCD[i] = polar[leftInd, 2] + (n - polar[leftInd, 0]) * (polar[rightInd, 2] - polar[leftInd, 2]) / \
+                         (polar[rightInd, 0] - polar[leftInd, 0])
 
-        return (CL, CD)
+        return dCL, dCD
 
+    def residuals( Th0, twistDist, targCT):
+        '''
+        This function computes the residuals from the target trim variables.
+        :param lamInit: initial estimate for the inflow distribution
+        :param Th0: collective pitch setting
+        :param twistDist: radial twist distribution
+        :param targCT: target thrust coefficient
+        :return:
+        :param res: residual in the percentage error between the target and computed thrust coefficient
+        '''
+
+        th = Th0 + twistDist
+        trim_out = EvalCT(lamInit, th)
+        trimCT = trim_out[0]
+        res = np.abs((targCT - trimCT) / targCT)
+        #res = targCT - trimCT
+
+        return res
+
+    # %%
+    #   This block of code defines parameters that are used throughout the remainder of the module
+    Nb = UserIn['Nb']
+    R = geomParams['R']
+    chordDist = geomParams['chordDist']
+    twistDist = geomParams['twistDist']
+    solDist = geomParams['solDist']
+    XsecLocation = UserIn['XsecLocation']
+    airfoilName = list(XsecPolar.keys())
+    rho = UserIn['rho']
+    tipLoss = UserIn['tipLoss']
+    r = geomParams['r']
+    Adisk = geomParams['diskArea']
+    sol = geomParams['solidity']
+
+    # %%
+    #   converts rotational rate from degrees to radians
+    omega = omega / 60 * 2 * np.pi
+    #   Target thrust coefficient
+    targCT = T / (rho * Adisk * (omega * R) ** 2)
+    #   Converts initial guess for the collective pitch setting from degrees to radians
+    Th0 = UserIn['thetaInit'] * (np.pi / 180)
+    #   Initial guess for the radial inflow distribution
+    lamInit = np.full(len(chordDist), np.sqrt(targCT / 2))
+
+    #   Populates a list with indices that correspond to each airfoil cross-section.
+    if len(XsecLocation) > 1:
+        PolarInd = []
+        for ii in range(1, len(XsecLocation)):
+            PolarInd.append(
+                np.squeeze(np.where((XsecLocation[ii - 1] <= np.round(r, 5)) == (XsecLocation[ii] >= np.round(r, 5)))))
+        PolarInd.append(np.arange(PolarInd[-1][-1] + 1, len(r)))
+    else:
+        PolarInd = np.arange(0, len(r))
+
+    #   initializes and populates an array with the sectional lift curve slope.
+    a = np.ones((len(r)))
+    a0 = np.ones((len(r)))
+
+    if len(XsecLocation) > 1:
+        for ii in range(0, len(PolarInd)):
+            a[PolarInd[ii]] = XsecPolar[airfoilName[ii]]['Lift Slope']
+            a0[PolarInd[ii]] = XsecPolar[airfoilName[ii]]['Alpha0'] * (np.pi / 180)
+    else:
+        a = a * XsecPolar[airfoilName[0]]['Lift Slope']
+        a0 = a0 * XsecPolar[airfoilName[0]]['Alpha0'] * (np.pi / 180)
 
     # %%
 
-    errCT = 1
-    ii = 0
-    delta = 0.0001
+    # This function employs the non-linear least square optimization method (LM) to compute the necessary collective
+    # pitch settings to minimize the residuals, which is the percentage error between the target and computed thrust
+    # coefficient.
+    trim_sol = least_squares(residuals, Th0, args=[ twistDist, targCT], method='lm')
 
-    while errCT > 0.0005:
+    # Evaluates the core function, 'EvalCT' once more with the trimmed collective pitch to attain the remainder of
+    # load parameters needed to compute the integrated and pre-integraated blade load.
+    CT, dCT, dCL, dCD, lam, AoA = EvalCT(lamInit, trim_sol.x+twistDist)
 
-        delTh0 = Th0 + delta * Th0
-        delThetaDist = delTh0 + twist
+    # Assembles the pitch setting into a list, which is referenced in the 'nml_write' module
+    th = list(trim_sol.x)+[0,0]
 
-        #[Lambda, F, Err, i]  = TipLoss(InitLam, thetaDist)
-        Lambda= TipLoss(InitLam, thetaDist)
-        # [delLambda, delF, delErr, deli] = TipLoss(InitLam, delThetaDist)
-        delLambda = TipLoss(InitLam, delThetaDist)
+    # errCT = 1
+    # ii = 0
+    # delta = 0.0001
+    #
+    # while errCT > 0.0005:
+    #
+    #     thetaDist = Th0+twistDist
+    #     delTh0 = Th0 + delta * Th0
+    #     delThetaDist = delTh0 + twistDist
+    #
+    #     [CT, dCT, dCL, dCD, lam,AoA] = EvalCT(lamInit, thetaDist)
+    #     [delCT, deldCT, delCL, delCD,dellam, delAoA] = EvalCT(lamInit, delThetaDist)
+    #
+    #     J = (delCT - CT) / (delta * Th0)
+    #     errNR = targCT - CT
+    #     errCT = abs(errNR) / targCT
+    #
+    #     Th0 = delTh0 + 0.5 * J ** -1 * errNR
+    #     thetaDist = Th0 + twistDist
+    #     lamInit = dellam
+    #
+    #     ii = ii + 1
 
-        [CT, dCT, dCL, dCD, AoA] = EvalCT(Lambda, thetaDist)
-        [delCT, deldCT, delCL, delCD, delAoA] = EvalCT(delLambda, delThetaDist)
+    # %%
 
-        J = (delCT - CT) / (delta * Th0)
-        errNR = TargetCT - CT
-        errCT = abs(errNR) / TargetCT
+    #   Integrated lift and drag coefficients
+    CL = np.trapz(dCL, r)
+    CD = np.trapz(dCD, r)
 
-        Th0 = delTh0 + 0.5 * J ** -1 * errNR
-        thetaDist = Th0 + twist
-        InitLam = delLambda
+    #   Distribution and integrated of the power/torque coefficient
+    dCP = 0.5 * solDist * (lam / r * dCL + dCD) * r ** 3
+    CP = np.trapz(dCP, r)
 
-        ii = ii + 1
+    #   Power required by the rotor
+    P = CP * rho * Adisk * (omega * R) ** 3
 
-# %%
-    CL = np.trapz(dCL,r)
-    CD = np.trapz(dCD,r)
-
-    dCP = 0.5 * solDist * (Lambda / r * dCL + dCD) * r ** 3
-    CP = np.trapz(dCP,r)
-    P = CP* rho * Adisk * (omega * R) ** 3
-
+    #   Distribution and integrated thrust
     dT = dCT * rho * Adisk * (omega * R) ** 2
-    T = np.trapz(dT,r)
+    T = np.trapz(dT, r)
+
+    #   Resolved force component that is normal to the rotor plane
     dFz = dT / Nb
 
+    #   Distribution and integrated torque
     dQ = dCP * rho * Adisk * (omega * R) ** 2 * R
-    Q = np.trapz(dQ,r)
+    Q = np.trapz(dQ, r)
+
+    #   Resolved in-plane force component
     dFx = dQ / (Nb * r * R)
 
-    FM = CP/(1.15*CP+sol/8*CD)
+    #   Figure of merit, induced power factor = 1.15
+    FM = CP / (1.15 * CP + sol / 8 * CD)
 
-
+    #   Sets any infinite values of the computed force components (primarily near the blade root) equal to zero.
     dFx[np.where(np.isnan(dFx) == 1)] = 0
     dFz[np.where(np.isnan(dFz) == 1)] = 0
     dFy = np.squeeze(np.zeros((len(r))))
 
-    #%%
-    dL = 0.5*rho*(omega * R) ** 2*chordDist*dCL
-    dD = 0.5 * rho * (omega * R) ** 2 * chordDist * dCD
-    dFz2 = dL*np.cos(Lambda / r)-dD*np.sin(Lambda / r)
-#todo resolve lift coefficient from blade normal to allign with the TPP
-    #%%
-
+    #   Assembles loads into a list that is referenced in the 'ConstantLoadingPatchFileWrite' module
     loads = [dFx, dFy, dFz]
-    # compactArea = np.insert(np.diff(rdim),0,np.diff(rdim)[0])
-    compactArea = chordDist
 
-    loadParams = {'th':[Th0,0,0],'beta':[0,0,0],'CT':CT,'T':T, 'dCT':dCT,'dT':dT, 'CP':CP,'P':P,'Q':Q, 'dCP':dCP,
-                  'dQ':dQ,'dCL':dCL, 'dCD':dCD, 'CL':CL,'CD':CD,'FM':FM, 'AoA':AoA,'Lambda':Lambda,'dFx':dFx,'dFy':dFy,'dFz':dFz,'dFz2':dFz2,'compactArea':compactArea,'omega':omega}
+#%%
+    # Assembles all computed load parameters into a dictionary
+    loadParams = {'residuals':trim_sol.fun,'th': th, 'beta': [0, 0, 0], 'CT': CT, 'T': T, 'dCT': dCT, 'dT': dT, 'CP': CP, 'P': P,
+                  'Q': Q, 'dCP': dCP, 'dQ': dQ, 'dCL': dCL, 'dCD': dCD, 'CL': CL, 'CD': CD, 'FM': FM, 'AoA': AoA, 'lambda': lam,
+                  'dFx': dFx, 'dFy': dFy, 'dFz': dFz, 'omega': omega}
     return loadParams
-
-
-
-
-
-
 
 # # %%
 # # figdir = os.path.abspath(os.path.join(input.dirDataFile,'Figures/CL.png'))

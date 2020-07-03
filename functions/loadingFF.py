@@ -238,7 +238,8 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     lamTPP_init = mu_x * np.tan(alphaInit)
     #   Improved estimate of the inflow ratio after going through the fixed point procedure
     lamTPP_init = lam_fixed_pnt(lamTPP_init, mu_x, alphaInit, targ_CT)
-    #   employs non-linear least square optimization method (LM) to compute the necessary collective and cyclic pitch settings to mimimize the residuals.
+    # employs non-linear least square optimization method (LM) to compute the necessary collective and cyclic pitch
+    # settings to minimize the residuals.
     trim_sol = least_squares(residuals, th, args = [mu_x,lamTPP_init] ,method='lm')
     #   overwrites the initial guessed pitch settings with the computed.
     th = trim_sol.x
