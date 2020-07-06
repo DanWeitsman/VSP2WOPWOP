@@ -8,7 +8,8 @@ supports any number of DegenGeom files operating at any number of loading condit
 comma-delimitted lists below (dataFileNames, Vx, W, omega). A folder that corresponds to each DegenGeom file,
 containing the patch and namelist files for each loading condition, will be generated in the user specified directory.
 '''
-# %% Package import
+# %%
+'''Package import and directory setup'''
 import os
 
 dirPyScript = os.getcwd()
@@ -18,7 +19,7 @@ dirPyScript = os.getcwd()
 dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/Model 360 Validation Data'
 
 # %%
-#   Names of DegenGeom files add as many geometry cases as you wish separated by commas.
+'''   Names of DegenGeom files add as many geometry cases as you wish separated by commas.'''
 dataFileNames = ["Boeing360_DegenGeom.csv"]
 
 # Operational mode: set equal to one for design mode, which is ideal for geometric parametric studies, where each
@@ -53,10 +54,10 @@ loadingFileName = "Load"
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
 # number of 'XsecLocation'.
-airfoilPolarFileName = [['vr12Re14E5.dat','vr15Re6E5.dat']]
+airfoilPolarFileName = [['vr12Re14E5.dat', 'vr15Re6E5.dat']]
 
 #   Non-dimensional radial location of each airfoil cross section
-XsecLocation = [0.268,0.85]
+XsecLocation = [0.268, 0.85]
 
 # Starting angle of attack over which to evaluate the lift curve slop (degrees). The airfoil properties must have
 # been evaluated at this angle of attack.
@@ -69,16 +70,16 @@ aLength = 3
 check = 1
 
 # %%
-''' Operating conditions configuration '''
+''' Operating condition configuration '''
 # Number of Blades
 Nb = 4
 
 #   Forward velocity, set to zero for hover, input as many comma-delimited forward flight velocities as you wish to be
 # evaluated.
-Vx = [0]
+Vx = [100]
 
 #   Vertical climb velocity
-Vz = [0]
+Vz = [-20]
 
 #   Shaft tilt angle (degrees), forward tilt is designated by a negative tilt angle
 alphaShaft = [0]
@@ -95,7 +96,7 @@ omega = [1323]
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.
-thetaInit = 8
+thetaInit = 1
 
 #   Position of loading line from the blade's leading edge as a percentage of the chord.
 loadPos = 0.25
@@ -116,7 +117,7 @@ Ib = 1 / 3 * 217.423 * (5.965 - 1.72985) ** 2
 # hinge offset of the blade (only required for forward flight).
 nuBeta = 1.03
 
-#%%
+# %%
 '''Namelist file configuration'''
 #   Set equal to one in order to write out a namelist file for each case.
 nmlWrite = 1
@@ -128,7 +129,7 @@ NmlFileName = 'Boeing360.nam'
 nRev = 1
 
 #   Set sample rate (Hz), preferably as a power of two.
-nt = 2**15
+nt = 2 ** 15
 
 # Observer type set equal to one for a single observer, two for a rectangular observer grid, and three for a
 # spherical grid. Then complete the respective section below.
@@ -154,7 +155,7 @@ nbx = 1
 xMin = 0
 
 #   Maximum x coordinate
-xMax = 0
+xMax = [0]
 
 #   Number of observers along the y-direction (to the side of the rotor).
 nby = 1
@@ -163,7 +164,7 @@ nby = 1
 yMin = 14.165447920000007
 
 #   Maximum y coordinate
-yMax = 14.165447920000007
+yMax = [14.165447920000007]
 
 #   Number of observers along the z-direction (normal to the rotor plane).
 nbz = 3
@@ -172,7 +173,7 @@ nbz = 3
 zMin = -1.4888485708273682
 
 #   Maximum z coordinate
-zMax = 1.4888485708273682
+zMax = [1.4888485708273682]
 
 # %%
 '''Spherical Observer Grid'''
@@ -197,7 +198,6 @@ psimin = -30
 #   Maximum inclination angle of the out-of-plane observers (degrees)
 psimax = 30
 
-
 # %%
 '''Pegg broadband noise set up '''
 
@@ -211,9 +211,10 @@ UserIn = {'dirDataFile': dirDataFile, 'OperMode': OperMode, 'savePickle': savePi
           'airfoilPolarFileName': airfoilPolarFileName, 'XsecLocation': XsecLocation,
           'aStart': aStart, 'aLength': aLength, 'check': check, 'Nb': Nb, 'Vx': Vx, 'Vz': Vz, 'alphaShaft': alphaShaft,
           'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss, 'rho': rho, 'c': c,
-          'Ib': Ib, 'nuBeta': nuBeta,'nmlWrite': nmlWrite, 'dirPatchFile': dirPatchFile, 'compactGeomFileName':compactGeomFileName,
+          'Ib': Ib, 'nuBeta': nuBeta, 'nmlWrite': nmlWrite, 'dirPatchFile': dirPatchFile,
+          'compactGeomFileName': compactGeomFileName,
           'geomFileName': geomFileName, 'loadingFileName': loadingFileName, 'bbFileName': bbFileName,
           'BBNoise': BBNoise, 'NmlFileName': NmlFileName, 'nRev': nRev, 'nt': nt, 'obsType': obsType, 'xLoc': xLoc,
           'yLoc': yLoc, 'zLoc': zLoc, 'nbx': nbx, 'nby': nby, 'nbz': nbz, 'xMin': xMin, 'yMin': yMin, 'zMin': zMin,
-          'xMax': xMax, 'yMax': yMax, 'zMax': zMax,'radius': radius, 'nbtheta': nbtheta,
+          'xMax': xMax, 'yMax': yMax, 'zMax': zMax, 'radius': radius, 'nbtheta': nbtheta,
           'thetamin': thetamin, 'thetamax': thetamax, 'nbpsi': nbpsi, 'psimin': psimin, 'psimax': psimax}

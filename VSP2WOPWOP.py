@@ -17,7 +17,7 @@ from shutil import rmtree
 from functions.DegenGeom import ParseDegenGeom
 from functions.GeomProcess import geomProcess
 from functions.polarRead import polarRead
-from functions.loadingHover import loadingHover
+from functions.loadingHover import loadingAxialHover
 from functions.loadingFF import loadingFF
 from functions.GeomPatchFileWrite import GeomPatchFileWrite
 from functions.ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
@@ -28,7 +28,6 @@ from functions.caseFile_write import caseFile_write
 
 
 # %%
-
 def main():
     #   Creates a parent directory for the case files to be written out to
     if os.path.exists(UserIn['dirPatchFile']) == 0:
@@ -41,7 +40,7 @@ def main():
     globalFolder = []
 
     #   Iterates over each DegenGeom geometry file
-    for i, dataFileName in enumerate(UserIn['dataFileName']):
+    for iter_geom, dataFileName in enumerate(UserIn['dataFileName']):
 
         #   Parses and returns data contained in the DegenGeom file
         [dataSorted, indHeader] = ParseDegenGeom(UserIn['dirDataFile'], dataFileName)
@@ -52,9 +51,9 @@ def main():
 
         # Reads and evaluates the XFoil polars, this is only done once during the first iteration of the outer for
         # loop.
-        if i == 0:
-            for ii, n in enumerate(UserIn['omega']):
-                polarReadOut = polarRead(UserIn, ii)
+        if iter_geom == 0:
+            for i, n in enumerate(UserIn['omega']):
+                polarReadOut = polarRead(UserIn, i)
                 XsecPolar = {**XsecPolar, **{str(round(n)) + 'RPM': polarReadOut}}
 
         # Creates a directory for each geometry where the respective loading, patch, and namelist files will be
@@ -75,73 +74,100 @@ def main():
             # In the design mode each DegenGeom variant can be trimmed to the same or have its own respective thrust
             # condition. This if statement selects the correct thrust condition before passing it on to the loading
             # module.
-            if UserIn['T'] is list:
-                T = UserIn['T'][i]
+            if len(UserIn['T']) > 1:
+                T = UserIn['T'][iter_geom]
             else:
                 T = UserIn['T'][0]
 
+            if len(UserIn['Vz']) > 1:
+                Vz = UserIn['Vz'][iter_geom]
+            else:
+                Vz = UserIn['Vz'][0]
+
+            if len(UserIn['omega']) > 1:
+                omega = UserIn['omega'][iter_geom]
+            else:
+                omega = UserIn['omega'][0]
+
             # This section of code determines whether to run the hover/axial or forward flight module and writes out
             # the corresponding constant or periodic functional data file, respectively.
-            if UserIn['Vx'][i] == 0:
-                loadParams = loadingHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[i]], T,
-                                          UserIn['omega'][i])
+            if UserIn['Vx'][iter_geom] == 0:
+                loadParams = loadingAxialHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vz)
                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
-                loadParams = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[i]], T, UserIn['omega'][i])
-                PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'],
-                                              UserIn['omega'][i], dirSaveFile)
+
+                if len(UserIn['Vx']) > 1:
+                    Vx = UserIn['Vx'][iter_geom]
+                else:
+                    Vx = UserIn['Vx'][0]
+
+                if len(UserIn['alphaShaft']) > 1:
+                    alphaShaft = UserIn['alphaShaft'][iter_geom]
+                else:
+                    alphaShaft = UserIn['alphaShaft'][0]
+
+                loadParams = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vx, Vz, alphaShaft)
+                PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega, dirSaveFile)
 
             if UserIn['nmlWrite'] == 1:
-                nml_write(UserIn, loadParams, dirSaveFile, i)
+                nml_write(UserIn, loadParams, dirSaveFile, Vx, Vz, omega, alphaShaft, iter_geom)
 
             if UserIn['BBNoise'] == 1:
                 from functions.PeggBBDataFileWrite import PeggBBDataFileWrite
                 PeggBBDataFileWrite(UserIn['bbFileName'], geomParams, loadParams)
 
             globalFolder.append(dataFileName[:-4])
-            if i == len(UserIn['dataFileName']):
+
+            if iter_geom == len(UserIn['dataFileName'])-1:
                 caseFile_write(globalFolder, UserIn['NmlFileName'], UserIn['dirPatchFile'])
 
         #   Analysis Mode: Multiple loading condition per geometry
         if UserIn['OperMode'] == 2:
 
-            for ii, nThrust in enumerate(UserIn['T']):
-                for iii, nVx in enumerate(UserIn['Vx']):
-                    for iiii, nOmega in enumerate(UserIn['omega']):
+            for iter_thrust, nThrust in enumerate(UserIn['T']):
+                for iter_Vx, nVx in enumerate(UserIn['Vx']):
+                    for iter_Vz, nVz in enumerate(UserIn['Vz']):
+                        for iter_omega, nOmega in enumerate(UserIn['omega']):
 
-                        globalFolderName = '{:.2e}'.format(nThrust) + 'N_' + str(round(nVx * 1.944)) + 'Kts_' + str(
-                            round(nOmega)) + 'RPM'
-                        dirCaseFile = os.path.abspath(os.path.expanduser(dirSaveFile + '/' + globalFolderName))
+                            globalFolderName = 'T_'+'{:.2e}'.format(nThrust) + 'N_Vx_' + str(round(nVx * 1.944))\
+                                               +'Kts_Vz_' + str(round(nVz)) + 'ms_Nr_'+ str(round(nOmega)) + 'RPM'
+                            dirCaseFile = os.path.abspath(os.path.expanduser(dirSaveFile + os.path.sep + globalFolderName))
 
-                        if os.path.exists(dirCaseFile) == 1:
-                            rmtree(dirCaseFile)
-                        os.mkdir(dirCaseFile)
+                            if os.path.exists(dirCaseFile) == 1:
+                                rmtree(dirCaseFile)
+                            os.mkdir(dirCaseFile)
 
-                        GeomPatchFileWrite(UserIn['geomFileName'], geomParams, dirCaseFile)
-                        CompactGeomPatchFileWrite(UserIn['compactGeomFileName'], geomParams['nXsecs'],
-                                                  geomParams['liftLineCoord'], dirCaseFile)
+                            GeomPatchFileWrite(UserIn['geomFileName'], geomParams, dirCaseFile)
+                            CompactGeomPatchFileWrite(UserIn['compactGeomFileName'], geomParams['nXsecs'],
+                                                      geomParams['liftLineCoord'], dirCaseFile)
 
-                        if nVx == 0:
-                            loadingOut = loadingHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iiii]],
-                                                      nThrust, nOmega)
-                            ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
-                                                          dirCaseFile)
-                        else:
-                            loadingOut = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iiii]], nThrust,
-                                                   nOmega, nVx, UserIn['Vz'][iii], UserIn['alphaShaft'][iii])
-                            PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
-                                                          nOmega, dirCaseFile)
+                            if len(UserIn['alphaShaft']) > 1:
+                                alphaShaft = UserIn['alphaShaft'][iter_Vx]
+                            else:
+                                alphaShaft = UserIn['alphaShaft'][0]
 
-                        if UserIn['nmlWrite'] == 1:
-                            nml_write(UserIn, loadingOut, dirCaseFile, iiii)
+                            if nVx == 0:
+                                loadingOut = loadingAxialHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_omega]],
+                                                               nThrust, nOmega)
+                                ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
+                                                              dirCaseFile)
+                            else:
+                                loadingOut = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_omega]], nThrust,
+                                                       nOmega, nVx, nVz, alphaShaft)
+                                PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
+                                                              nOmega, dirCaseFile)
 
-                        if UserIn['BBNoise'] == 1:
-                            from functions.PeggBBDataFileWrite import PeggBBDataFileWrite
-                            PeggBBDataFileWrite(UserIn['bbFileName'], geomParams, loadingOut)
 
-                        loadParams = {**loadParams, **{globalFolderName: loadingOut}}
+                            if UserIn['nmlWrite'] == 1:
+                                nml_write(UserIn, loadingOut, dirCaseFile,nVx, nVz, nOmega, alphaShaft, iter_geom)
 
-                        globalFolder.append(globalFolderName)
+                            if UserIn['BBNoise'] == 1:
+                                from functions.PeggBBDataFileWrite import PeggBBDataFileWrite
+                                PeggBBDataFileWrite(UserIn['bbFileName'], geomParams, loadingOut)
+
+                            loadParams = {**loadParams, **{globalFolderName: loadingOut}}
+
+                            globalFolder.append(globalFolderName)
             caseFile_write(globalFolder, UserIn['NmlFileName'], dirSaveFile)
 
         MainDict = {**MainDict, **{'UserIn': UserIn,

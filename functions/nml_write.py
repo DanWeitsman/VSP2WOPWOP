@@ -18,24 +18,34 @@ import numpy as np
 
 
 # %%
-def nml_write(UserIn, loadParams, dirSaveFile, i):
-    # Checks if these quantities are formatted as a list in the input module and selects the appropriate quantitiy.
-    if UserIn['radius'] is list:
-        radius = UserIn['radius'][i]
-    else:
-        radius = UserIn['radius'][0]
+def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter_geom):
 
-    nOmega = UserIn['omega'][i]
+    # The position of the observers can be maintained constant or varied for each geometry variant by
+    # populating the list of any dimension of the observer grid in the input file with multiple comma
+    # delimited values. This set of if statements checks if multiple observer position have been
+    # specified in the input file.
 
-    if UserIn['Vx'] is list:
-        nVx = UserIn['Vx'][i]
-    else:
-        nVx = UserIn['Vx'][0]
+    if UserIn['obsType'] == 2:
+        if len(UserIn['xMax']) > 1:
+            xMax = UserIn['xMax'][iter_geom]
+        else:
+            xMax = UserIn['xMax'][0]
 
-    if UserIn['alphaShaft'] is list:
-        alphaShaft = UserIn['alphaShaft'][i]
-    else:
-        alphaShaft = UserIn['alphaShaft'][0]
+        if len(UserIn['yMax']) > 1:
+            yMax = UserIn['xMax'][iter_geom]
+        else:
+            yMax = UserIn['xMax'][0]
+
+        if len(UserIn['zMax']) > 1:
+            zMax = UserIn['xMax'][iter_geom]
+        else:
+            zMax = UserIn['xMax'][0]
+
+    elif UserIn['obsType'] == 3:
+        if len(UserIn['radius']) > 1:
+            radius = UserIn['radius'][iter_geom]
+        else:
+            radius = UserIn['radius'][0]
 
     # Determines the sampling rate, as a power of 2, based on the desired sampling rate and the duration of the run
     # specified in the input module.
@@ -123,13 +133,13 @@ def nml_write(UserIn, loadParams, dirSaveFile, i):
                     'lowpassfrequency': 20000,
                     'nbx': UserIn['nbx'],
                     'xMin': UserIn['xMin'],
-                    'xMax': UserIn['xMax'],
+                    'xMax': xMax,
                     'nby': UserIn['nby'],
                     'yMin': UserIn['yMin'],
-                    'yMax': UserIn['yMax'],
+                    'yMax': yMax,
                     'nbz': UserIn['nbz'],
                     'zMin': UserIn['zMin'],
-                    'zMax': UserIn['zMax'],
+                    'zMax': zMax,
                     'nbBase': 0
                 },
             'cb':
@@ -180,7 +190,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, i):
             {
                 'Title': "'Aircraft motion'",
                 'TranslationType': "'KnownFunction'",
-                'VH': [nVx, 0, 0],
+                'VH': [nVx, 0, nVz],
             }
     }
 

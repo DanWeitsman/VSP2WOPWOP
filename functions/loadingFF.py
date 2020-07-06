@@ -166,8 +166,6 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     This block of code processes the input parameters and determines the initial estimates for the trim procedure 
     '''
 
-    thFP = np.arctan(Vz/Vx)
-
     omega = omega/60*2*np.pi
     rho = UserIn['rho']
     Nb = UserIn['Nb']
@@ -180,6 +178,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     airfoilName = list(XsecPolar.keys())
 
     alphaShaft = alphaShaft*(np.pi/180)
+    thFP = np.arctan(Vz / Vx)
 
     alphaInit = alphaShaft+thFP
     U = np.linalg.norm((Vx,Vz))
@@ -203,6 +202,8 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     targ_beta1c = 0
     targ_beta1s = 0
     trimTargs = [targ_CT,targ_beta1c,targ_beta1s]
+
+    assert -2 <= Vz/np.sqrt(W/(2*rho*np.pi*R**2)) <= 0,'Non-physical solution, 1D assumption of momentum theory is violated'
 
 #%%
     '''

@@ -21,8 +21,6 @@ def polarRead(UserIn,iii):
 
     #%%
     XsecPolar = {}
-    os.chdir(dirDataFile)
-
     #%%
     def SeekAbsMin(PolarData):
         data = PolarData[:,1]
@@ -49,8 +47,8 @@ def polarRead(UserIn,iii):
         return PolarData[MaxInd,0], PolarData[MaxInd,1],PolarData[MaxInd,2]
 
     #%%
-    for i,file in enumerate(airfoilPolarFileName):
-        with open(file) as f:
+    for i, file in enumerate(airfoilPolarFileName):
+        with open(os.path.expanduser(dirDataFile+os.path.sep+file)) as f:
             data = f.read()
         data = data.split("\n")
         dataParse = [x.split(" ")[1:] for x in data[12:-1]]

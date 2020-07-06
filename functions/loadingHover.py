@@ -12,7 +12,7 @@ from scipy.optimize import least_squares,minimize
 
 
 # %%
-def loadingHover(UserIn, geomParams, XsecPolar, T, omega):
+def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
 
     def TipLoss(lambdaInit, ThetaDist):
         """
@@ -32,8 +32,8 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega):
                 # froot = 0.5*Nb*(r/((1 - r)*lam/r))
                 f = 0.5 * Nb * ((1 - r) / lambdaInit)
                 F = (2 / np.pi) * np.arccos(np.e ** (-f))
-                lam = (solDist * a / (16 * F)) * (np.sqrt(1 + 32 * F / (solDist * a) * ThetaDist * r) - 1)
-                # lam = np.sqrt(1/(8*F)*CL*r**2)
+                #lam = (solDist * a / (16 * F)) * (np.sqrt(1 + 32 * F / (solDist * a) * ThetaDist * r) - 1)
+                lam = np.sqrt(1/4*(solDist*a/(8*F)-lam_c)**2+solDist*a*ThetaDist*r/(8*F))-(solDist*a/(16*F)-lam_c/2)
                 err = np.abs((lam - lambdaInit) / lam)
                 err[np.where(np.isnan(err) == 1)] = 0
                 lambdaInit = lam
@@ -151,6 +151,11 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega):
     Th0 = UserIn['thetaInit'] * (np.pi / 180)
     #   Initial guess for the radial inflow distribution
     lamInit = np.full(len(chordDist), np.sqrt(targCT / 2))
+    #   Axial climb/descent inflow ratio
+    lam_c = Vz / (omega * R)
+
+    assert -2 <= Vz/np.sqrt(T/(2*rho*Adisk)) <= 0,'Non-physical solution, 1D assumption of momentum theory is violated'
+        # raise ValueError('Non-physical solution, 1D assumption of momentum theory is violated')
 
     #   Populates a list with indices that correspond to each airfoil cross-section.
     if len(XsecLocation) > 1:
@@ -256,9 +261,11 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega):
                   'dFx': dFx, 'dFy': dFy, 'dFz': dFz, 'omega': omega}
     return loadParams
 
-# # %%
-# # figdir = os.path.abspath(os.path.join(input.dirDataFile,'Figures/CL.png'))
-# # with cbook.get_sample_data(figdir) as image_file:
+# todo implement axial flight and ensure the inflow distribution does not change. Then compare the results attained
+#  from the hover and FF modules and determine which one to use for axial flight conditions.
+#
+# %% # figdir = os.path.abspath(os.path.join(input.dirDataFile,'Figures/CL.png')) # with cbook.get_sample_data(figdir) as
+#  image_file:
 #
 # # fig, ax = plt.subplots()
 # # image = plt.imread(figdir)
