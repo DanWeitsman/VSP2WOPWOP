@@ -5,17 +5,15 @@
 #   This function computes the face-area scaled node-centered normal vectors needed for the patch files.
 #   Even though the DegenGeom file contains the face centered normals, the version of PSU-WOPWOP that I was running was
 #   throwing an error when I used the face-centered normals, so I wrote this function to bypass the glitch.
-
 #%%
-import numpy as np
-#%%
-#   This function computes the node centered normal vectors
 #   Input:
 #       surfNodes: Coordinates of the surface nodes
 #       pntsPerXsec: Number of chordwise nodes [i]
 #       nXsecs: Number of spanwise nodes [j]
 #   Output:
 #       NormNodeCenteredNorms: Node centered surface normals, which are normalized by the corresponding face areas
+
+import numpy as np
 
     #%%
 def NodeCenteredNorms(surfNodes,pntsPerXsec,nXsecs):

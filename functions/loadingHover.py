@@ -145,6 +145,8 @@ def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     # %%
     #   converts rotational rate from degrees to radians
     omega = omega / 60 * 2 * np.pi
+    #   Sectional free stream velocity
+    UP = omega*geomParams['rdim']
     #   Target thrust coefficient
     targCT = T / (rho * Adisk * (omega * R) ** 2)
     #   Converts initial guess for the collective pitch setting from degrees to radians
@@ -154,8 +156,8 @@ def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     #   Axial climb/descent inflow ratio
     lam_c = Vz / (omega * R)
 
-    assert -2 <= Vz/np.sqrt(T/(2*rho*Adisk)) <= 0,'Non-physical solution, 1D assumption of momentum theory is violated'
-        # raise ValueError('Non-physical solution, 1D assumption of momentum theory is violated')
+    if -2 < Vz/np.sqrt(T/(2*rho*Adisk)) < 0:
+         raise ValueError('Non-physical solution, 1D assumption of momentum theory is violated')
 
     #   Populates a list with indices that correspond to each airfoil cross-section.
     if len(XsecLocation) > 1:
@@ -257,12 +259,10 @@ def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
 #%%
     # Assembles all computed load parameters into a dictionary
     loadParams = {'residuals':trim_sol.fun,'th': th, 'beta': [0, 0, 0], 'CT': CT, 'T': T, 'dCT': dCT, 'dT': dT, 'CP': CP, 'P': P,
-                  'Q': Q, 'dCP': dCP, 'dQ': dQ, 'dCL': dCL, 'dCD': dCD, 'CL': CL, 'CD': CD, 'FM': FM, 'AoA': AoA, 'lambda': lam,
-                  'dFx': dFx, 'dFy': dFy, 'dFz': dFz, 'omega': omega}
+                  'Q': Q, 'dCP': dCP, 'dQ': dQ, 'dCL': dCL, 'dCD': dCD, 'CL': CL, 'CD': CD, 'FM': FM, 'AoA': AoA,'ClaDist':a, 'lambda': lam,
+                  'dFx': dFx, 'dFy': dFy, 'dFz': dFz, 'omega': omega,'UP':UP}
     return loadParams
 
-# todo implement axial flight and ensure the inflow distribution does not change. Then compare the results attained
-#  from the hover and FF modules and determine which one to use for axial flight conditions.
 #
 # %% # figdir = os.path.abspath(os.path.join(input.dirDataFile,'Figures/CL.png')) # with cbook.get_sample_data(figdir) as
 #  image_file:

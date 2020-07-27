@@ -86,6 +86,10 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
             beta = beta_solve(th, mu_x, lamTPP_init)
 
             alpha = alphaShaft+beta[1]+thFP
+
+            # if alpha <-20*np.pi/180:
+            #     alpha =-20*np.pi/180
+
             mu = U / (omega * R) * np.cos(alpha)
             lam = lamTPP_init-mu*beta[1]
 
@@ -116,8 +120,9 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         :return: difference between the trim targets and computes CT, beta1c, and beta1s.
         '''
 
+        weights = np.array([1,1,1])
         trim_out = WT_trim(th,mu_x,lamTPP_init)
-        res = trimTargs - np.array([trim_out[3], trim_out[0][1], trim_out[0][2]])
+        res = (trimTargs - np.array([trim_out[3], trim_out[0][1], trim_out[0][2]]))*weights
         return res
 
     def loads_moments(ut, up, beta, theta_expanded, beta_expanded):
@@ -159,7 +164,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         distCMY = -solDist * a / (2*gamma) * (nuBeta**2-1-3/2*e/R) * beta[1] + e / R * 1 / (4*np.pi) * solDist * a * (ut ** 2 * theta_expanded - up * ut) * np.expand_dims(np.sin(phi), axis = 1)
         CMY = np.trapz(np.trapz(distCMY, r, axis=1), phi)
 
-        return np.array([CT,CH,CY,CQ,CMX,CMY])
+        return np.array([CT,CH,CY,CQ,CMX,CMY]),distCT
 
 #%%
     '''
@@ -203,7 +208,8 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     targ_beta1s = 0
     trimTargs = [targ_CT,targ_beta1c,targ_beta1s]
 
-    assert -2 <= Vz/np.sqrt(W/(2*rho*np.pi*R**2)) <= 0,'Non-physical solution, 1D assumption of momentum theory is violated'
+    # if -2 < Vz/np.sqrt(W/(2*rho*np.pi*R**2)) < 0:
+    #     raise ValueError('Non-physical solution, 1D assumption of momentum theory is violated')
 
 #%%
     '''
@@ -245,14 +251,14 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     #   overwrites the initial guessed pitch settings with the computed.
     th = trim_sol.x
 
-    if np.any(trim_sol.fun > 1e-8):
-        raise NameError('Caution: large residuals, solution is not converged!')
+    # if np.any(trim_sol.fun > 1e-8):
+    #     raise NameError('Caution: large residuals, solution is not converged!')
 
     #%%
     #todo resolve ut and up in TPP, incorporate inflow model
 
     beta,alpha,mu,CT, lamTPP, theta_expanded,beta_expanded,ut,up = WT_trim(th,mu_x,lamTPP_init)
-    aeroloads = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
+    aeroloads,distCT = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
 
     #   dimensionalized tangential, normal, and radial velocity components in order to compute the periodic blade load distribution
     UT = ut*(omega*R)
@@ -261,6 +267,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
     dFz = (0.5*rho*a*geomParams['chordDist']*((UT ** 2 * theta_expanded - UT * UP)*np.cos(UP/UT)-UT**2*cd0/a*np.sin(UP/UT)))*np.expand_dims(np.cos(beta_expanded),axis = 1)
     T = Nb / (2 * np.pi) * np.trapz(np.trapz(dFz, geomParams['rdim'], axis=1), phi)
+    # T = np.trapz(aeroloads[-1])
 
     dFy = (0.5*rho*a*geomParams['chordDist']*(-(UT ** 2 * theta_expanded - UT * UP)*np.expand_dims(np.sin(beta_expanded),axis = 1)+UT**2*cd0/a*np.sin(np.expand_dims(UR,axis=1)/UT)))
 
@@ -271,7 +278,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
 #%%
     # assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
-    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'lamTPP': lamTPP ,'gamma':gamma,'mu_x':mu_x,'phi':phi,'th':th,'beta':beta,'CT':aeroloads[0],'T':T,'CH':aeroloads[1],'CY':aeroloads[2],'CQ':aeroloads[3],'Q':Q,'P':P,
+    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'lamTPP': lamTPP ,'gamma':gamma,'mu_x':mu_x,'phi':phi,'th':th,'beta':beta,'CT':aeroloads[0],'T':T,'CH':aeroloads[1],'CY':aeroloads[2],'CQ':aeroloads[3],'Q':Q,'P':P,
                   'CMX':aeroloads[4],'CMY':aeroloads[5],'UP':UP,'UT':UT,'dFx':dFx,'dFy':dFy,'dFz':dFz}
 
     return loadParams

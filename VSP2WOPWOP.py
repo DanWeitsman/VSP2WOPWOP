@@ -23,8 +23,10 @@ from functions.GeomPatchFileWrite import GeomPatchFileWrite
 from functions.ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
 from functions.PeriodicLoadingPatchFileWrite import PeriodicLoadingPatchFileWrite
 from functions.CompactGeomPatchFileWrite import CompactGeomPatchFileWrite
-from functions.nml_write import nml_write
-from functions.caseFile_write import caseFile_write
+from functions.nmlWrite import nml_write
+from functions.CaseFileWrite import caseFile_write
+from functions.PeggWrite import PeggBBDataFileWrite
+from functions.ConstantBPMWrite import ConstantBPMWrite
 
 
 # %%
@@ -71,6 +73,8 @@ def main():
             CompactGeomPatchFileWrite(UserIn['compactGeomFileName'], geomParams['nXsecs'], geomParams['liftLineCoord'],
                                       dirSaveFile)
 
+            #todo change conditional statments to assertions in perhaps a seperate module that handles input module errors
+
             # In the design mode each DegenGeom variant can be trimmed to the same or have its own respective thrust
             # condition. This if statement selects the correct thrust condition before passing it on to the loading
             # module.
@@ -89,32 +93,34 @@ def main():
             else:
                 omega = UserIn['omega'][0]
 
+            if len(UserIn['Vx']) > 1:
+                Vx = UserIn['Vx'][iter_geom]
+            else:
+                Vx = UserIn['Vx'][0]
+
+            if len(UserIn['alphaShaft']) > 1:
+                alphaShaft = UserIn['alphaShaft'][iter_geom]
+            else:
+                alphaShaft = UserIn['alphaShaft'][0]
+
             # This section of code determines whether to run the hover/axial or forward flight module and writes out
             # the corresponding constant or periodic functional data file, respectively.
-            if UserIn['Vx'][iter_geom] == 0:
+            if Vx == 0:
                 loadParams = loadingAxialHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vz)
                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
 
-                if len(UserIn['Vx']) > 1:
-                    Vx = UserIn['Vx'][iter_geom]
-                else:
-                    Vx = UserIn['Vx'][0]
-
-                if len(UserIn['alphaShaft']) > 1:
-                    alphaShaft = UserIn['alphaShaft'][iter_geom]
-                else:
-                    alphaShaft = UserIn['alphaShaft'][0]
-
                 loadParams = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vx, Vz, alphaShaft)
                 PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega, dirSaveFile)
 
-            if UserIn['nmlWrite'] == 1:
-                nml_write(UserIn, loadParams, dirSaveFile, Vx, Vz, omega, alphaShaft, iter_geom)
+            if UserIn['BBNoiseFlag'] == 1:
+                if UserIn['BBNoiseModel'] == 1:
+                    PeggBBDataFileWrite(geomParams, loadParams,dirSaveFile)
+                if UserIn['BBNoiseModel'] == 2:
+                    ConstantBPMWrite(geomParams, loadParams,dirSaveFile)
 
-            if UserIn['BBNoise'] == 1:
-                from functions.PeggBBDataFileWrite import PeggBBDataFileWrite
-                PeggBBDataFileWrite(UserIn['bbFileName'], geomParams, loadParams)
+            if UserIn['nmlWrite'] == 1:
+                nml_write(UserIn, loadParams, dirSaveFile, Vx, Vz, omega, alphaShaft, iter_geom,geomParams['nXsecs'])
 
             globalFolder.append(dataFileName[:-4])
 
@@ -148,7 +154,7 @@ def main():
 
                             if nVx == 0:
                                 loadingOut = loadingAxialHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_omega]],
-                                                               nThrust, nOmega)
+                                                               nThrust, nOmega,nVz)
                                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
                                                               dirCaseFile)
                             else:
@@ -157,17 +163,19 @@ def main():
                                 PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
                                                               nOmega, dirCaseFile)
 
+                            if UserIn['BBNoiseFlag'] == 1:
+                                if UserIn['BBNoiseModel'] ==1:
+                                    PeggBBDataFileWrite(geomParams, loadingOut,dirCaseFile)
+                                if UserIn['BBNoiseModel'] == 2:
+                                    ConstantBPMWrite(geomParams, loadingOut,dirCaseFile)
 
                             if UserIn['nmlWrite'] == 1:
-                                nml_write(UserIn, loadingOut, dirCaseFile,nVx, nVz, nOmega, alphaShaft, iter_geom)
-
-                            if UserIn['BBNoise'] == 1:
-                                from functions.PeggBBDataFileWrite import PeggBBDataFileWrite
-                                PeggBBDataFileWrite(UserIn['bbFileName'], geomParams, loadingOut)
+                                nml_write(UserIn, loadingOut, dirCaseFile,nVx, nVz, nOmega, alphaShaft, iter_geom,geomParams['nXsecs'])
 
                             loadParams = {**loadParams, **{globalFolderName: loadingOut}}
 
                             globalFolder.append(globalFolderName)
+
             caseFile_write(globalFolder, UserIn['NmlFileName'], dirSaveFile)
 
         MainDict = {**MainDict, **{'UserIn': UserIn,

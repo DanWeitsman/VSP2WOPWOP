@@ -57,13 +57,15 @@ def geomProcess(dataSorted, indHeader, loadPos, Nb):
     #   Non-dimensional radial vector
     r = np.linspace(e / R, 1, len(planformChord))
 
+    sectLen = np.insert(np.diff(rdim), 0, np.diff(rdim)[0])
+
      # Local solidity computed between cross-sections
     # solDist = np.cumsum(Nb * (planformChord[:-1] + np.diff(planformChord) / 2) * np.diff(rdim)) / \
     #           (np.pi * ((rdim[:-1] + np.diff(rdim) / 2) ** 2))
     # r = np.linspace(e / R, 1, len(solDist))
 
     #   Local solidity computed at cross-sections
-    solDist = np.cumsum(Nb * chordDist * np.insert(np.diff(rdim), 0, np.diff(rdim)[0])) / (np.pi *rdim ** 2)
+    solDist = np.cumsum(Nb * chordDist * sectLen) / (np.pi *rdim ** 2)
     solDist[0] = 0
 
     bladeArea = np.sum(Nb * chordDist * np.insert(np.diff(rdim), 0, np.diff(rdim)[0]))
@@ -71,7 +73,7 @@ def geomProcess(dataSorted, indHeader, loadPos, Nb):
     #   Coordinates of the lifting line
     liftLineCoord = LENodes - (LENodes - TENodes) * loadPos
 
-    geomParams = {'liftLineCoord':liftLineCoord,'R':R,'e':e,'diskArea':A,'bladeArea':bladeArea,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,
+    geomParams = {'liftLineCoord':liftLineCoord,'R':R,'e':e,'diskArea':A,'bladeArea':bladeArea,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,
                   'solidity':sol,'surfNodes':surfNodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r}
 
 
@@ -83,7 +85,8 @@ def geomProcess(dataSorted, indHeader, loadPos, Nb):
 # ax = fig.gca(projection = '3d')
 # ax.auto_scale_xyz([-2, 2], [10, 60], [-1, 1])
 # ax.pbaspect = [.09, 1, .05]
-#
 # ax.set(xlabel = 'x',ylabel = 'y',zlabel = 'z')
 # ax.scatter3D(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],c = 'red',linewidths = 1)
+# ax.scatter3D(surfNodes[24,0], surfNodes[24,1], surfNodes[24,2],c = 'yellow',linewidths = 5)
+# plt.show()
 # ax.quiver(surfNodes[n*pntsPerXsec:n*pntsPerXsec+pntsPerXsec,0], surfNodes[n*pntsPerXsec:n*pntsPerXsec+pntsPerXsec,1], surfNodes[n*pntsPerXsec:n*pntsPerXsec+pntsPerXsec,2],ScaledNodeCenteredSurfNorms[n*pntsPerXsec:n*pntsPerXsec+pntsPerXsec,0]*0.05,ScaledNodeCenteredSurfNorms[n*pntsPerXsec:n*pntsPerXsec+pntsPerXsec,1]*0.05,ScaledNodeCenteredSurfNorms[n*pntsPerXsec:n*pntsPerXsec+pntsPerXsec,2]*0.05)

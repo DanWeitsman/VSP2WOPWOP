@@ -5,14 +5,13 @@
 #   This function writes a binary data file for that is needed by PSU-WOPWOP to predict the broadband noise contributions.
 #%%
 import struct
-
+import os
 #%%
 
-def PeggBBDataFileWrite(bbFileName,geomParams,loadParams):
+def PeggBBDataFileWrite(geomParams,loadParams,dirSaveFile):
 
 
 #%%
-    fileName = bbFileName
     magic_number = 42   # 4-byte signed
     IncBladeArea = 1    # Set equal to one in order to include blade area (4-byte signed)
     IncBladeR = 1       # Set equal to one in order to include blade radius (4-byte signed)
@@ -24,7 +23,7 @@ def PeggBBDataFileWrite(bbFileName,geomParams,loadParams):
 
 #%%
 
-    with open(fileName + '.dat','bw') as f_bin:
+    with open(os.path.abspath(os.path.expanduser(dirSaveFile + '/Pegg.dat')), 'bw') as f_bin:
 
         magic_number_bin = struct.pack('<i', magic_number)
         f_bin.write(magic_number_bin)

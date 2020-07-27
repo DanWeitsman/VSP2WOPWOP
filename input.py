@@ -38,7 +38,7 @@ savePickle = 1
 
 # Directory were you would like to write out the patch and functional data flies. By default this path is configured
 # to be a separate folder in the 'dirDataFile'.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'Boeing360_7_1'))
+dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'BPM Test'))
 
 #   Lifting line compact patch file name (without the extension).
 compactGeomFileName = "CompactGeom"
@@ -54,17 +54,17 @@ loadingFileName = "Load"
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
 # number of 'XsecLocation'.
-airfoilPolarFileName = [['vr12Re14E5.dat', 'vr15Re6E5.dat']]
+airfoilPolarFileName = [['vr12Re14E5.dat','vr15Re6E5.dat']]
 
 #   Non-dimensional radial location of each airfoil cross section
-XsecLocation = [0.268, 0.85]
+XsecLocation = [0.268,0.85]
 
 # Starting angle of attack over which to evaluate the lift curve slop (degrees). The airfoil properties must have
 # been evaluated at this angle of attack.
 aStart = 2
 
 #   Range over which to evaluate to evaluate the lift curve slope (degrees).
-aLength = 3
+aLength = 4
 
 # Set equal to one for the airfoil polars to be plotted, along with the interval that the lift curve slope is evaluated.
 check = 1
@@ -76,10 +76,10 @@ Nb = 4
 
 #   Forward velocity, set to zero for hover, input as many comma-delimited forward flight velocities as you wish to be
 # evaluated.
-Vx = [100]
+Vx = [0]
 
 #   Vertical climb velocity
-Vz = [-20]
+Vz = [0]
 
 #   Shaft tilt angle (degrees), forward tilt is designated by a negative tilt angle
 alphaShaft = [0]
@@ -96,7 +96,7 @@ omega = [1323]
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.
-thetaInit = 1
+thetaInit = 5
 
 #   Position of loading line from the blade's leading edge as a percentage of the chord.
 loadPos = 0.25
@@ -118,6 +118,15 @@ Ib = 1 / 3 * 217.423 * (5.965 - 1.72985) ** 2
 nuBeta = 1.03
 
 # %%
+'''Broadband noise analysis configuration '''
+
+#   Set equal to '1' to conduct a broadband noise prediction,'0' otherwise.
+BBNoiseFlag = 1
+
+#   Broadband noise method, set equal to '1' for Pegg's and '2' for the BPM's method.
+BBNoiseModel = 2
+
+# %%
 '''Namelist file configuration'''
 #   Set equal to one in order to write out a namelist file for each case.
 nmlWrite = 1
@@ -129,9 +138,9 @@ NmlFileName = 'Boeing360.nam'
 nRev = 1
 
 #   Set sample rate (Hz), preferably as a power of two.
-nt = 2 ** 15
+nt = 2 ** 12
 
-# Observer type set equal to one for a single observer, two for a rectangular observer grid, and three for a
+# Observer type set equal to '1' for a single observer, '2' for a rectangular observer grid, and '3' for a
 # spherical grid. Then complete the respective section below.
 obsType = 2
 
@@ -181,30 +190,22 @@ zMax = [1.4888485708273682]
 radius = [304.8]
 
 #   Number of in-plane observers
-nbtheta = 60
+nbtheta = 1
 
 #   Minimum angle of in-plane observer (degrees)
 thetamin = 0
 
 #   Maximum angle of in-plane observer (degrees)
-thetamax = 360
+thetamax = 0
 
 #   Number of observers outside of the rotor plane (degrees)
-nbpsi = 11
+nbpsi = 47
 
 #   Minimum inclination angle of the out-of-plane observers (degrees)
-psimin = -30
+psimin = -45
 
 #   Maximum inclination angle of the out-of-plane observers (degrees)
-psimax = 30
-
-# %%
-'''Pegg broadband noise set up '''
-
-BBNoise = 0
-
-#   Pegg Broadband data file name
-bbFileName = "PeggBB"
+psimax = 45
 
 # %% Packs user input parameters into a dictionary (no need to edit)
 UserIn = {'dirDataFile': dirDataFile, 'OperMode': OperMode, 'savePickle': savePickle, 'dataFileName': dataFileNames,
@@ -213,8 +214,8 @@ UserIn = {'dirDataFile': dirDataFile, 'OperMode': OperMode, 'savePickle': savePi
           'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss, 'rho': rho, 'c': c,
           'Ib': Ib, 'nuBeta': nuBeta, 'nmlWrite': nmlWrite, 'dirPatchFile': dirPatchFile,
           'compactGeomFileName': compactGeomFileName,
-          'geomFileName': geomFileName, 'loadingFileName': loadingFileName, 'bbFileName': bbFileName,
-          'BBNoise': BBNoise, 'NmlFileName': NmlFileName, 'nRev': nRev, 'nt': nt, 'obsType': obsType, 'xLoc': xLoc,
+          'geomFileName': geomFileName, 'loadingFileName': loadingFileName, 'BBNoiseModel':BBNoiseModel,
+          'BBNoiseFlag': BBNoiseFlag, 'NmlFileName': NmlFileName, 'nRev': nRev, 'nt': nt, 'obsType': obsType, 'xLoc': xLoc,
           'yLoc': yLoc, 'zLoc': zLoc, 'nbx': nbx, 'nby': nby, 'nbz': nbz, 'xMin': xMin, 'yMin': yMin, 'zMin': zMin,
           'xMax': xMax, 'yMax': yMax, 'zMax': zMax, 'radius': radius, 'nbtheta': nbtheta,
           'thetamin': thetamin, 'thetamax': thetamax, 'nbpsi': nbpsi, 'psimin': psimin, 'psimax': psimax}
