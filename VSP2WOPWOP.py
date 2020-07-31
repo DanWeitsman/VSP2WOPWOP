@@ -27,7 +27,10 @@ from functions.nmlWrite import nml_write
 from functions.CaseFileWrite import caseFile_write
 from functions.PeggWrite import PeggBBDataFileWrite
 from functions.ConstantBPMWrite import ConstantBPMWrite
+from functions.FullGeomPatchFileWrite import FullGeomPatchFileWrite
 
+#todo figure out lifting line normal orientation and corresponding cb, run BPM case with single geom patch file, update nml_write module
+#todo write error handaling module for input file, attempt to replace the conditional statments in main
 
 # %%
 def main():
@@ -69,8 +72,8 @@ def main():
         if UserIn['OperMode'] == 1:
 
             #   Writes out the blade geometry and lifting line compact geometry patch files
-            GeomPatchFileWrite(UserIn['geomFileName'], geomParams, dirSaveFile)
-            CompactGeomPatchFileWrite(UserIn['compactGeomFileName'], geomParams['nXsecs'], geomParams['liftLineCoord'],
+            FullGeomPatchFileWrite(UserIn['geomFileName'], geomParams, dirSaveFile)
+            CompactGeomPatchFileWrite(UserIn['compactGeomFileName'], geomParams['nXsecs'], geomParams['liftLineCoord'],geomParams['liftLineNorm'],
                                       dirSaveFile)
 
             #todo change conditional statments to assertions in perhaps a seperate module that handles input module errors
@@ -143,9 +146,9 @@ def main():
                                 rmtree(dirCaseFile)
                             os.mkdir(dirCaseFile)
 
-                            GeomPatchFileWrite(UserIn['geomFileName'], geomParams, dirCaseFile)
+                            FullGeomPatchFileWrite(UserIn['geomFileName'], geomParams, dirCaseFile)
                             CompactGeomPatchFileWrite(UserIn['compactGeomFileName'], geomParams['nXsecs'],
-                                                      geomParams['liftLineCoord'], dirCaseFile)
+                                                      geomParams['liftLineCoord'],geomParams['liftLineNorm'], dirCaseFile)
 
                             if len(UserIn['alphaShaft']) > 1:
                                 alphaShaft = UserIn['alphaShaft'][iter_Vx]

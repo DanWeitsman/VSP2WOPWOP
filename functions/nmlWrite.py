@@ -18,7 +18,7 @@ import numpy as np
 
 
 # %%
-def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter_geom):
+def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter_geom,nXsecs):
 
     # The position of the observers can be maintained constant or varied for each geometry variant by
     # populating the list of any dimension of the observer grid in the input file with multiple comma
@@ -32,20 +32,37 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             xMax = UserIn['xMax'][0]
 
         if len(UserIn['yMax']) > 1:
-            yMax = UserIn['xMax'][iter_geom]
+            yMax = UserIn['yMax'][iter_geom]
         else:
-            yMax = UserIn['xMax'][0]
+            yMax = UserIn['yMax'][0]
 
         if len(UserIn['zMax']) > 1:
-            zMax = UserIn['xMax'][iter_geom]
+            zMax = UserIn['zMax'][iter_geom]
         else:
-            zMax = UserIn['xMax'][0]
+            zMax = UserIn['zMax'][0]
 
     elif UserIn['obsType'] == 3:
         if len(UserIn['radius']) > 1:
             radius = UserIn['radius'][iter_geom]
         else:
             radius = UserIn['radius'][0]
+
+    #   Specifies broadband noise to be outputted independently
+    if UserIn['BBNoiseFlag'] == 1:
+        broadbandFlag = '.true.'
+        octaveFlag =  '.true.'
+    else:
+        broadbandFlag = '.false.'
+        octaveFlag =  '.false.'
+
+    #   Configures which broadband noise model to enable
+    if UserIn['BBNoiseModel'] == 1:
+        PeggNoiseFlag = '.true.'
+        BPMNoiseFlag = '.false.'
+    else:
+        PeggNoiseFlag = '.false.'
+        BPMNoiseFlag = '.true.'
+
 
     # Determines the sampling rate, as a power of 2, based on the desired sampling rate and the duration of the run
     # specified in the input module.
@@ -64,15 +81,16 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             {
                 'nbSourceContainers': 1,
                 'nbObserverContainers': 1,
-                'spectrumFlag': '.false.',
-                'SPLdBFLAG': '.false.',
+                'spectrumFlag': '.true.',
+                'SPLdBFLAG': '.true.',
                 'SPLdBAFlag': '.false.',
                 'OASPLdBAFlag': '.false.',
                 'OASPLdBFlag': '.false.',
-                'thicknessNoiseFlag': '.true.',
+                'broadbandFlag': broadbandFlag,
+                'thicknessNoiseFlag': '.false.',
                 'loadingNoiseFlag': '.true.',
-                'acousticPressureFlag': '.true.',
-                'totalNoiseFlag': '.true.',
+                'acousticPressureFlag': '.false.',
+                'totalNoiseFlag': '.false.',
                 'debugLevel': 1,
                 'ASCIIOutputFlag': '.true.',
                 'sigmaflag': '.false.',
@@ -111,7 +129,10 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'xLoc': UserIn['xLoc'],
                     'yLoc': UserIn['yLoc'],
                     'zLoc': UserIn['zLoc'],
-                    'nbBase': 0
+                    'nbBase': 0,
+                    'octaveFlag': octaveFlag,
+                    'octaveNumber': 3,
+                    'nbBase': 0,
                 },
             'cb':
                 {
@@ -140,7 +161,10 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'nbz': UserIn['nbz'],
                     'zMin': UserIn['zMin'],
                     'zMax': zMax,
-                    'nbBase': 0
+                    'nbBase': 0,
+                    'octaveFlag': octaveFlag,
+                    'octaveNumber': 3,
+                    'nbBase': 0,
                 },
             'cb':
                 {
@@ -168,7 +192,9 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'thetamax': UserIn['thetamax'] * (np.pi / 180),
                     'psimin': UserIn['psimin'] * (np.pi / 180),
                     'psimax': UserIn['psimax'] * (np.pi / 180),
-                    'nbBase': 0
+                    'octaveFlag' : octaveFlag,
+                    'octaveNumber': 3,
+                    'nbBase': 0,
                 },
             'cb':
                 {
@@ -194,39 +220,100 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             }
     }
 
-    rotor = {
-        'containerin':
-            {
-                'Title': "'Rotor'",
-                'nbContainer': 2 * UserIn['Nb'],
-                'nbBase': 3,
-            },
-        'cb':
+    if UserIn['BBNoiseFlag'] == 0:
+        rotor = {
+            'containerin':
+                {
+                    'Title': "'Rotor'",
+                    'nbContainer': 2 * UserIn['Nb'],
+                    'nbBase': 3,
+                },
+            'cb':
+                [
+                    {
+                        'Title': "'Rotation'",
+                        'rotation': '.true.',
+                        'AngleType': "'KnownFunction'",
+                        'Omega': nOmega / 60 * 2 * np.pi,
+                        'Psi0': 0,
+                        'AxisValue': [0, 0, 1],
+                    },
+                    {
+                        'Title': "'Rotate to align blades with zero azimuth'",
+                        'AngleType': "'Timeindependent'",
+                        'AxisType': "'Timeindependent'",
+                        'AxisValue': [0, 0, 1],
+                        'angleValue': -np.pi / 2,
+                    },
+                    {
+                        'Title': "'Rotor disk AoA tilt'",
+                        'AngleType': "'Timeindependent'",
+                        'AxisType': "'Timeindependent'",
+                        'AxisValue': [0, 1, 0],
+                        'angleValue': - alphaShaft * np.pi / 180,
+                    }
+                ]
+        }
+
+    else:
+        rotor = {
+            'containerin':
+                {
+                    'Title': "'Rotor'",
+                    'nbContainer': 2 * UserIn['Nb'],
+                    'nbBase': 3,
+                    'PeggNoiseFlag': PeggNoiseFlag,
+                    'BPMNoiseFlag' : BPMNoiseFlag,
+                },
+            'cb':
+                [
+                    {
+                        'Title': "'Rotation'",
+                        'rotation': '.true.',
+                        'AngleType': "'KnownFunction'",
+                        'Omega': nOmega / 60 * 2 * np.pi,
+                        'Psi0': 0,
+                        'AxisValue': [0, 0, 1],
+                    },
+                    {
+                        'Title': "'Rotate to align blades with zero azimuth'",
+                        'AngleType': "'Timeindependent'",
+                        'AxisType': "'Timeindependent'",
+                        'AxisValue': [0, 0, 1],
+                        'angleValue': -np.pi / 2,
+                    },
+                    {
+                        'Title': "'Rotor disk AoA tilt'",
+                        'AngleType': "'Timeindependent'",
+                        'AxisType': "'Timeindependent'",
+                        'AxisValue': [0, 1, 0],
+                        'angleValue': - alphaShaft * np.pi / 180,
+                    }
+                ],
+            'BPMin':
             [
                 {
-                    'Title': "'Rotation'",
-                    'rotation': '.true.',
-                    'AngleType': "'KnownFunction'",
-                    'Omega': nOmega / 60 * 2 * np.pi,
-                    'Psi0': 0,
-                    'AxisValue': [0, 0, 1],
-                },
-                {
-                    'Title': "'Rotate to align blades with zero azimuth'",
-                    'AngleType': "'Timeindependent'",
-                    'AxisType': "'Timeindependent'",
-                    'AxisValue': [0, 0, 1],
-                    'angleValue': -np.pi / 2,
-                },
-                {
-                    'Title': "'Rotor disk AoA tilt'",
-                    'AngleType': "'Timeindependent'",
-                    'AxisType': "'Timeindependent'",
-                    'AxisValue': [0, 1, 0],
-                    'angleValue': - alphaShaft * np.pi / 180,
-                }
+                    'BPMNoiseFile' : "'BPM.dat'",
+                    'nSect': nXsecs,
+                    'uniformBlade': 0,
+                    'BLtrip':0,
+                    'sectChordFlag':"'FileValue'",
+                    'sectLengthFlag':"'FileValue'",
+                    'TEThicknessFlag':"'FileValue'",
+                    'TEflowAngleFlag':"'FileValue'",
+                    'TipLCSFlag':"'UserValue'",
+                    'TipLCS' : 1,
+                    'SectAOAFlag':"'FileValue'",
+                    'UFlag':"'FileValue'",
+                    'LBLVSnoise':'.true.',
+                    'TBLTEnoise':'.true.',
+                    'bluntNoise':'.true.',
+                    'bladeTipNoise':'.true.',
+                    'roundBladeTip' :'.false.'
+        }
             ]
-    }
+        }
+
     nml = [environmentin, environmentconstants, observerin, aircraft, rotor]
 
     # Loop over the blade count and appends the container of each blade to the nml list.

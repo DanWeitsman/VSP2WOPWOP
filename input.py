@@ -19,7 +19,8 @@ dirPyScript = os.getcwd()
 dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/Model 360 Validation Data'
 
 # %%
-'''   Names of DegenGeom files add as many geometry cases as you wish separated by commas.'''
+
+# Names of DegenGeom files add as many geometry cases as you wish separated by commas.
 dataFileNames = ["Boeing360_DegenGeom.csv"]
 
 # Operational mode: set equal to one for design mode, which is ideal for geometric parametric studies, where each
@@ -121,7 +122,7 @@ nuBeta = 1.03
 '''Broadband noise analysis configuration '''
 
 #   Set equal to '1' to conduct a broadband noise prediction,'0' otherwise.
-BBNoiseFlag = 1
+BBNoiseFlag = 0
 
 #   Broadband noise method, set equal to '1' for Pegg's and '2' for the BPM's method.
 BBNoiseModel = 2
@@ -135,7 +136,7 @@ nmlWrite = 1
 NmlFileName = 'Boeing360.nam'
 
 #   Duration of the case, expressed as shaft revolutions
-nRev = 1
+nRev = 10
 
 #   Set sample rate (Hz), preferably as a power of two.
 nt = 2 ** 12
@@ -150,10 +151,10 @@ obsType = 2
 xLoc = 0
 
 #   y-position (to the side of the rotor) of observer
-yLoc = 0
+yLoc = 14.165447920000007
 
 #   z-position (vertical) of observer
-zLoc = 0
+zLoc = 14.165447920000007
 
 # %%
 '''Rectangular Observer Grid'''

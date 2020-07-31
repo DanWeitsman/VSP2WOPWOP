@@ -11,9 +11,9 @@ import numpy as np
 import struct
 import os
 #%%
-def CompactGeomPatchFileWrite(liftLineFileName, nXsecs, liftLineCoord,dirSaveFile):
-    data = liftLineCoord
-    norm = np.append(np.zeros((np.size(data,0),2)),-np.ones((np.size(data,0),1)),1)
+def CompactGeomPatchFileWrite(liftLineFileName, nXsecs, liftLineCoord, liftLineNorm,dirSaveFile):
+    # data = liftLineCoord
+    # norm = np.append(np.zeros((np.size(data,0),2)),-np.ones((np.size(data,0),1)),1)
 
     #%%
 
@@ -74,11 +74,11 @@ def CompactGeomPatchFileWrite(liftLineFileName, nXsecs, liftLineCoord,dirSaveFil
         jMax_bin = struct.pack('<i', jMax)
         f_bin.write(jMax_bin)
 
-        for i in range(np.size(data,1)):
-            data_bin = struct.pack('<' + str(np.size(data,0)) + 'f',*data[:,i])
+        for i in range(np.size(liftLineCoord,1)):
+            data_bin = struct.pack('<' + str(np.size(liftLineCoord,0)) + 'f',*liftLineCoord[:,i])
             f_bin.write(data_bin)
 
-        for i in range(np.size(data,1)):
-            norm_bin = struct.pack('<' + str(np.size(data,0)) + 'f',*norm[:,i])
+        for i in range(np.size(liftLineNorm,1)):
+            norm_bin = struct.pack('<' + str(np.size(liftLineNorm,0)) + 'f',*liftLineNorm[:,i])
             f_bin.write(norm_bin)
 
