@@ -19,7 +19,6 @@ from functions.GeomProcess import geomProcess
 from functions.polarRead import polarRead
 from functions.loadingHover import loadingAxialHover
 from functions.loadingFF import loadingFF
-from functions.GeomPatchFileWrite import GeomPatchFileWrite
 from functions.ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
 from functions.PeriodicLoadingPatchFileWrite import PeriodicLoadingPatchFileWrite
 from functions.CompactGeomPatchFileWrite import CompactGeomPatchFileWrite
@@ -27,9 +26,9 @@ from functions.nmlWrite import nml_write
 from functions.CaseFileWrite import caseFile_write
 from functions.PeggWrite import PeggBBDataFileWrite
 from functions.ConstantBPMWrite import ConstantBPMWrite
-from functions.FullGeomPatchFileWrite import FullGeomPatchFileWrite
+from functions.GeomPatchFileWrite import FullGeomPatchFileWrite
 
-#todo figure out lifting line normal orientation and corresponding cb, run BPM case with single geom patch file, update nml_write module
+#todo   update periodic loading cases
 #todo write error handaling module for input file, attempt to replace the conditional statments in main
 
 # %%

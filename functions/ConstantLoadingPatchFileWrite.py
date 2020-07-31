@@ -2,8 +2,8 @@
 
 #   Author: Daniel Weitsman
 
-#   This function writes a compact loading binary functional data file for a constant structured blade geometry. The comments and zoneName variables
-#   are most likely the only parameters that the user may wish to vary.
+# This function writes a compact loading binary functional data file for a constant structured blade geometry. The
+# comments and zoneName variables are most likely the only parameters that the user may wish to vary.
 
 #%%
 import numpy as np
@@ -16,20 +16,29 @@ def ConstantLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs,dirSaveFil
     # aeroLoads = aeroLoads/np.expand_dims(loadParams['compactArea'],axis = 1)
 
     #%%
-    fileName = loadingFileName
-    magic_number = 42                #4-byte signed
+    # 4-byte signed
+    magic_number = 42
     version_number = [1,0]
     comments = "Constant loading patch file"
-    Nzones = 2                       # number of zones
-    grid_type = 1                    # structured (1) or unstructured (2) grid
-    geom_type = 1                    # constant (1), periodic (2), aperiodic (3), multi-time aperiodic (4), quasiperiodic (5), multi-time quasiperiodic (6)
-    vector_centering = 1             # normal vectors are node centered (1), face centered (2)
-    data_type = 2                    # data is surface pressure (1), surface loading vector (2), flow parameters (3)
-    ref_frame = 3                    # reference frame is a stationary (1), rotating ground-fixed frame (2), patch-fixed frame (3). Note that this has no effect on pressure data, and that “2” and “3” are equivalent for load vectors.
-    precision = 1                    # Floating points are single (1) or double (2) precision. WOPWOP only supports single
-    dataZones = [1,-2]               # number of zones with data, zone designation (negative to skip thickness calc).
+    # number of zones, must correspond to the same number of zones as specified in the geometry patch file
+    Nzones = 2
+    # structured (1) or unstructured (2) grid
+    grid_type = 1
+    # constant (1), periodic (2), aperiodic (3), multi-time aperiodic (4), quasiperiodic (5), multi-time quasiperiodic (6)
+    geom_type = 1
+    # normal vectors are node centered (1), face centered (2) (Only node centered normals are supported in v3.4.4)
+    vector_centering = 1
+    # data is surface pressure (1), surface loading vector (2), flow parameters (3)
+    data_type = 2
+    # reference frame is a stationary (1), rotating ground-fixed frame (2), patch-fixed frame (3). Note that this has
+    # no effect on pressure data, and that “2” and “3” are equivalent for load vectors.
+    ref_frame = 3
+    # Floating points are single (1) or double (2) precision  (only single precision is supported in v3.4.4)
+    precision = 1
+    # number of zones with data, zone designation (negative to skip thickness noise calculation)
+    dataZones = [1,-2]
 
-    zoneName = "LiftingLine"
+    zoneName = "Blade Loads"
     iMax = 1                         # number of chordwise elements
     jMax = nXsecs                    # number of spanwise elements
 
@@ -37,7 +46,7 @@ def ConstantLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs,dirSaveFil
     #%%
     # os.chdir(dirPatchFile)
 
-    with open(os.path.abspath(os.path.expanduser(dirSaveFile+ '/'+ fileName + '.dat')),'bw') as f_bin:
+    with open(os.path.abspath(os.path.expanduser(dirSaveFile+ '/'+ loadingFileName + '.dat')),'bw') as f_bin:
 
         f_bin.write(struct.pack('<i', magic_number))
         f_bin.write(struct.pack('<i', version_number[0]))

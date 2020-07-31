@@ -87,10 +87,10 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                 'OASPLdBAFlag': '.false.',
                 'OASPLdBFlag': '.false.',
                 'broadbandFlag': broadbandFlag,
-                'thicknessNoiseFlag': '.false.',
+                'thicknessNoiseFlag': '.true.',
                 'loadingNoiseFlag': '.true.',
-                'acousticPressureFlag': '.false.',
-                'totalNoiseFlag': '.false.',
+                'acousticPressureFlag': '.true.',
+                'totalNoiseFlag': '.true.',
                 'debugLevel': 1,
                 'ASCIIOutputFlag': '.true.',
                 'sigmaflag': '.false.',
@@ -164,6 +164,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'nbBase': 0,
                     'octaveFlag': octaveFlag,
                     'octaveNumber': 3,
+                    'octaveApproxFlag':'.false.',
                     'nbBase': 0,
                 },
             'cb':
@@ -225,7 +226,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             'containerin':
                 {
                     'Title': "'Rotor'",
-                    'nbContainer': 2 * UserIn['Nb'],
+                    'nbContainer': UserIn['Nb'],
                     'nbBase': 3,
                 },
             'cb':
@@ -260,7 +261,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             'containerin':
                 {
                     'Title': "'Rotor'",
-                    'nbContainer': 2 * UserIn['Nb'],
+                    'nbContainer': UserIn['Nb'],
                     'nbBase': 3,
                     'PeggNoiseFlag': PeggNoiseFlag,
                     'BPMNoiseFlag' : BPMNoiseFlag,
@@ -318,12 +319,13 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
 
     # Loop over the blade count and appends the container of each blade to the nml list.
     for Nb in range(0, UserIn['Nb']):
-        blade_geom = {
+        blade_nml = {
             'containerin':
                 {
-                    'Title': "'" + 'Thickness - Blade ' + str(Nb + 1) + "'",
+                    'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
                     'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
-                    'nbBase': 3,
+                    'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
+                    'nbBase': 1,
                 },
             'cb':
                 [
@@ -352,26 +354,26 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                 ]
         }
 
-        nml.append(blade_geom)
-        blade_load = {
-            'containerin':
-                {
-                    'Title': "'" + 'Loading-Blade ' + str(Nb + 1) + "'",
-                    'patchGeometryFile': "'" + UserIn['compactGeomFileName'] + '.dat' + "'",
-                    'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
-                    'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb,
-                    'nbBase': 1,
-                },
-            'cb':
-                {
-                    'Title': "'Constant Rotation'",
-                    'AngleType': "'Timeindependent'",
-                    'AxisType': "'Timeindependent'",
-                    'AxisValue': [0, 0, 1],
-                    'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
-                }
-        }
-        nml.append(blade_load)
+        nml.append(blade_nml)
+        # blade_load = {
+        #     'containerin':
+        #         {
+        #             'Title': "'" + 'Loading-Blade ' + str(Nb + 1) + "'",
+        #             'patchGeometryFile': "'" + UserIn['compactGeomFileName'] + '.dat' + "'",
+        #             'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
+        #             'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb,
+        #             'nbBase': 1,
+        #         },
+        #     'cb':
+        #         {
+        #             'Title': "'Constant Rotation'",
+        #             'AngleType': "'Timeindependent'",
+        #             'AxisType': "'Timeindependent'",
+        #             'AxisValue': [0, 0, 1],
+        #             'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
+        #         }
+        # }
+        # nml.append(blade_load)
 #%%
     #   writes out each namelist to the file
     with open(os.path.expanduser(dirSaveFile + os.path.sep + UserIn['NmlFileName']), 'w') as f:

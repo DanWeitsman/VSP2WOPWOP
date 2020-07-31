@@ -72,7 +72,7 @@ def geomProcess(dataSorted, indHeader, loadPos, Nb):
     sol = bladeArea/(np.pi*R**2)
     #   Coordinates of the lifting line
     liftLineCoord = LENodes - (LENodes - TENodes) * loadPos
-    liftLineNorm = np.transpose(np.array((np.sin(twistDist),np.zeros(len(twistDist)),np.cos(twistDist))))
+    liftLineNorm = np.transpose((np.sin(twistDist),np.zeros(len(twistDist)),np.cos(twistDist)))
 
     geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'bladeArea':bladeArea,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,
                   'solidity':sol,'surfNodes':surfNodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r}

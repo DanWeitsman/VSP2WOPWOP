@@ -68,7 +68,7 @@ aStart = 2
 aLength = 4
 
 # Set equal to one for the airfoil polars to be plotted, along with the interval that the lift curve slope is evaluated.
-check = 1
+check = 0
 
 # %%
 ''' Operating condition configuration '''
@@ -122,7 +122,7 @@ nuBeta = 1.03
 '''Broadband noise analysis configuration '''
 
 #   Set equal to '1' to conduct a broadband noise prediction,'0' otherwise.
-BBNoiseFlag = 0
+BBNoiseFlag = 1
 
 #   Broadband noise method, set equal to '1' for Pegg's and '2' for the BPM's method.
 BBNoiseModel = 2
