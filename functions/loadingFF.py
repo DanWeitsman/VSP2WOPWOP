@@ -99,8 +99,10 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
             ut = r + mu * np.expand_dims(np.sin(phi), axis = 1)
             up = lam + r * np.expand_dims(beta[2] * np.cos(phi) - beta[1] * np.sin(phi), axis = 1) + np.expand_dims(beta_expanded * mu * np.cos(phi), axis = 1)
 
-            ct_dist = 1/(4*np.pi)*solDist*a*(ut**2*theta_expanded-ut*up)
-            CT = np.trapz(np.trapz(ct_dist,r,axis=1),phi)
+            ct_dist = 1/2*solDist*ut**2*(a*(theta_expanded-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
+            # ct_dist = 1/(4*np.pi) * solDist * ut ** 2 * a * (theta_expanded - up / ut)
+            # ct_dist = 1/(4*np.pi)*solDist*a*(ut**2*theta_expanded-ut*up)
+            CT = 1/(2*np.pi)*np.trapz(np.trapz(ct_dist,r),phi)
 
             lamTTP_temp = lam_fixed_pnt(lamTPP_init,mu,alpha,CT)
 
@@ -108,7 +110,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
             lamTPP_init = lamTTP_temp
             mu_x = mu
 
-        return beta,alpha,mu,CT,lamTTP_temp,theta_expanded,beta_expanded,ut,up
+        return beta,alpha,mu,CT,ct_dist,lamTTP_temp,theta_expanded,beta_expanded,ut,up
 
     def residuals(th,mu_x,lamTPP_init):
         '''
@@ -143,28 +145,28 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         :param CMY: averaged pitch moment coefficient
         '''
 
-        distCT = 1 / (4 * np.pi) * solDist * a * (ut ** 2 * theta_expanded - ut * up)
-        CT = np.trapz(np.trapz(distCT, r, axis=1), phi)
+        distCT = 1/2*solDist*ut**2*(a*(theta_expanded-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
+        CT = 1/(2*np.pi)*np.trapz(np.trapz(distCT,r),phi)
 
-        distCH = 1/(4*np.pi)*solDist*a*((up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.sin(phi), axis = 1)
+        distCH = 1/2*solDist*a*((up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.sin(phi), axis = 1)
                                         - np.expand_dims(beta_expanded * np.cos(phi), axis = 1) * (ut ** 2 * theta_expanded - up * ut))
-        CH = np.trapz(np.trapz(distCH, r, axis=1), phi)
+        CH = 1/(2*np.pi)*np.trapz(np.trapz(distCH,r),phi)
         CH_TTP = CH+beta[1]*CT
 
-        distCY = 1/(4*np.pi)*solDist*a*(-(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.sin(phi), axis = 1) - np.expand_dims(beta_expanded * np.sin(phi), axis = 1) * (ut ** 2 * theta_expanded - up * ut))
-        CY = np.trapz(np.trapz(distCY, r, axis=1), phi)
+        distCY = 0.5*solDist*a*(-(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.sin(phi), axis = 1) - np.expand_dims(beta_expanded * np.sin(phi), axis = 1) * (ut ** 2 * theta_expanded - up * ut))
+        CY = 1/(2*np.pi)*np.trapz(np.trapz(distCY,r),phi)
         CY_TTP = CY+beta[2]*CT
 
-        distCQ = 1/(4*np.pi)*solDist*a*r*(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2)
-        CQ = np.trapz(np.trapz(distCQ, r, axis=1), phi)
+        distCQ = 0.5*solDist*a*r*(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2)
+        CQ = 1/(2*np.pi)*np.trapz(np.trapz(distCQ,r),phi)
 
         distCMX = solDist * a / (2*gamma) * (nuBeta**2-1-3/2*e/R) * beta[2] + e / R * 1 / (4*np.pi) * solDist * a * (ut ** 2 * theta_expanded - up * ut) * np.expand_dims(np.cos(phi), axis = 1)
-        CMX = np.trapz(np.trapz(distCMX, r, axis=1), phi)
+        CMX = np.trapz(np.trapz(distCMX, r), phi)
 
         distCMY = -solDist * a / (2*gamma) * (nuBeta**2-1-3/2*e/R) * beta[1] + e / R * 1 / (4*np.pi) * solDist * a * (ut ** 2 * theta_expanded - up * ut) * np.expand_dims(np.sin(phi), axis = 1)
-        CMY = np.trapz(np.trapz(distCMY, r, axis=1), phi)
+        CMY = np.trapz(np.trapz(distCMY, r), phi)
 
-        return np.array([CT,CH,CY,CQ,CMX,CMY]),distCT
+        return np.array([CT,CH,CY,CQ,CMX,CMY])
 
 #%%
     '''
@@ -192,8 +194,6 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
     phiRes = 361
     phi = np.linspace(0,2*np.pi,phiRes)
-
-    np.zeros((len(phi),len(r)))
 
     th0 = UserIn['thetaInit'] * (np.pi / 180)
     th1c = 1* (np.pi / 180)
@@ -255,30 +255,42 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     #     raise NameError('Caution: large residuals, solution is not converged!')
 
     #%%
-    #todo resolve ut and up in TPP, incorporate inflow model
 
-    beta,alpha,mu,CT, lamTPP, theta_expanded,beta_expanded,ut,up = WT_trim(th,mu_x,lamTPP_init)
-    aeroloads,distCT = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
+    #   Run WT_trim once again with the trimmed values to return quantities necessary in computing the blade loads
+    beta,alpha,mu,CT,distCT, lamTPP, theta_expanded,beta_expanded,ut,up = WT_trim(th,mu_x,lamTPP_init)
+    #   Run to return hub loads
+    # hubLoads = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
 
-    #   dimensionalized tangential, normal, and radial velocity components in order to compute the periodic blade load distribution
+    #   Dimensionalized tangential, normal, and radial velocities
     UT = ut*(omega*R)
     UP = up*(omega*R)
     UR = mu_x*np.cos(phi)*(omega*R)
 
-    dFz = (0.5*rho*a*geomParams['chordDist']*((UT ** 2 * theta_expanded - UT * UP)*np.cos(UP/UT)-UT**2*cd0/a*np.sin(UP/UT)))*np.expand_dims(np.cos(beta_expanded),axis = 1)
-    T = Nb / (2 * np.pi) * np.trapz(np.trapz(dFz, geomParams['rdim'], axis=1), phi)
-    # T = np.trapz(aeroloads[-1])
+    U = np.sqrt(UT**2+UP**2)
+    AoA = theta_expanded-UP/UT
 
-    dFy = (0.5*rho*a*geomParams['chordDist']*(-(UT ** 2 * theta_expanded - UT * UP)*np.expand_dims(np.sin(beta_expanded),axis = 1)+UT**2*cd0/a*np.sin(np.expand_dims(UR,axis=1)/UT)))
+    #   Computes the distributed and integrated thrust as well as the vertical force component
+    dT = rho*np.pi*R**2*(omega*R)**2*distCT
+    T = 1/(2*np.pi)*np.trapz(np.trapz(dT,r),phi)
+    dFz = dT/Nb
 
-    dFx = (0.5*rho*a*geomParams['chordDist']*((UT ** 2 * theta_expanded - UT * UP)*np.sin(UP/UT)+UT**2*cd0/a*np.cos(UP/UT)*np.cos(np.expand_dims(UR,axis=1)/UT)))
+    #   Computes distributed and integrated thrust as well as the in-plane force component
+    distCQ = 0.5*solDist*ut**2*r*(a*(theta_expanded-up/ut)*np.sin(up/ut)+cd0*np.cos(up/ut))
+    CQ = 1/(2*np.pi)*np.trapz(np.trapz(distCQ,r),phi)
+    dQ = rho*np.pi*R**3*(omega*R)**2*distCQ
+    Q = 1/(2*np.pi)*np.trapz(np.trapz(dQ,r),phi)
 
-    Q = Nb / (2 * np.pi) * np.trapz(np.trapz(geomParams['rdim']*dFx, geomParams['rdim'], axis=1), phi)
-    P = Q*omega
+    #   Power required
+    P = Q * omega
+    dFx = dQ / (Nb * r * R)
+    #   Radial force component, computed using eq. 1.31 of HELICOPTER DYNAMICS (2011, Chopra et al.)
+    dFy = 0.5*rho*geomParams['chordDist']*U**2*(-a*(theta_expanded-up/ut)*np.expand_dims(np.sin(beta_expanded),axis = 1)+cd0*np.sin(np.expand_dims(UR,axis=1)/UT))
+
+
 
 #%%
     # assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
-    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'lamTPP': lamTPP ,'gamma':gamma,'mu_x':mu_x,'phi':phi,'th':th,'beta':beta,'CT':aeroloads[0],'T':T,'CH':aeroloads[1],'CY':aeroloads[2],'CQ':aeroloads[3],'Q':Q,'P':P,
-                  'CMX':aeroloads[4],'CMY':aeroloads[5],'UP':UP,'UT':UT,'dFx':dFx,'dFy':dFy,'dFz':dFz}
+    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'lamTPP': lamTPP ,'gamma':gamma,'mu_x':mu_x,'phi':phi,'th':th,'beta':beta,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
+                  'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFy,'dFz':dFz}
 
     return loadParams

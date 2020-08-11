@@ -16,12 +16,12 @@ dirPyScript = os.getcwd()
 
 # Directory where the DegenGeom and airfoil polars are located, by default this is set to the location of the
 # test case folder.
-dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/Model 360 Validation Data'
+dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/OLS Validation for Forward Flight'
 
 # %%
 
 # Names of DegenGeom files add as many geometry cases as you wish separated by commas.
-dataFileNames = ["Boeing360_DegenGeom.csv"]
+dataFileNames = ["OLS_DegenGeom.csv"]
 
 # Operational mode: set equal to one for design mode, which is ideal for geometric parametric studies, where each
 # variant of the blade geometry geometry corresponds to a different operating condition. Set this quantity equal to
@@ -39,7 +39,7 @@ savePickle = 1
 
 # Directory were you would like to write out the patch and functional data flies. By default this path is configured
 # to be a separate folder in the 'dirDataFile'.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'BPM Test'))
+dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'PeriodicBPM'))
 
 #   Lifting line compact patch file name (without the extension).
 compactGeomFileName = "CompactGeom"
@@ -55,14 +55,14 @@ loadingFileName = "Load"
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
 # number of 'XsecLocation'.
-airfoilPolarFileName = [['vr12Re14E5.dat','vr15Re6E5.dat']]
+airfoilPolarFileName = [['b540olsRe11E5.dat']]
 
 #   Non-dimensional radial location of each airfoil cross section
-XsecLocation = [0.268,0.85]
+XsecLocation = [0.182]
 
 # Starting angle of attack over which to evaluate the lift curve slop (degrees). The airfoil properties must have
 # been evaluated at this angle of attack.
-aStart = 2
+aStart = 1
 
 #   Range over which to evaluate to evaluate the lift curve slope (degrees).
 aLength = 4
@@ -73,31 +73,31 @@ check = 0
 # %%
 ''' Operating condition configuration '''
 # Number of Blades
-Nb = 4
+Nb = 2
 
 #   Forward velocity, set to zero for hover, input as many comma-delimited forward flight velocities as you wish to be
 # evaluated.
-Vx = [0]
+Vx = [37.02464]
 
 #   Vertical climb velocity
 Vz = [0]
 
 #   Shaft tilt angle (degrees), forward tilt is designated by a negative tilt angle
-alphaShaft = [0]
+alphaShaft = [-2]
 
 #   Set the gross weight of the aircraft (N). Add as many comma-delimited thrust conditions as you wish into the list.
 # Separate functional data files will be written for each case. If you are running in the design mode ('OperMode' = 1),
 # the length of this list should be equal to the number of geometric cases ('dataFileNames').
-T = [3460]
+T = [974.9446]
 
 # Populate this list with the rotational rates (rpm) of the rotor. If you are running in the design mode ('OperMode'
 # = 1), the length of this list should be equal to the number of geometric cases ('dataFileNames').
-omega = [1323]
+omega = [2250]
 
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.
-thetaInit = 5
+thetaInit = 2
 
 #   Position of loading line from the blade's leading edge as a percentage of the chord.
 loadPos = 0.25
@@ -112,11 +112,11 @@ rho = 1.225
 c = 340
 
 #   Blade moment of inertia (only required for forward flight).
-Ib = 1 / 3 * 217.423 * (5.965 - 1.72985) ** 2
+Ib = 1/3*2.266*(0.958-0.17436)**2
 
 #   Nondimensionalized rotating flap frequency, this quantity is dependent on the non-rotating natural frequency and
 # hinge offset of the blade (only required for forward flight).
-nuBeta = 1.03
+nuBeta = 1
 
 # %%
 '''Broadband noise analysis configuration '''
@@ -133,17 +133,17 @@ BBNoiseModel = 2
 nmlWrite = 1
 
 #   Name of the namelist file that will be the same for all cases.
-NmlFileName = 'Boeing360.nam'
+NmlFileName = 'OLS.nam'
 
 #   Duration of the case, expressed as shaft revolutions
-nRev = 10
+nRev = 1
 
 #   Set sample rate (Hz), preferably as a power of two.
-nt = 2 ** 12
+nt = 2 ** 14
 
 # Observer type set equal to '1' for a single observer, '2' for a rectangular observer grid, and '3' for a
 # spherical grid. Then complete the respective section below.
-obsType = 2
+obsType = 3
 
 # %%
 '''Single Observer'''
@@ -188,7 +188,7 @@ zMax = [1.4888485708273682]
 # %%
 '''Spherical Observer Grid'''
 #   Radial position of the observers from the rotor hub.
-radius = [304.8]
+radius = [3.2]
 
 #   Number of in-plane observers
 nbtheta = 1
@@ -200,13 +200,13 @@ thetamin = 0
 thetamax = 0
 
 #   Number of observers outside of the rotor plane (degrees)
-nbpsi = 47
+nbpsi = 4
 
 #   Minimum inclination angle of the out-of-plane observers (degrees)
 psimin = -45
 
 #   Maximum inclination angle of the out-of-plane observers (degrees)
-psimax = 45
+psimax = 0
 
 # %% Packs user input parameters into a dictionary (no need to edit)
 UserIn = {'dirDataFile': dirDataFile, 'OperMode': OperMode, 'savePickle': savePickle, 'dataFileName': dataFileNames,

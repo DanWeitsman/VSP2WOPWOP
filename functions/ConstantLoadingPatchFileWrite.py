@@ -39,8 +39,10 @@ def ConstantLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs,dirSaveFil
     dataZones = [1,-2]
 
     zoneName = "Blade Loads"
-    iMax = 1                         # number of chordwise elements
-    jMax = nXsecs                    # number of spanwise elements
+    # number of chordwise elements
+    iMax = 1
+    # number of spanwise elements
+    jMax = nXsecs
 
 
     #%%

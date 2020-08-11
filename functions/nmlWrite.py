@@ -297,13 +297,13 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'BPMNoiseFile' : "'BPM.dat'",
                     'nSect': nXsecs,
                     'uniformBlade': 0,
-                    'BLtrip':0,
+                    'BLtrip':1,
                     'sectChordFlag':"'FileValue'",
                     'sectLengthFlag':"'FileValue'",
                     'TEThicknessFlag':"'FileValue'",
                     'TEflowAngleFlag':"'FileValue'",
                     'TipLCSFlag':"'UserValue'",
-                    'TipLCS' : 1,
+                    'TipLCS' : loadParams['ClaDist'][-1],
                     'SectAOAFlag':"'FileValue'",
                     'UFlag':"'FileValue'",
                     'LBLVSnoise':'.true.',
@@ -319,41 +319,78 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
 
     # Loop over the blade count and appends the container of each blade to the nml list.
     for Nb in range(0, UserIn['Nb']):
-        blade_nml = {
-            'containerin':
-                {
-                    'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
-                    'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
-                    'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
-                    'nbBase': 1,
-                },
-            'cb':
-                [
+        if nVx == 0:
+            blade_nml = {
+                'containerin':
                     {
-                        'Title': "'Constant Rotation'",
-                        'AngleType': "'Timeindependent'",
-                        'AxisType': "'Timeindependent'",
-                        'AxisValue': [0, 0, 1],
-                        'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
+                        'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
+                        'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
+                        'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
+                        'nbBase': 1,
                     },
+                'cb':
+                    [
+                        {
+                            'Title': "'Constant Rotation'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'AxisValue': [0, 0, 1],
+                            'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
+                        },
+                        {
+                            'Title': "'Pitch'",
+                            'AngleType': "'Periodic'",
+                            'A0': loadParams['th'][0],
+                            'A1': -loadParams['th'][1],
+                            'B1': -loadParams['th'][2],
+                            'AxisValue': [0, 1, 0],
+                        },
+                        {
+                            'Title': "'Coning'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'angleValue': loadParams['beta'][0],
+                            'AxisValue': [1, 0, 0],
+                        }
+                    ]
+            }
+        else:
+            blade_nml = {
+                'containerin':
                     {
-                        'Title': "'Pitch'",
-                        'AngleType': "'Periodic'",
-                        'A0': loadParams['th'][0],
-                        'A1': -loadParams['th'][1],
-                        'B1': -loadParams['th'][2],
-                        'AxisValue': [0, 1, 0],
+                        'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
+                        'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
+                        'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
+                        # 'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb*(180/np.pi),
+                        'periodicKeyOffset': (nOmega/60)**-1/UserIn['Nb']*Nb,
+                        'nbBase': 1,
                     },
-                    {
-                        'Title': "'Coning'",
-                        'AngleType': "'Timeindependent'",
-                        'AxisType': "'Timeindependent'",
-                        'angleValue': loadParams['beta'][0],
-                        'AxisValue': [1, 0, 0],
-                    }
-                ]
-        }
-
+                'cb':
+                    [
+                        {
+                            'Title': "'Constant Rotation'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'AxisValue': [0, 0, 1],
+                            'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
+                        },
+                        {
+                            'Title': "'Pitch'",
+                            'AngleType': "'Periodic'",
+                            'A0': loadParams['th'][0],
+                            'A1': -loadParams['th'][1],
+                            'B1': -loadParams['th'][2],
+                            'AxisValue': [0, 1, 0],
+                        },
+                        {
+                            'Title': "'Coning'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'angleValue': loadParams['beta'][0],
+                            'AxisValue': [1, 0, 0],
+                        }
+                    ]
+            }
         nml.append(blade_nml)
         # blade_load = {
         #     'containerin':

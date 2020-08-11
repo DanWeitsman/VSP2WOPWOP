@@ -1,10 +1,9 @@
-#       VSP2WOPWOP BPM Binary Broadband Data File
+#       VSP2WOPWOP Constant BPM Binary Broadband Data File
 
 #   Author: Daniel Weitsman
 
 #   This function writes out the binary BPM broadband data file for constant cases.
 
-#todo edit nml_write to include pegg/bpm flag if write is enabled in the input module
 import os
 import struct
 import numpy as np

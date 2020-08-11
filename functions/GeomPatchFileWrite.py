@@ -10,7 +10,7 @@ import struct
 import numpy as np
 import os
 #%%
-def FullGeomPatchFileWrite(geomFileName, geomParams,dirSaveFile):
+def GeomPatchFileWrite(geomFileName, geomParams,dirSaveFile):
 
     fileName = geomFileName
     magic_number = 42                                               # 4-byte signed
