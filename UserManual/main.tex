@@ -29,48 +29,176 @@
 
 \section*{Nomenclature}
 
-\noindent(Nomenclature entries should have the units identified)
-
-{\renewcommand\arraystretch{1.0}
-\noindent\begin{longtable*}{@{}l @{\quad=\quad} l@{}}
-$A$  & amplitude of oscillation \\
-$a$ &    cylinder diameter \\
-$C_p$& pressure coefficient \\
-$Cx$ & force coefficient in the \textit{x} direction \\
-$Cy$ & force coefficient in the \textit{y} direction \\
-c   & chord \\
-d$t$ & time step \\
-$Fx$ & $X$ component of the resultant pressure force acting on the vehicle \\
-$Fy$ & $Y$ component of the resultant pressure force acting on the vehicle \\
-$f, g$   & generic functions \\
-$h$  & height \\
-$i$  & time index during navigation \\
-$j$  & waypoint index \\
-$K$  & trailing-edge (TE) nondimensional angular deflection rate\\
-$\Theta$ & boundary-layer momentum thickness\\
-$\rho$ & density\\
-\multicolumn{2}{@{}l}{Subscripts}\\
-cg & center of gravity\\
-$G$ & generator body\\
-iso	& waypoint index
-\end{longtable*}}
+%\noindent(Nomenclature entries should have the units identified)
+%
+%{\renewcommand\arraystretch{1.0}
+%\noindent\begin{longtable*}{@{}l @{\quad=\quad} l@{}}
+%$A$  & amplitude of oscillation \\
+%$a$ &    cylinder diameter \\
+%$C_p$& pressure coefficient \\
+%$Cx$ & force coefficient in the \textit{x} direction \\
+%$Cy$ & force coefficient in the \textit{y} direction \\
+%c   & chord \\
+%d$t$ & time step \\
+%$Fx$ & $X$ component of the resultant pressure force acting on the vehicle \\
+%$Fy$ & $Y$ component of the resultant pressure force acting on the vehicle \\
+%$f, g$   & generic functions \\
+%$h$  & height \\
+%$i$  & time index during navigation \\
+%$j$  & waypoint index \\
+%$K$  & trailing-edge (TE) nondimensional angular deflection rate\\
+%$\Theta$ & boundary-layer momentum thickness\\
+%$\rho$ & density\\
+%\multicolumn{2}{@{}l}{Subscripts}\\
+%cg & center of gravity\\
+%$G$ & generator body\\
+%iso	& waypoint index
+%\end{longtable*}}
 
 \section{Introduction}
 
-VSP2WOPWOP couples NASA's parametric aircraft geometry tool, Open Vehicle Sketch Pad (OpenVSP) with the acoustic prediction code PSU-WOPWOP. OpenVSP enables users to rapidly develop and modify blade geometries, particularly since they are parameterized in familiar terms, e.g., chord, twist, sweep. VSP2WOPWOP uses the degenerate blade geometry output from OpenVSP, in conjunction with airfoil cross section polars attained from MIT's XFoil panel code, to compute the blade loads based on blade element momentum theory (BEMT). The blade geometry and loading information is then written as binary patch and data input files for PSU-WOPWOP. The intent of this program is to (1) minimize the learning curve faced by new researchers working with PSU-WOPWOP and to (2) provide a framework for conducting large parametric studies of blade geometries and operating conditions, were manual modification of individual test cases may not be practical.  
+VSP2WOPWOP is a code that was written in Python, which couples NASA's parametric aircraft geometry tool, Open Vehicle Sketch Pad (OpenVSP) with the acoustic prediction code PSU-WOPWOP. The benefit of OpenVSP is that it enables users to rapidly develop and modify blade geometries, particularly since they are parameterized in familiar terms, e.g., chord, twist, sweep. VSP2WOPWOP can then be used to analyze the degenerate blade geometry output from OpenVSP, in conjunction with airfoil cross section polars attained from MIT's XFoil panel code, to compute the blade loads using blade element momentum theory (BEMT). The program then writes out the blade geometry and loading information as binary patch and data input files for PSU-WOPWOP. VSP2WOPWOP was primarily developed to handle isolated rotors operating in hover, axial climb, and forward flight; however for more complex, perhaps multi-rotor vehicle configurations, VSP2WOPWOP can be utilized to write the necessary patch files for PSU-WOPWOP, after which the namelist file can be edited manually to reflect the case. The intent of this program is to (1) minimize the learning curve faced by new researchers working with PSU-WOPWOP and to (2) provide a framework for conducting parametric studies of blade geometries and operating conditions, where manual modification of individual test cases may not be practical.  
 
-%Even though VSP2WOPWOP is primarily configured to handle isolated rotors, it can still calculate the blade loads and generate the input files for PSU-WOPWOP for more complex vehicle configurations. 
+\section{Getting Started} 
 
-\section{Getting Started}
+In order to run VSP2WOPWOP, the user will need the degenerate blade geometry information output from OpwnVSP as a .csv file and an airfoil cross section polar obtained from MIT's XFoil panel code. The remainder of the case configuration is done in the input.py module. This section provides an overview of the workflow using VSP2WOPWOP.  
+
+\subsection{VSP2WOPWOP Dependencies}
+Since VSP2WOPWOP is written in Python there are dependencies on several modules that must be installed in the user's environment. The most up to date releases of the following modules would be sufficient. These modules are commonly installed using conda or pip, please refer to the respective documentation for a more comprehensive set of installation instructions.  
+% .yml automatic environment configuration 
 
 \begin{enumerate}
-\item Creating geometry --- orientation
-\item Obtaining Xsec polar
-\item Brief input module description 
-\item Running VSP2WOPWOP
-\item Loading dictionaries and saved variables
-\item Running PSU-WOPWOP
+\item NumPy
+\item Matplotlib
+\item SciPy
 \end{enumerate}
+
+\subsection{Blade Geometry}
+
+There are several important things to note about modeling the blade geometries in OpenVSP. Firstly, only a single blade actually needs to be modeled. Since the blade geometries are assumed to be identical and each blade experiences the same loads as it travels around the azimuth, the blade is duplicated in the namelist file via a change of base (CB). If a rotor consists of different blades then each blade would need to be modeled and analyzed separately, in which case the namelist file would need to be modified accordingly. Furthermore, in order for the degenerate blade geometry to be analyzed correctly, the blade must be oriented properly in the absolute coordinate system of OpenVSP. This orientation is illustrated in Fig.~\ref{fig:blade_orientation}, whereby the blade spans in the direction of the positive y-axis, the positive x-axis points towards the trailing edge of the blade, and the positive z-axis is oriented upwards towards the suction side of the airfoil cross-sections. 
+
+The span and chord wise tessellation must be fine enough to capture the surface detail of the blade. A sensitivity study has not been conducted for this parameter but it was found that using approximately 50 and 25 points in the spanwise and chordwise directions, respectively yields satisfactory results. Additionally, if the blade has a twist distribution it is important to select a location along the blade span where the blade pitch would be referenced. The blade pitch at 75\% span position (beta 3/4) should then be adjusted so that the pitch is zero at the reference location. This enables the user to interpret the collective and cyclic blade pitch settings computed in VSP2WOPWOP. After the geometry has been properly modeled, a degenerate geometry .csv file can be exported by navigating to the analysis tab of OpenVSP and selecting DegenGeom from the dropdown menu. 
+
+\begin{figure}[hbt!]
+\centering
+\includegraphics[width=.5\textwidth]{Figures/blade_orientation.png}
+\caption{\label{fig:blade_orientation}Blade geometry orientation in OpenVSP.}
+\end{figure}
+
+\subsection{XfFoil Polar}
+
+XFoil polar files are referenced when computing blade loading. In hover, the lift and drag coefficients that correspond to the sectional angle of attack are directly extracted from the polars, whereas only the lift-curve slope is used in forward flight. VSP2WOPWOP automatically parses and extracts all the necessary quantities from the XFoil polar files. The number of cross section polars to use is left to the discretion of the user, adequate results have been obtained using a single polar generated with the flow parameters computed at 75\% of the blade span. If the blade is composed of different airfoil cross section a polar can be generated for each and then their locations can be specified in the input.py module. 
+
+%perhaps include the XFoil tutorial doc
+
+\subsection{Configuring the Input Module}
+
+The input.py module is where the user configures a single case or an entire parametric study, it is also most likely the only module that needs to modify. This section will provide a description of each parameter in this module and describes how VSP2WOPWOP may be leveraged to conduct parametric studies of variating operating conditions and blade geometries. The module is organized such that the directories containing the input files (DegenGeom .csv and XFoil polars) as well as the location to where the user wishes to write the case files to are specified in the first two cells. In the following cell, the degenerate blade geometry files are specified in a comma-delimited list object (dataFileNames). There are several other variables that must be specified as lists because they are iterated over in parametric studies. Therefore, if several variations of the blade geometry are included in the dataFileNames list, separate cases would be configured for each variant. 
+
+
+
+\begin{enumerate}
+\item I/O
+\begin{itemize}
+\item \textit{dirDataFile}: Absolute path to the directory containing the DegenGeom .csv and XFoil polar files. 
+\item \textit{dirPatchFile}: Absolute path to the directory where the user wishes the generated patch and data files to be written to.
+\item \textit{geomFileName}: Desired name of the geometry patch file that contains both the blade geometry and compact lifting line information.  
+\item \textit{loadingFileName}: Desired name of the compact loading data file.
+\end{itemize}
+\item Blade geometry configuration and general settings 
+\begin{itemize}
+\item \textit{dataFileNames}: Comma-delimited list object containing the names of the degenerate geometry .csv files. VSP2WOPWOP will iterated over each geometry variant in this list. If only a single blade geometry is being analyzed it must still be included in brackets. 
+\item \textit{operMode}: This variable specifies the operational mode, which concerns parametric studies. If this value is set equal to 1, VSP2WOPWOP will run in "design mode", whereby each operating condition corresponds to a single variant of the blade geometry (\textit{dataFileNames}). This mode is geared towards conducting parametric studies of the blade geometry, where the operating conditions may vary to account for alterations of the blade design. When using this mode, it is important to ensure that the number operating conditions corresponds to the number of DegenGeom files, therefore the lengths of the lists specifying the operating conditions (\textit{Vx, Vz, alphaShaft, T, omega}) must be equal to that of \textit{dataFileNames} or have a single value, if it is constant for all the blade geometry variants. When this variable is set equal to 2, VSP2WOPWOP runs in "analysis mode", which is tailored for conducting parametric studies of operating conditions. This mode essentially sweeps through all the combination of operating conditions specified in \textit{Vx, Vz, alphaShaft, T, and omega}. When configuring a case consisting of a single blade geometry operating under a single flight condition either of the two modes could be used. 
+\item \textit{savePickle}: Set this value equal to 1, if the user wishes to save the main dictionary (\textit{MainDict}), which contains all of the input and computed geometric and loading quantities as a .pkl file. 
+\end{itemize}
+\item Airfoil cross section polar configuration
+\begin{itemize}
+\item \textit{airfoilPolarFileName}: This is a nested comma-delimited list containing the names of the XFoil polar files. If the blade is composed of different airfoil cross sections their corresponding polars are specified in the inner list. If running a parametric study and different polars are generated for each variation of the geometry or operating condition they can be specified in the outer list. 
+\item \textit{XsecLocation}: This is a list that specifies the radial location corresponding to each airfoil polar specified in the inner list of \textit{airfoilPolarFileName}. This quantity is non-dimensionalized by the blade radius.
+\item \textit{aStart}: This parameter is the starting angle of attack, specified in degree, from which to calculate the lift-curve slope. This starting angle of attack must be included in the XFoil polar output file, otherwise an error would arise.   
+\item \textit{aLength}: This is the range of angles of attack, specified in degree, over which to evaluate the lift-curve slope.
+\item \textit{check}: If this variable is set to 1, all of the airfoil polars along with the region over which the lift-curve slope was evaluated would be plotted.  
+\end{itemize}
+\item Operational condition configuration
+\begin{itemize}
+\item \textit{Nb}: Number of blades 	
+\item \textit{Vx}:	 Comma-delimited list specifying the forward flight velocities, specified in m/s.  
+\item \textit{Vz}: Comma-delimited list specifying the climb or descent velocities, specified in m/s. A positive velocity corresponds to climb, whereas a negative velocity signifies that the rotor is descending.  
+\item \textit{alphaShaft}: Comma-delimited list of shaft tilt angles, specified in degrees. A negative tilt angle signifies that the rotor disk is tilted forward. 
+\item \textit{T}: Comma-delimited list of the thrust, specified in newtons. 
+\item \textit{omega}:	Comma-delimited list of rotational rates, specified in rpm. 
+\item \textit{thetaInit}:	 Initial guess for the collective pitch setting. This is an arbitrary value that is needed to initialize the trim procedure, however if the trim solution does not converge this quantity will likely need to be changed to a value closer to the actual collective pitch setting. It should also not be set equal to 0. 
+\item \textit{loadPos}: This parameter is non-dimensionalized by the sectional chord length and specifies the position from the blade's leading edge where the compact lifting line is located. The integrated sectional blade loads are prescribed on this line. 
+\item \textit{tipLoss}: Set equal to 1 in order to include Pardtl's tip loss formulation. This only applies to cases where the rotor is operating in hover. 
+\item \textit{rho}: Density, specified in $kg/m^3$ and is written to the namelist file.  
+\item \textit{c}: Speed of sound, specified in $m/s$ and is written to the namelist file.
+\item \textit{Ib}: Blade mass moment of inertia about the flap hinge, specified in $kg*m^2$, and is only applicable for forward flight cases.
+\item \textit{nuBeta}: Non-dimensionalized rotating flap frequency, which is dependent on the blade's non-rotating natural frequency and its hinge offset. This quantity is also only applicable for forward flight cases.
+\end{itemize}
+\item Broadband noise model configuration
+\begin{itemize}
+\item \textit{BBNoiseFlag}: Set equal to 1 in order to include the broadband noise prediction. 
+\item \textit{BBNoiseModel}: Set equal to 1 in order to use Pegg's \cite{Pegg1979} and 2 for Brooks, Pope, and Marcolini's (BPM) \cite{BPM1989} semi-empirical broadband models. Note: if Pegg's model is selected the corresponding namelist (\&PeggIn) is currently not written to the namelist file and must be included manually- 8/20.  
+\end{itemize}
+\item Namelist file configuration
+\begin{itemize}
+\item \textit{nmlWrite}: Set equal to 1 in order to write out the namelist file. 
+\item \textit{NmlFileName}: Desired name for the namelist file. 
+\end{itemize}
+\item Observer namelist configuration 
+\begin{itemize}
+\item \textit{nRev}: Number of rotor revolutions to simulate.
+\item \textit{nt}: Desired sample rate, specified in Hz. 
+\item \textit{obsType}: Specifies the type of observer grid to use. Set equal to 1 for a single observer, 2 for a rectangular grid, and 3 for a spherical grid. Then define the dimensions of these grids in the respective subsequent cells. 
+\end{itemize}
+\item Single observer 
+\begin{itemize}
+\item \textit{xLoc}: x-position of the observer (ahead/behind of the rotor), expressed in meters.
+\item \textit{yLoc}: y-position of the observer (to the side of the rotor), expressed in meters.
+\item \textit{zLoc}: z-position of the observer (above/below of the rotor), expressed in meters.
+\end{itemize}
+\item Rectangular observer grid
+\begin{itemize}
+\item \textit{nbx}: Number of observers along the x-direction (ahead/behind of the rotor).
+\item \textit{xMin}: Minimum observer position along the x-direction, expressed in meters. 
+\item \textit{xMax}: Maximum observer position along the x-direction, expressed in meters.This variable can be specified as a list when conducting parametric studies. 
+\item \textit{nby}: Number of observers along the y-direction (to the side of the rotor).
+\item \textit{yMin}: Minimum observer position along the y-direction, expressed in meters.
+\item \textit{yMax}: Maximum observer position along the y-direction, expressed in meters. This variable can be specified as a list when conducting parametric studies. 
+\item \textit{nbz}: Number of observers along the z-direction (above/below the rotor).
+\item \textit{zMin}: Minimum observer position along the z-direction, expressed in meters. 
+\item \textit{zMax}: Maximum observer position along the z-direction, expressed in meters. This variable can be specified as a list when conducting parametric studies. 
+\end{itemize}
+\item Spherical observer grid 
+\begin{itemize}
+\item \textit{radius}: Radial position of the observers from the rotor hub, express in meters. This variable can be specified as a list when conducting parametric studies. 
+\item \textit{nbTheta}: Number of in-plane observers. 
+\item \textit{thetaMin}: Minimum angle of in-plane observer, expressed in degrees. 
+\item \textit{thetaMax}: Maximum angle of in-plane observer, expressed in degrees. This variable can be specified as a list when conducting parametric studies.
+\item \textit{nbPsi}: Number of out-of-plane observers. 
+\item \textit{psiMin}: Minimum angle of out-of-plane observer, expressed in degrees. 
+\item \textit{psiMax}: Maximum angle of out-of-plane observer, expressed in degrees. This variable can be specified as a list when conducting parametric studies.
+\end{itemize}
+
+\end {enumerate}
+
+%Files that need to be in the same locations
+%All lists can contain multiple entries 
+%Save pickle and then loading
+%Describe operational modes and each parameter
+%A more detailed description of all the input parameters is provided in section ~\ref{sec:Program Structure}.
+
+% Briefly through the input variables - state that a more detailed description will be provided later on 
+
+\subsection{Running VSP2WOPWOP}
+
+% Can be ran from a Python IDE of your choosing or the command line - simply by navigating into the project folder and executing the command 'python VSP2WOPWOP.py'
+
+\subsection{Loading Computed Parameters}
+
+% If the user enables savePickle in the input file all of the input and computed parameters would be saved in a dictionary object
+% Go over importing MainDict
+
 
 \section{Theory}
 \subsection{Hover}
@@ -79,6 +207,7 @@ VSP2WOPWOP couples NASA's parametric aircraft geometry tool, Open Vehicle Sketch
 \section{Validation}
 
 \section{Program Structure}
+\label{sec:Program Structure}
 
 \begin{enumerate}
 \item input.py
@@ -162,7 +291,7 @@ VSP2WOPWOP couples NASA's parametric aircraft geometry tool, Open Vehicle Sketch
 %\subsection{Footnotes and References}
 %Footnotes, where they appear, should be placed above the 1'' margin at the bottom of the page. Numbered footnotes are acceptable, but superscript symbols are the preferred AIAA style, in the sequence, *, $\dag$, $\ddag$, \S, \P, **, $\dag\dag$, $\ddag\ddag$, \S\S, etc.
 %
-%List and number all references at the end of the paper. Corresponding bracketed numbers are used to cite references in the text \cite{vatistas1986reverse}, including citations that are an integral part of the sentence (e.g., ``It is shown in \cite{dornheim1996planetary} that\ldots '') or follow a mathematical expression: ``$A^{2} + B = C$ (Ref.~\cite{terster1997nasa}).'' For multiple citations, separate reference numbers with commas \cite{peyret2012computational,oates1997aerothermodynamics}, or use a dash to show a range \cite{volpe1994techniques,thompsonspacecraft,chi1993fluid,brandis2016nonequi}. Reference citations in the text should be in numerical order. 
+%List and number all references at the end of the paper. Corresponding bracketed numbers are used to cite references in the text \cite{vatistas1986reverse}, including citations that are an integral part of the sentence (e.g., ``It is shown in \cite{dornheim1996planetary} that\ldots '') or follow a mathematical expression: ``$A^{2} + B = C$ (Ref.~\cite{terster1997nasa}).'' For multiple citations, separate reference numbers with commas \cite{peyret2012computational,oates1997aerothermodynamics}, or use a dash to show a range ≈{volpe1994techniques,thompsonspacecraft,chi1993fluid,brandis2016nonequi}. Reference citations in the text should be in numerical order. 
 %
 %In the reference list, give all authors' names; do not use ``et al.''. Papers that have not been published should be cited as ``unpublished''; papers that have been submitted or accepted for publication should be cited as ``submitted for publication.'' Private communications and personal website should appear as footnotes rather than in the reference list.
 %
@@ -234,6 +363,6 @@ VSP2WOPWOP couples NASA's parametric aircraft geometry tool, Open Vehicle Sketch
 %\section*{Acknowledgments}
 %An Acknowledgments section, if used, \textbf{immediately precedes} the References. Individuals other than the authors who contributed to the underlying research may be acknowledged in this section. The use of special facilities and other resources also may be acknowledged. 
 %
-%\bibliography{sample}
+\bibliography{sample}
 
 \end{document}

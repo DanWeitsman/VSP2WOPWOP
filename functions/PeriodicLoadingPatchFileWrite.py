@@ -33,8 +33,8 @@ def PeriodicLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs, omega,dir
     nkey = len(loadParams['phi'])    # number of keys specified in radians
     iMax = 1                         # number of chordwise elements
     jMax = nXsecs                    # number of spanwise elements
-    # keys = loadParams['phi']*180/np.pi         # Array of keys
-    keys = np.linspace(0, period, nkey)
+    keys = loadParams['phi']         # Array of keys
+    # keys = np.linspace(0, period, nkey)
 
 #%%
 

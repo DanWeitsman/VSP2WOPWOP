@@ -112,7 +112,29 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
         return beta,alpha,mu,CT,ct_dist,lamTTP_temp,theta_expanded,beta_expanded,ut,up
 
-    def residuals(th,mu_x,lamTPP_init):
+    def fixed_pitch_trim(omega_temp,CT_init, lamTPP_init):
+
+        alpha = alphaShaft + thFP
+        mu = U / (omega_temp * R) * np.cos(alpha)
+        CT_init =  W/(rho * np.pi * R ** 2 * (omega_temp * R) ** 2)
+        i = 0
+        err = 1
+        while err > 0.0001:
+
+            up = lam_fixed_pnt(lamTPP_init, mu, alpha, CT_init)
+            ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
+            CT_temp_dist = 1/2*solDist*ut**2*(a*((th0+geomParams['twistDist'])-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))
+            CT_temp = 1 / (2 * np.pi) * np.trapz(np.trapz(CT_temp_dist, r), phi)
+            err = np.abs((CT_init - CT_temp) / CT_init)
+            i+=1
+            CT_init = CT_temp
+            lamTPP_init = up
+
+        T = CT_temp * rho * np.pi * R ** 2 * (omega_temp * R) ** 2
+
+        return T
+
+    def variable_pitch_residuals(th,*args):
         '''
         This function computes the residuals from the target trim variables.
 
@@ -121,10 +143,22 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         :param lamTPP_init: initial estimate for the inflow ratio
         :return: difference between the trim targets and computes CT, beta1c, and beta1s.
         '''
+        weights = np.array([1, 1, 1])
+        trimOut = WT_trim(th,mu_x,lamTPP_init)
+        res = (trimTargs - np.array([trimOut[3], trimOut[0][1], trimOut[0][2]]))*weights
+        return res
 
-        weights = np.array([1,1,1])
-        trim_out = WT_trim(th,mu_x,lamTPP_init)
-        res = (trimTargs - np.array([trim_out[3], trim_out[0][1], trim_out[0][2]]))*weights
+    def fixed_pitch_residuals(omega_temp,*args):
+        '''
+        This function computes the residuals from the target trim variables.
+
+        :param th: an array of three elements the first being the collective pitch setting, followed by the lateral and longituinal cyclic pitch amplitudes.
+        :param mu_x: advance ratio
+        :param lamTPP_init: initial estimate for the inflow ratio
+        :return: difference between the trim targets and computes CT, beta1c, and beta1s.
+        '''
+        trimOut = fixed_pitch_trim(omega_temp,targ_CT,lamTPP_init)
+        res = trimTargs - trimOut
         return res
 
     def loads_moments(ut, up, beta, theta_expanded, beta_expanded):
@@ -147,26 +181,32 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
         distCT = 1/2*solDist*ut**2*(a*(theta_expanded-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
         CT = 1/(2*np.pi)*np.trapz(np.trapz(distCT,r),phi)
+        T = rho*np.pi*R**2*(omega*R)**2*CT
 
         distCH = 1/2*solDist*a*((up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.sin(phi), axis = 1)
                                         - np.expand_dims(beta_expanded * np.cos(phi), axis = 1) * (ut ** 2 * theta_expanded - up * ut))
         CH = 1/(2*np.pi)*np.trapz(np.trapz(distCH,r),phi)
         CH_TTP = CH+beta[1]*CT
+        H = rho * np.pi * R ** 2 * (omega * R) ** 2 * CH
 
         distCY = 0.5*solDist*a*(-(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.sin(phi), axis = 1) - np.expand_dims(beta_expanded * np.sin(phi), axis = 1) * (ut ** 2 * theta_expanded - up * ut))
         CY = 1/(2*np.pi)*np.trapz(np.trapz(distCY,r),phi)
         CY_TTP = CY+beta[2]*CT
+        Y = rho * np.pi * R ** 2 * (omega * R) ** 2 * CY
 
         distCQ = 0.5*solDist*a*r*(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2)
         CQ = 1/(2*np.pi)*np.trapz(np.trapz(distCQ,r),phi)
+        Q = rho * np.pi * R ** 3 * (omega * R) ** 2 * CQ
 
         distCMX = solDist * a / (2*gamma) * (nuBeta**2-1-3/2*e/R) * beta[2] + e / R * 1 / (4*np.pi) * solDist * a * (ut ** 2 * theta_expanded - up * ut) * np.expand_dims(np.cos(phi), axis = 1)
         CMX = np.trapz(np.trapz(distCMX, r), phi)
+        MX = rho * np.pi * R ** 3 * (omega * R) ** 2 * CMX
 
         distCMY = -solDist * a / (2*gamma) * (nuBeta**2-1-3/2*e/R) * beta[1] + e / R * 1 / (4*np.pi) * solDist * a * (ut ** 2 * theta_expanded - up * ut) * np.expand_dims(np.sin(phi), axis = 1)
         CMY = np.trapz(np.trapz(distCMY, r), phi)
+        MY = rho * np.pi * R ** 3 * (omega * R) ** 2 * CMY
 
-        return np.array([CT,CH,CY,CQ,CMX,CMY])
+        return np.array([T,CT,H,CH,Y,CY,Q,CQ,MX,CMX,MY,CMY])
 
 #%%
     '''
@@ -206,7 +246,10 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     targ_CT = W/(rho*np.pi*R**2*(omega*R)**2)
     targ_beta1c = 0
     targ_beta1s = 0
-    trimTargs = [targ_CT,targ_beta1c,targ_beta1s]
+    if UserIn['trim'] == 1:
+        trimTargs = [targ_CT,targ_beta1c,targ_beta1s]
+    else:
+        trimTargs = W
 
     # if -2 < Vz/np.sqrt(W/(2*rho*np.pi*R**2)) < 0:
     #     raise ValueError('Non-physical solution, 1D assumption of momentum theory is violated')
@@ -241,15 +284,20 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     gamma = np.mean((rho*a*geomParams['chordDist']*R**4)/UserIn['Ib'])
 
     #%%
-    #  initial estimate of the inflow ratio
-    lamTPP_init = mu_x * np.tan(alphaInit)
-    #   Improved estimate of the inflow ratio after going through the fixed point procedure
-    lamTPP_init = lam_fixed_pnt(lamTPP_init, mu_x, alphaInit, targ_CT)
-    # employs non-linear least square optimization method (LM) to compute the necessary collective and cyclic pitch
-    # settings to minimize the residuals.
-    trim_sol = least_squares(residuals, th, args = [mu_x,lamTPP_init] ,method='lm')
-    #   overwrites the initial guessed pitch settings with the computed.
-    th = trim_sol.x
+    #   Initial estimate  of the inflow ratio after completing the fixed point iteration procedure
+    lamTPP_init = lam_fixed_pnt(mu_x * np.tan(alphaInit), mu_x, alphaInit, targ_CT)
+
+    # Employs non-linear least square optimization method (LM) to compute the necessary rpm (fixed pitch) or
+    # collective and cyclic pitch settings (variable pitch) to minimize the residuals of the trim targets. Separate
+    # functions were written for each variety of pitch since the independent variable (th and omega),
+    # which is optimized must be the first argument of each of these functions in order for scipy.least_squares to
+    # run properly.
+    if UserIn['trim'] == 1:
+        trim_sol = least_squares(variable_pitch_residuals, th, args = [targ_CT,omega,mu_x,lamTPP_init] ,method='lm')
+        th = trim_sol.x
+    else:
+        trim_sol = least_squares(fixed_pitch_residuals, omega, args = [targ_CT,lamTPP_init] ,method='lm')
+        omega = trim_sol.x
 
     # if np.any(trim_sol.fun > 1e-8):
     #     raise NameError('Caution: large residuals, solution is not converged!')
@@ -259,7 +307,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     #   Run WT_trim once again with the trimmed values to return quantities necessary in computing the blade loads
     beta,alpha,mu,CT,distCT, lamTPP, theta_expanded,beta_expanded,ut,up = WT_trim(th,mu_x,lamTPP_init)
     #   Run to return hub loads
-    # hubLoads = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
+    hubLM = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
 
     #   Dimensionalized tangential, normal, and radial velocities
     UT = ut*(omega*R)
@@ -290,7 +338,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
 #%%
     # assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
-    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'lamTPP': lamTPP ,'gamma':gamma,'mu_x':mu_x,'phi':phi,'th':th,'beta':beta,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
-                  'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFy,'dFz':dFz}
+    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'lamTPP': lamTPP ,'alpha':alpha,'gamma':gamma,'mu_x':mu_x,'phi':phi,'th':th,'beta':beta,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
+                  'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFy,'dFz':dFz,'hubLM':hubLM}
 
     return loadParams

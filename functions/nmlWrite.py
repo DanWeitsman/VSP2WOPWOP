@@ -132,6 +132,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'nbBase': 0,
                     'octaveFlag': octaveFlag,
                     'octaveNumber': 3,
+                    'octaveApproxFlag': '.false.',
                     'nbBase': 0,
                 },
             'cb':
@@ -195,6 +196,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'psimax': UserIn['psimax'] * (np.pi / 180),
                     'octaveFlag' : octaveFlag,
                     'octaveNumber': 3,
+                    'octaveApproxFlag': '.false.',
                     'nbBase': 0,
                 },
             'cb':
@@ -361,8 +363,8 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                         'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
                         'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
                         'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
-                        # 'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb*(180/np.pi),
-                        'periodicKeyOffset': (nOmega/60)**-1/UserIn['Nb']*Nb,
+                        'periodicKeyOffset': 2 * np.pi / UserIn['Nb']*Nb,
+                        # 'periodicKeyOffset': (nOmega/60)**-1/UserIn['Nb']*Nb,
                         'nbBase': 1,
                     },
                 'cb':

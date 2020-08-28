@@ -28,8 +28,7 @@ from functions.ConstantBPMWrite import ConstantBPMWrite
 from functions.PeriodicBPMWrite import PeriodicBPMWrite
 from functions.GeomPatchFileWrite import GeomPatchFileWrite
 from functions.ErrorHandles import ErrorHandles
-
-#todo write error handaling module for input file, attempt to replace the conditional statments in main
+import numpy as np
 
 # %%
 def main():
@@ -194,6 +193,10 @@ def main():
                       "wb") as f:
                 pickle.dump(MainDict, f)
 
+            # import h5py
+            # f = h5py.File(os.path.abspath(os.path.expanduser(UserIn['dirPatchFile'] + os.path.sep + 'MainDict.hdf5')),'w')
+
+
         # Use the following command to load data
         # pickle.load(open("file.pkl", "rb"))
 
@@ -203,3 +206,5 @@ def main():
 if __name__ == '__main__':
     print(__name__)
     MainDict = main()
+
+    # f = h5py.File(os.path.abspath(os.path.expanduser(UserIn['dirPatchFile'] + os.path.sep + 'MainDict.hdf5')),'w')
