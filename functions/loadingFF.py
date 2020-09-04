@@ -112,7 +112,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
         return beta,alpha,mu,CT,ct_dist,lamTTP_temp,theta_expanded,beta_expanded,ut,up
 
-    def fixed_pitch_trim(omega_temp,CT_init, lamTPP_init):
+    def fixed_pitch_trim(omega_temp, lamTPP_init):
 
         alpha = alphaShaft + thFP
         mu = U / (omega_temp * R) * np.cos(alpha)
@@ -123,7 +123,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
             up = lam_fixed_pnt(lamTPP_init, mu, alpha, CT_init)
             ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
-            CT_temp_dist = 1/2*solDist*ut**2*(a*((th0+geomParams['twistDist'])-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))
+            CT_temp_dist = 1/2*solDist*ut**2*(a*(geomParams['twistDist']-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))
             CT_temp = 1 / (2 * np.pi) * np.trapz(np.trapz(CT_temp_dist, r), phi)
             err = np.abs((CT_init - CT_temp) / CT_init)
             i+=1
@@ -132,7 +132,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
         T = CT_temp * rho * np.pi * R ** 2 * (omega_temp * R) ** 2
 
-        return T
+        return T,up,ut,CT_temp_dist,CT_temp
 
     def variable_pitch_residuals(th,*args):
         '''
@@ -157,8 +157,8 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         :param lamTPP_init: initial estimate for the inflow ratio
         :return: difference between the trim targets and computes CT, beta1c, and beta1s.
         '''
-        trimOut = fixed_pitch_trim(omega_temp,targ_CT,lamTPP_init)
-        res = trimTargs - trimOut
+        trimOut = fixed_pitch_trim(omega_temp,lamTPP_init)
+        res = trimTargs - trimOut[0]
         return res
 
     def loads_moments(ut, up, beta, theta_expanded, beta_expanded):
@@ -179,24 +179,17 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         :param CMY: averaged pitch moment coefficient
         '''
 
-        distCT = 1/2*solDist*ut**2*(a*(theta_expanded-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
-        CT = 1/(2*np.pi)*np.trapz(np.trapz(distCT,r),phi)
-        T = rho*np.pi*R**2*(omega*R)**2*CT
-
-        distCH = 1/2*solDist*a*((up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.sin(phi), axis = 1)
-                                        - np.expand_dims(beta_expanded * np.cos(phi), axis = 1) * (ut ** 2 * theta_expanded - up * ut))
+        gam = np.transpose(mu_x*np.cos(phi)/(np.expand_dims(r,axis = 1)+mu_x*np.sin(phi)))
+        distCH = 0.5*solDist*ut**2*(a*(theta_expanded-up/ut)*(np.expand_dims(np.sin(phi),axis = 1)*np.sin(up/ut)-np.sin(beta_expanded)*np.expand_dims(np.cos(phi),axis = 1))+cd0*(np.cos(up/ut)*np.cos(gam)*np.expand_dims(np.sin(phi),axis = 1)+np.sin(gam)*np.expand_dims(np.cos(phi),axis = 1)))
         CH = 1/(2*np.pi)*np.trapz(np.trapz(distCH,r),phi)
         CH_TTP = CH+beta[1]*CT
         H = rho * np.pi * R ** 2 * (omega * R) ** 2 * CH
 
-        distCY = 0.5*solDist*a*(-(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.sin(phi), axis = 1) - np.expand_dims(beta_expanded * np.sin(phi), axis = 1) * (ut ** 2 * theta_expanded - up * ut))
+        # distCY = 0.5*solDist*a*(-(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.cos(phi), axis = 1) - np.expand_dims(beta_expanded * np.sin(phi), axis = 1) * (ut ** 2 * theta_expanded - up * ut))
+        distCY = 0.5*solDist*ut**2*(-a*(theta_expanded-up/ut)*(np.expand_dims(np.cos(phi),axis = 1)*np.sin(up/ut)+np.sin(beta_expanded)*np.expand_dims(np.sin(phi),axis = 1))+cd0*(np.cos(up/ut)*np.cos(gam)*np.expand_dims(np.cos(phi),axis = 1)+np.sin(gam)*np.expand_dims(np.sin(phi),axis = 1)))
         CY = 1/(2*np.pi)*np.trapz(np.trapz(distCY,r),phi)
         CY_TTP = CY+beta[2]*CT
         Y = rho * np.pi * R ** 2 * (omega * R) ** 2 * CY
-
-        distCQ = 0.5*solDist*a*r*(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2)
-        CQ = 1/(2*np.pi)*np.trapz(np.trapz(distCQ,r),phi)
-        Q = rho * np.pi * R ** 3 * (omega * R) ** 2 * CQ
 
         distCMX = solDist * a / (2*gamma) * (nuBeta**2-1-3/2*e/R) * beta[2] + e / R * 1 / (4*np.pi) * solDist * a * (ut ** 2 * theta_expanded - up * ut) * np.expand_dims(np.cos(phi), axis = 1)
         CMX = np.trapz(np.trapz(distCMX, r), phi)
@@ -206,7 +199,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         CMY = np.trapz(np.trapz(distCMY, r), phi)
         MY = rho * np.pi * R ** 3 * (omega * R) ** 2 * CMY
 
-        return np.array([T,CT,H,CH,Y,CY,Q,CQ,MX,CMX,MY,CMY])
+        return H,CH,Y,CY,MX,CMX,MY,CMY
 
 #%%
     '''
@@ -295,17 +288,19 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     if UserIn['trim'] == 1:
         trim_sol = least_squares(variable_pitch_residuals, th, args = [targ_CT,omega,mu_x,lamTPP_init] ,method='lm')
         th = trim_sol.x
-    else:
-        trim_sol = least_squares(fixed_pitch_residuals, omega, args = [targ_CT,lamTPP_init] ,method='lm')
-        omega = trim_sol.x
+        #   Run WT_trim once again with the trimmed values to return quantities necessary in computing the blade loads
+        beta, alpha, mu, CT, distCT, lamTPP, theta_expanded, beta_expanded, ut, up = WT_trim(th, mu_x, lamTPP_init)
 
-    # if np.any(trim_sol.fun > 1e-8):
-    #     raise NameError('Caution: large residuals, solution is not converged!')
+    else:
+        trim_sol = least_squares(fixed_pitch_residuals, omega, args = [lamTPP_init] ,method='lm')
+        omega = trim_sol.x
+        theta_expanded = geomParams['twistDist']
+        beta_expanded = np.zeros(1)
+        beta = np.zeros(3)
+        T,up,ut,distCT,CT = fixed_pitch_trim(omega,lamTPP_init)
 
     #%%
 
-    #   Run WT_trim once again with the trimmed values to return quantities necessary in computing the blade loads
-    beta,alpha,mu,CT,distCT, lamTPP, theta_expanded,beta_expanded,ut,up = WT_trim(th,mu_x,lamTPP_init)
     #   Run to return hub loads
     hubLM = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
 
@@ -342,3 +337,9 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
                   'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFy,'dFz':dFz,'hubLM':hubLM}
 
     return loadParams
+
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+# dist = ax.contourf(phi, r, np.expand_dims(geomParams['twistDist'],axis = 1)-np.transpose(up/ut))
+dist = ax.contourf(phi, r, np.transpose(ut))
+plt.colorbar(dist)

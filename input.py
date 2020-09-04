@@ -34,7 +34,7 @@ loadingFileName = "Load"
 # %%
 
 # Names of DegenGeom files add as many geometry cases as you wish separated by commas.
-dataFileNames = ["Actual_24.5D_DegenGeom.csv"]
+dataFileNames = ["Actual_12D_DegenGeom.csv"]
 
 # Operational mode: set equal to one for design mode, which is ideal for geometric parametric studies, where each
 # variant of the blade geometry geometry corresponds to a different operating condition. Set this quantity equal to
@@ -52,7 +52,7 @@ savePickle = 0
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
 # number of 'XsecLocation'.
-airfoilPolarFileName = [['vr7Re16E4.dat']]
+airfoilPolarFileName = [['naca4412Re16E4.dat']]
 
 #   Non-dimensional radial location of each airfoil cross section
 XsecLocation = [0.18380]
@@ -78,7 +78,7 @@ Nb = 2
 
 #   Forward velocity, set to zero for hover, input as many comma-delimited forward flight velocities as you wish to be
 # evaluated.
-Vx = [7]
+Vx = [10]
 
 #   Vertical climb velocity (m/s), set to positive for ascent and negative for descent
 Vz = [0]
@@ -89,16 +89,16 @@ alphaShaft = [0]
 #   Set the gross weight of the aircraft (N). Add as many comma-delimited thrust conditions as you wish into the list.
 # Separate functional data files will be written for each case. If you are running in the design mode ('OperMode' = 1),
 # the length of this list should be equal to the number of geometric cases ('dataFileNames').
-T = [42]
+T = [10.04]
 
 # Populate this list with the rotational rates (rpm) of the rotor. If you are running in the design mode ('OperMode'
 # = 1), the length of this list should be equal to the number of geometric cases ('dataFileNames').
-omega = [3500]
+omega = [7000]
 
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.
-thetaInit = 1
+thetaInit = 0
 
 #   Position of loading line from the blade's leading edge as a percentage of the chord.
 loadPos = 0.25
