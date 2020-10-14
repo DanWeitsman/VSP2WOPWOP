@@ -5,12 +5,40 @@
 #   This function trims a rotor for operating in forward flight by equating the drag and side force to zero.
 #   The periodic blade loads are also computed.
 #%%
-
+import bisect
+import time
 import numpy as np
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares,minimize
 #%%
 
 def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
+
+    def searchPolar(AoA):
+        '''
+        This function uses the bisection search algorithm to locate the  lift and drag coefficients from the XFoil
+        polar for a given angle of attack (AoA). If the angle of attack exceeds that corresponding to the maximum
+        AoA, the maximum lift and drag coefficients would be set.
+
+        :param AoA: matrix filled with the angles of attack
+        [rad] for each azimuthal and radial station
+        :return CL: matrix of corresponding lift coefficients, having the same dimensions as AoA.
+        :return CD: matrix of corresponding drag coefficients, having the same
+        dimensions as AoA
+        '''
+
+        CL = np.zeros(np.shape(AoA))
+        CD = np.zeros(np.shape(AoA))
+        for i, azimuth in enumerate(AoA):
+            for ii, radial in enumerate(azimuth):
+                if radial >= XsecPolar['b540ols']['alphaMax']:
+                    # CL[i, ii] = XsecPolar['b540ols']['ClMax']
+                    CL[i, ii] = 0
+                    CD[i, ii] = XsecPolar['b540ols']['CdMax']
+                else:
+                    ind = bisect.bisect_right(XsecPolar['b540ols']['Polar'][:, 0], radial)
+                    CL[i,ii] = XsecPolar['b540ols']['Polar'][ind,1]
+                    CD[i, ii] = XsecPolar['b540ols']['Polar'][ind, 2]
+        return CL, CD
 
     def beta_solve(th,mu_x,lamTPP):
         '''
@@ -84,7 +112,6 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         while np.any(err > 0.0001):
 
             beta = beta_solve(th, mu_x, lamTPP_init)
-
             alpha = alphaShaft+beta[1]+thFP
 
             # if alpha <-20*np.pi/180:
@@ -93,13 +120,19 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
             mu = U / (omega * R) * np.cos(alpha)
             lam = lamTPP_init-mu*beta[1]
 
-            theta_expanded = np.expand_dims(th[0],axis=0)+np.expand_dims(th[1]*np.cos(phi),axis=1)+np.expand_dims(th[2]*np.sin(phi),axis = 1)
+            theta_expanded = geomParams['twistDist']+np.expand_dims(th[0],axis=0)+np.expand_dims(th[1]*np.cos(phi),axis=1)+np.expand_dims(th[2]*np.sin(phi),axis = 1)
             beta_expanded = beta[0]+beta[1]*np.cos(phi)+beta[2]*np.sin(phi)
 
             ut = r + mu * np.expand_dims(np.sin(phi), axis = 1)
             up = lam + r * np.expand_dims(beta[2] * np.cos(phi) - beta[1] * np.sin(phi), axis = 1) + np.expand_dims(beta_expanded * mu * np.cos(phi), axis = 1)
 
-            ct_dist = 1/2*solDist*ut**2*(a*(theta_expanded-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
+            # todo  insert condition for determining stalled sections if AoA > AoA_max Cl = 0, Cd = cd_max
+            AoA = theta_expanded-up/ut
+            # CL,CD = searchPolar(AoA)
+            CL = a*(theta_expanded-up/ut)
+            # ct_dist = 1/2*solDist*ut**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
+            ct_dist = 1/2*solDist*ut**2*(CL*np.cos(up/ut)-0.1*CL*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
+
             # ct_dist = 1/(4*np.pi) * solDist * ut ** 2 * a * (theta_expanded - up / ut)
             # ct_dist = 1/(4*np.pi)*solDist*a*(ut**2*theta_expanded-ut*up)
             CT = 1/(2*np.pi)*np.trapz(np.trapz(ct_dist,r),phi)
@@ -112,26 +145,24 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
         return beta,alpha,mu,CT,ct_dist,lamTTP_temp,theta_expanded,beta_expanded,ut,up
 
-    def fixed_pitch_trim(omega_temp, lamTPP_init):
+    def fixed_pitch_trim(omega, lamTPP_init):
 
-        alpha = alphaShaft + thFP
-        mu = U / (omega_temp * R) * np.cos(alpha)
-        CT_init =  W/(rho * np.pi * R ** 2 * (omega_temp * R) ** 2)
+        mu = U / (omega * R) * np.cos(alphaInit)
+        CT_temp =  W/(rho * np.pi * R ** 2 * (omega * R) ** 2)
         i = 0
         err = 1
         while err > 0.0001:
 
-            up = lam_fixed_pnt(lamTPP_init, mu, alpha, CT_init)
+            up = lam_fixed_pnt(lamTPP_init, mu, alphaInit, CT_temp)
             ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
-            CT_temp_dist = 1/2*solDist*ut**2*(a*(geomParams['twistDist']-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))
+            CT_temp_dist = 1/2*solDist*r**2*(a*(geomParams['twistDist']-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))
             CT_temp = 1 / (2 * np.pi) * np.trapz(np.trapz(CT_temp_dist, r), phi)
-            err = np.abs((CT_init - CT_temp) / CT_init)
-            i+=1
-            CT_init = CT_temp
+            err = np.abs((lamTPP_init - up) / lamTPP_init)
             lamTPP_init = up
+            i =+1
 
-        T = CT_temp * rho * np.pi * R ** 2 * (omega_temp * R) ** 2
-
+        T = CT_temp * rho * np.pi * R ** 2 * (omega * R) ** 2
+        # print(omega)
         return T,up,ut,CT_temp_dist,CT_temp
 
     def variable_pitch_residuals(th,*args):
@@ -148,7 +179,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         res = (trimTargs - np.array([trimOut[3], trimOut[0][1], trimOut[0][2]]))*weights
         return res
 
-    def fixed_pitch_residuals(omega_temp,*args):
+    def fixed_pitch_residuals(omega, lamTPP_init):
         '''
         This function computes the residuals from the target trim variables.
 
@@ -157,8 +188,11 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         :param lamTPP_init: initial estimate for the inflow ratio
         :return: difference between the trim targets and computes CT, beta1c, and beta1s.
         '''
-        trimOut = fixed_pitch_trim(omega_temp,lamTPP_init)
+
+        trimOut = fixed_pitch_trim(omega, lamTPP_init)
+        lamTPP_init = trimOut[1]
         res = trimTargs - trimOut[0]
+        print(res)
         return res
 
     def loads_moments(ut, up, beta, theta_expanded, beta_expanded):
@@ -249,8 +283,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
 #%%
     '''
-    This block of code populates an array of indices corresponding to the variety of airfoil sections used along the blade span. 
-    
+    This block of code populates an array of indices corresponding to the variety of airfoil sections used along the blade span.   
     '''
     if len(XsecLocation) > 1:
         polarInd = []
@@ -292,7 +325,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         beta, alpha, mu, CT, distCT, lamTPP, theta_expanded, beta_expanded, ut, up = WT_trim(th, mu_x, lamTPP_init)
 
     else:
-        trim_sol = least_squares(fixed_pitch_residuals, omega, args = [lamTPP_init] ,method='lm')
+        trim_sol = least_squares(fixed_pitch_residuals, np.array([omega]), args = [lamTPP_init],method = 'lm',bounds=([-np.inf, 1.5], np.inf, np.inf))
         omega = trim_sol.x
         theta_expanded = geomParams['twistDist']
         beta_expanded = np.zeros(1)
@@ -338,8 +371,9 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
     return loadParams
 
-import matplotlib.pyplot as plt
-fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-# dist = ax.contourf(phi, r, np.expand_dims(geomParams['twistDist'],axis = 1)-np.transpose(up/ut))
-dist = ax.contourf(phi, r, np.transpose(ut))
-plt.colorbar(dist)
+# import matplotlib.pyplot as plt
+# fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+# # dist = ax.contourf(phi, r, np.expand_dims(geomParams['twistDist'],axis = 1)-np.transpose(up/ut))
+# levels = np.linspace(-0.075,0.1,30)
+# dist = ax.contourf(phi, r, np.transpose((theta_expanded-up/ut)),levels = levels)
+# plt.colorbar(dist)

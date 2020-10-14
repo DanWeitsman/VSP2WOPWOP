@@ -16,14 +16,14 @@ dirPyScript = os.getcwd()
 
 # Directory where the DegenGeom and airfoil polars are located, by default this is set to the location of the
 # test case folder.
-dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/coax_load_prediction'
+dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/OLS Validation for Forward Flight'
 
 # %%
 ''''Patch file write directory setup'''
 
 # Directory were you would like to write out the patch and functional data flies. By default this path is configured
 # to be a separate folder in the 'dirDataFile'.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'CoaxPredict'))
+dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'test_10_5'))
 
 #   Blade geometry patch file name (without the extension).
 geomFileName = "Geom"
@@ -34,7 +34,7 @@ loadingFileName = "Load"
 # %%
 
 # Names of DegenGeom files add as many geometry cases as you wish separated by commas.
-dataFileNames = ["Actual_12D_DegenGeom.csv"]
+dataFileNames = ["OLS_DegenGeom.csv"]
 
 # Operational mode: set equal to one for design mode, which is ideal for geometric parametric studies, where each
 # variant of the blade geometry geometry corresponds to a different operating condition. Set this quantity equal to
@@ -52,14 +52,14 @@ savePickle = 0
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
 # number of 'XsecLocation'.
-airfoilPolarFileName = [['naca4412Re16E4.dat']]
+airfoilPolarFileName = [['b540olsRe11E5.dat']]
 
 #   Non-dimensional radial location of each airfoil cross section
-XsecLocation = [0.18380]
+XsecLocation = [0.182]
 
 # Starting angle of attack over which to evaluate the lift curve slop (degrees). The airfoil properties must have
 # been evaluated at this angle of attack.
-aStart = 2
+aStart = 1
 
 #   Range over which to evaluate to evaluate the lift curve slope (degrees).
 aLength = 4
@@ -71,40 +71,40 @@ check = 0
 ''' Operating condition configuration '''
 # Set equal to 1 in order to perform a wind tunnel trim on rotor (no longitudinal and lateral flapping), otherwise if
 # the blade pitch is fixed set equal to zero.
-trim = 0
+trim = 1
 
 # Number of Blades
 Nb = 2
 
 #   Forward velocity, set to zero for hover, input as many comma-delimited forward flight velocities as you wish to be
 # evaluated.
-Vx = [10]
+Vx = [37.02464]
 
 #   Vertical climb velocity (m/s), set to positive for ascent and negative for descent
 Vz = [0]
 
 #   Shaft tilt angle (degrees), forward tilt is designated by a negative tilt angle
-alphaShaft = [0]
+alphaShaft = [-2]
 
 #   Set the gross weight of the aircraft (N). Add as many comma-delimited thrust conditions as you wish into the list.
 # Separate functional data files will be written for each case. If you are running in the design mode ('OperMode' = 1),
 # the length of this list should be equal to the number of geometric cases ('dataFileNames').
-T = [10.04]
+T = [974.9446]
 
 # Populate this list with the rotational rates (rpm) of the rotor. If you are running in the design mode ('OperMode'
 # = 1), the length of this list should be equal to the number of geometric cases ('dataFileNames').
-omega = [7000]
+omega = [2250]
 
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.
-thetaInit = 0
+thetaInit = 1
 
 #   Position of loading line from the blade's leading edge as a percentage of the chord.
 loadPos = 0.25
 
 #   Set equal to 1 to include Pardtl's tip loss formulation, only applies to hovering rotors
-tipLoss = 1
+tipLoss =1
 
 # Density (kg/m^3)
 rho = 1.225
@@ -112,8 +112,8 @@ rho = 1.225
 # Speed of sound (m/s)
 c = 340
 
-#   Blade mass moment of inertia about the flap hinge(only required for forward flight).
-Ib = 1/3*2.22*(0.31115-0.091)**2
+#   Blade mass moment of inertia about the flap hinge (only required for forward flight).
+Ib = 1/3*2.266*(0.958-0.17436)**3
 
 #   Nondimensionalized rotating flap frequency, this quantity is dependent on the non-rotating natural frequency and
 # hinge offset of the blade (only required for forward flight).
@@ -191,7 +191,7 @@ zMax = [1.4888485708273682]
 # %%
 '''Spherical Observer Grid'''
 #   Radial position of the observers from the rotor hub.
-radius = [3.2]
+radius = [30.48]
 
 #   Number of in-plane observers
 nbTheta = 1

@@ -28,6 +28,7 @@ from functions.ConstantBPMWrite import ConstantBPMWrite
 from functions.PeriodicBPMWrite import PeriodicBPMWrite
 from functions.GeomPatchFileWrite import GeomPatchFileWrite
 from functions.ErrorHandles import ErrorHandles
+from functions.fixPitchLoadFF import  fixPitchLoadFF
 import numpy as np
 
 # %%
@@ -111,7 +112,7 @@ def main():
                 loadParams = loadingAxialHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vz)
                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
-                loadParams = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vx, Vz, alphaShaft)
+                loadParams = fixPitchLoadFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vx, Vz, alphaShaft)
                 PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega, dirSaveFile)
 
             if UserIn['BBNoiseFlag'] == 1:
