@@ -81,8 +81,8 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             {
                 'nbSourceContainers': 1,
                 'nbObserverContainers': 1,
-                'spectrumFlag': '.true.',
-                'SPLdBFLAG': '.true.',
+                'spectrumFlag': '.false.',
+                'SPLdBFLAG': '.false.',
                 'SPLdBAFlag': '.false.',
                 'OASPLdBAFlag': '.false.',
                 'OASPLdBFlag': '.false.',
@@ -224,39 +224,74 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
     }
 
     if UserIn['BBNoiseFlag'] == 0:
-        rotor = {
-            'containerin':
-                {
-                    'Title': "'Rotor'",
-                    'nbContainer': UserIn['Nb'],
-                    'nbBase': 3,
-                },
-            'cb':
-                [
+        if UserIn['rotation'] == 1:
+            rotor = {
+                'containerin':
                     {
-                        'Title': "'Rotation'",
-                        'rotation': '.true.',
-                        'AngleType': "'KnownFunction'",
-                        'Omega': nOmega / 60 * 2 * np.pi,
-                        'Psi0': 0,
-                        'AxisValue': [0, 0, 1],
+                        'Title': "'Rotor'",
+                        'nbContainer': UserIn['Nb'],
+                        'nbBase': 3,
                     },
+                'cb':
+                    [
+                        {
+                            'Title': "'Rotation'",
+                            'rotation': '.true.',
+                            'AngleType': "'KnownFunction'",
+                            'Omega': nOmega / 60 * 2 * np.pi,
+                            'Psi0': 0,
+                            'AxisValue': [0, 0, 1],
+                        },
+                        {
+                            'Title': "'Rotate to align blades with zero azimuth'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'AxisValue': [0, 0, 1],
+                            'angleValue': -np.pi / 2,
+                        },
+                        {
+                            'Title': "'Rotor disk AoA tilt'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'AxisValue': [0, 1, 0],
+                            'angleValue': - alphaShaft * np.pi / 180,
+                        }
+                    ]
+            }
+        else:
+            rotor = {
+                'containerin':
                     {
-                        'Title': "'Rotate to align blades with zero azimuth'",
-                        'AngleType': "'Timeindependent'",
-                        'AxisType': "'Timeindependent'",
-                        'AxisValue': [0, 0, 1],
-                        'angleValue': -np.pi / 2,
+                        'Title': "'Rotor'",
+                        'nbContainer': UserIn['Nb'],
+                        'nbBase': 3,
                     },
-                    {
-                        'Title': "'Rotor disk AoA tilt'",
-                        'AngleType': "'Timeindependent'",
-                        'AxisType': "'Timeindependent'",
-                        'AxisValue': [0, 1, 0],
-                        'angleValue': - alphaShaft * np.pi / 180,
-                    }
-                ]
-        }
+                'cb':
+                    [
+                        {
+                            'Title': "'Rotation'",
+                            'rotation': '.true.',
+                            'AngleType': "'KnownFunction'",
+                            'Omega': nOmega / 60 * 2 * np.pi,
+                            'Psi0': 0,
+                            'AxisValue': [0, 0, -1],
+                        },
+                        {
+                            'Title': "'Rotate to align blades with zero azimuth'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'AxisValue': [0, 0, 1],
+                            'angleValue': -np.pi / 2,
+                        },
+                        {
+                            'Title': "'Rotor disk AoA tilt'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'AxisValue': [0, 1, 0],
+                            'angleValue': - alphaShaft * np.pi / 180,
+                        }
+                    ]
+            }
 
     else:
         rotor = {
@@ -346,14 +381,8 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                             'A1': -loadParams['th'][1],
                             'B1': -loadParams['th'][2],
                             'AxisValue': [0, 1, 0],
-                        },
-                        {
-                            'Title': "'Coning'",
-                            'AngleType': "'Timeindependent'",
-                            'AxisType': "'Timeindependent'",
-                            'angleValue': loadParams['beta'][0],
-                            'AxisValue': [1, 0, 0],
                         }
+
                     ]
             }
         else:
@@ -383,13 +412,6 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                             'A1': -loadParams['th'][1],
                             'B1': -loadParams['th'][2],
                             'AxisValue': [0, 1, 0],
-                        },
-                        {
-                            'Title': "'Coning'",
-                            'AngleType': "'Timeindependent'",
-                            'AxisType': "'Timeindependent'",
-                            'angleValue': loadParams['beta'][0],
-                            'AxisValue': [1, 0, 0],
                         }
                     ]
             }

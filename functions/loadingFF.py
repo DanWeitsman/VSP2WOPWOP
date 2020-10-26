@@ -131,7 +131,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
             # CL,CD = searchPolar(AoA)
             CL = a*(theta_expanded-up/ut)
             # ct_dist = 1/2*solDist*ut**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
-            ct_dist = 1/2*solDist*ut**2*(CL*np.cos(up/ut)-0.1*CL*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
+            ct_dist = 1/2*solDist*ut**2*(CL*np.cos(up/ut)-0.1*CL*np.sin(up/ut))
 
             # ct_dist = 1/(4*np.pi) * solDist * ut ** 2 * a * (theta_expanded - up / ut)
             # ct_dist = 1/(4*np.pi)*solDist*a*(ut**2*theta_expanded-ut*up)
@@ -143,7 +143,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
             lamTPP_init = lamTTP_temp
             mu_x = mu
 
-        return beta,alpha,mu,CT,ct_dist,lamTTP_temp,theta_expanded,beta_expanded,ut,up
+        return beta,alpha,mu,CT,ct_dist,lamTTP_temp,theta_expanded,beta_expanded,ut,up,CL
 
     def fixed_pitch_trim(omega, lamTPP_init):
 
@@ -177,6 +177,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         weights = np.array([1, 1, 1])
         trimOut = WT_trim(th,mu_x,lamTPP_init)
         res = (trimTargs - np.array([trimOut[3], trimOut[0][1], trimOut[0][2]]))*weights
+        print(res)
         return res
 
     def fixed_pitch_residuals(omega, lamTPP_init):
@@ -266,14 +267,14 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     th1c = 1* (np.pi / 180)
     th1s = 1* (np.pi / 180)
     thInit = np.array([th0,th1c,th1s])
-    th = thInit
+
     # nuBeta = np.sqrt(1+3/2*(e/R))
     nuBeta = UserIn['nuBeta']
 
     targ_CT = W/(rho*np.pi*R**2*(omega*R)**2)
     targ_beta1c = 0
     targ_beta1s = 0
-    if UserIn['trim'] == 1:
+    if UserIn['trim'] == 3:
         trimTargs = [targ_CT,targ_beta1c,targ_beta1s]
     else:
         trimTargs = W
@@ -318,14 +319,14 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     # functions were written for each variety of pitch since the independent variable (th and omega),
     # which is optimized must be the first argument of each of these functions in order for scipy.least_squares to
     # run properly.
-    if UserIn['trim'] == 1:
-        trim_sol = least_squares(variable_pitch_residuals, th, args = [targ_CT,omega,mu_x,lamTPP_init] ,method='lm')
+    if UserIn['trim'] == 3:
+        trim_sol = least_squares(variable_pitch_residuals, thInit, args = [targ_CT,omega,mu_x,lamTPP_init] ,method='lm',diff_step=0.5)
         th = trim_sol.x
         #   Run WT_trim once again with the trimmed values to return quantities necessary in computing the blade loads
-        beta, alpha, mu, CT, distCT, lamTPP, theta_expanded, beta_expanded, ut, up = WT_trim(th, mu_x, lamTPP_init)
+        beta, alpha, mu, CT, distCT, lamTPP, theta_expanded, beta_expanded, ut, up,CL = WT_trim(th, mu_x, lamTPP_init)
 
     else:
-        trim_sol = least_squares(fixed_pitch_residuals, np.array([omega]), args = [lamTPP_init],method = 'lm',bounds=([-np.inf, 1.5], np.inf, np.inf))
+        trim_sol = least_squares(fixed_pitch_residuals,omega, args = [lamTPP_init],method = 'lm')
         omega = trim_sol.x
         theta_expanded = geomParams['twistDist']
         beta_expanded = np.zeros(1)
@@ -335,7 +336,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     #%%
 
     #   Run to return hub loads
-    hubLM = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
+    # hubLM = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
 
     #   Dimensionalized tangential, normal, and radial velocities
     UT = ut*(omega*R)
@@ -351,7 +352,7 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     dFz = dT/Nb
 
     #   Computes distributed and integrated thrust as well as the in-plane force component
-    distCQ = 0.5*solDist*ut**2*r*(a*(theta_expanded-up/ut)*np.sin(up/ut)+cd0*np.cos(up/ut))
+    distCQ = 0.5*solDist*r**3*(CL*np.sin(up/ut)+cd0*np.cos(up/ut))
     CQ = 1/(2*np.pi)*np.trapz(np.trapz(distCQ,r),phi)
     dQ = rho*np.pi*R**3*(omega*R)**2*distCQ
     Q = 1/(2*np.pi)*np.trapz(np.trapz(dQ,r),phi)
@@ -360,20 +361,20 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     P = Q * omega
     dFx = dQ / (Nb * r * R)
     #   Radial force component, computed using eq. 1.31 of HELICOPTER DYNAMICS (2011, Chopra et al.)
-    dFy = 0.5*rho*geomParams['chordDist']*U**2*(-a*(theta_expanded-up/ut)*np.expand_dims(np.sin(beta_expanded),axis = 1)+cd0*np.sin(np.expand_dims(UR,axis=1)/UT))
-
+    # dFy = 0.5*rho*geomParams['chordDist']*U**2*(-a*(theta_expanded-up/ut)*np.expand_dims(np.sin(beta_expanded),axis = 1)+cd0*np.sin(np.expand_dims(UR,axis=1)/UT))
+    dFy = np.zeros((np.shape(dFz)))
 
 
 #%%
     # assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
     loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'lamTPP': lamTPP ,'alpha':alpha,'gamma':gamma,'mu_x':mu_x,'phi':phi,'th':th,'beta':beta,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
-                  'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFy,'dFz':dFz,'hubLM':hubLM}
+                  'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFy,'dFz':dFz}
 
     return loadParams
-
-# import matplotlib.pyplot as plt
-# fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-# # dist = ax.contourf(phi, r, np.expand_dims(geomParams['twistDist'],axis = 1)-np.transpose(up/ut))
-# levels = np.linspace(-0.075,0.1,30)
-# dist = ax.contourf(phi, r, np.transpose((theta_expanded-up/ut)),levels = levels)
-# plt.colorbar(dist)
+    #
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    # dist = ax.contourf(phi, r, np.expand_dims(geomParams['twistDist'],axis = 1)-np.transpose(up/ut))
+    levels = np.linspace(np.min(dFz),np.max(dFz),200)
+    dist = ax.contourf(phi, r, np.transpose((dFz)),levels = levels)
+    plt.colorbar(dist)

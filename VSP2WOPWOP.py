@@ -28,8 +28,7 @@ from functions.ConstantBPMWrite import ConstantBPMWrite
 from functions.PeriodicBPMWrite import PeriodicBPMWrite
 from functions.GeomPatchFileWrite import GeomPatchFileWrite
 from functions.ErrorHandles import ErrorHandles
-from functions.fixPitchLoadFF import  fixPitchLoadFF
-import numpy as np
+from functions.loadingFFV3 import  loadingFFv3
 
 # %%
 def main():
@@ -55,7 +54,7 @@ def main():
 
         # Processes the DegenGeom to extract the blade geometric properties (e.g. radius, root cut-out, local solidity,
         # radial pitch and chord distributions)
-        geomParams = geomProcess(dataSorted, indHeader, UserIn['loadPos'], UserIn['Nb'])
+        geomParams = geomProcess(dataSorted, indHeader, UserIn['loadPos'], UserIn['Nb'],UserIn['rotation'])
 
         # Reads and evaluates the XFoil polars, this is only done once during the first iteration of the outer for
         # loop.
@@ -112,7 +111,7 @@ def main():
                 loadParams = loadingAxialHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vz)
                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
-                loadParams = fixPitchLoadFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vx, Vz, alphaShaft)
+                loadParams = loadingFFv3(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vx, Vz, alphaShaft)
                 PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega, dirSaveFile)
 
             if UserIn['BBNoiseFlag'] == 1:

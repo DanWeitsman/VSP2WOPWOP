@@ -61,13 +61,13 @@ def polarRead(UserIn,iii):
 
         minInd, alpha0, ClMin, CdMin, maxInd, alpha1, ClMax, CdMax = min_max_CL_search(polar)
 
-        dx = polar[1, 0] - polar[0, 0]
-        padInd = 5
+        dx = round(polar[1, 0] - polar[0, 0],3)
+        padInd = 10
         polar= polar[minInd-padInd:maxInd+padInd,:]
 
         polar[:,0] =  polar[:,0]%360
-        polar2 = np.zeros((int((polar[0,0]-polar[-1,0]-dx)/dx),3))
-        polar2[:,0] = np.arange(polar[-1,0]+dx, polar[0,0], dx)
+        polar2 = np.zeros((int((polar[0,0]-polar[-1,0])/dx),3))
+        polar2[:,0] = polar[-1,0]+dx+np.arange((int((polar[0,0]-polar[-1,0])/dx)))*dx
         polar2[:, 1] = np.interp(polar2[:,0],[polar[-1,0],polar[0,0]],[polar[-1,1],polar[0,1]])
         polar2[:, 2] = CdMax
         polar = np.concatenate((polar, polar2))
@@ -83,10 +83,10 @@ def polarRead(UserIn,iii):
 
         if UserIn['check'] == 1:
             import matplotlib.pyplot as plt
-            polar[:,0] = polar[:,0]*180/np.pi
-            zeroInd = np.squeeze(np.where(polar[:,0]==alpha0))
-            maxInd = np.squeeze(np.where(polar[:,0]==alpha1))
-            plt.plot(polar[zeroInd:maxInd+2*padInd, 0], polar[zeroInd:maxInd+2*padInd, 1],label=airfoilName+', '+str(round(UserIn['omega'][iii]))+'RPM')
+            polar[:,0] = (polar[:,0]*180/np.pi)
+            zeroInd = np.squeeze(np.where(polar[:,0]==alpha0%360))
+            maxInd = np.squeeze(np.where(polar[:,0]==alpha1%360))
+            plt.plot(polar[zeroInd:int(maxInd+2*padInd), 0], polar[zeroInd:maxInd+2*padInd, 1],label=airfoilName+', '+str(round(UserIn['omega'][iii]))+'RPM')
             plt.plot(polar[ind[0]:ind[1],0],y,color='r')
             plt.scatter(alpha0, ClMin,color='g')
             plt.scatter(alpha1, ClMax,color='g')
