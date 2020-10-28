@@ -29,7 +29,7 @@ from functions.PeriodicBPMWrite import PeriodicBPMWrite
 from functions.GeomPatchFileWrite import GeomPatchFileWrite
 from functions.ErrorHandles import ErrorHandles
 from functions.loadingFFV3 import  loadingFFv3
-
+from functions.designModeVal import designModeVal
 # %%
 def main():
 
@@ -76,34 +76,9 @@ def main():
             #   Writes out the blade geometry and lifting line compact geometry patch files
             GeomPatchFileWrite(UserIn['geomFileName'], geomParams, dirSaveFile)
 
-            # In the design mode each DegenGeom variant can be trimmed to the same or have its own respective thrust
-            # condition. This if statement selects the correct thrust condition before passing it on to the loading
-            # module.
-
-            if len(UserIn['T']) > 1:
-                T = UserIn['T'][iter_geom]
-            else:
-                T = UserIn['T'][0]
-
-            if len(UserIn['Vz']) > 1:
-                Vz = UserIn['Vz'][iter_geom]
-            else:
-                Vz = UserIn['Vz'][0]
-
-            if len(UserIn['omega']) > 1:
-                omega = UserIn['omega'][iter_geom]
-            else:
-                omega = UserIn['omega'][0]
-
-            if len(UserIn['Vx']) > 1:
-                Vx = UserIn['Vx'][iter_geom]
-            else:
-                Vx = UserIn['Vx'][0]
-
-            if len(UserIn['alphaShaft']) > 1:
-                alphaShaft = UserIn['alphaShaft'][iter_geom]
-            else:
-                alphaShaft = UserIn['alphaShaft'][0]
+            # This function returns the values, which are specified as lists in the input module, corresponding to the
+            # current DegenGeom index
+            T, Vz, Vx, omega, alphaShaft = designModeVal(UserIn, iter_geom)
 
             # This section of code determines whether to run the hover/axial or forward flight module and writes out
             # the corresponding constant or periodic functional data file, respectively.

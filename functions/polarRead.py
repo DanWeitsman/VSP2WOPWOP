@@ -27,21 +27,6 @@ def polarRead(UserIn,iii):
         maxInd = minInd + np.squeeze(np.where(np.sign(np.diff(PolarData[minInd:, 1])) == -1))[0]
         return minInd,PolarData[minInd,0], PolarData[minInd,1], PolarData[minInd,2],maxInd,PolarData[maxInd,0], PolarData[maxInd,1],PolarData[maxInd,2]
 
-    # def SeekClMax(PolarData,minInd):
-    #
-    #     maxInd = minInd+np.squeeze(np.where(np.sign(np.diff(PolarData[minInd:,1])) == -1))[0]
-    #
-    #     # maxInd = []
-    #     # for iii, n in enumerate(PolarData[intBounds:-intBounds,1]):
-    #     #     if PolarData[iii,1] < n and n > PolarData[iii+2*intBounds,1]:
-    #     #         maxInd.append(iii)
-    #     #
-    #     # maxInd = np.asarray(maxInd)
-    #     # maxInd = maxInd[np.squeeze(np.where((searchBounds[1] > PolarData[maxInd,0]) == (searchBounds[0] < PolarData[maxInd,0])))]
-    #     # if np.size(maxInd) > 1:
-    #     #     maxInd = maxInd[np.squeeze(np.where(PolarData[maxInd, 1] == np.max(PolarData[maxInd, 1])))]
-    #     return PolarData[maxInd,0], PolarData[maxInd,1],PolarData[maxInd,2],maxInd
-
     #%%
     for i, file in enumerate(airfoilPolarFileName):
         with open(os.path.expanduser(dirDataFile+os.path.sep+file)) as f:
@@ -61,16 +46,16 @@ def polarRead(UserIn,iii):
 
         minInd, alpha0, ClMin, CdMin, maxInd, alpha1, ClMax, CdMax = min_max_CL_search(polar)
 
-        dx = round(polar[1, 0] - polar[0, 0],3)
-        padInd = 10
-        polar= polar[minInd-padInd:maxInd+padInd,:]
-
-        polar[:,0] =  polar[:,0]%360
-        polar2 = np.zeros((int((polar[0,0]-polar[-1,0])/dx),3))
-        polar2[:,0] = polar[-1,0]+dx+np.arange((int((polar[0,0]-polar[-1,0])/dx)))*dx
-        polar2[:, 1] = np.interp(polar2[:,0],[polar[-1,0],polar[0,0]],[polar[-1,1],polar[0,1]])
-        polar2[:, 2] = CdMax
-        polar = np.concatenate((polar, polar2))
+        # dx = round(polar[1, 0] - polar[0, 0],3)
+        # padInd = 10
+        # polar= polar[minInd-padInd:maxInd+padInd,:]
+        #
+        # polar[:,0] =  polar[:,0]%360
+        # polar2 = np.zeros((int((polar[0,0]-polar[-1,0])/dx),3))
+        # polar2[:,0] = polar[-1,0]+dx+np.arange((int((polar[0,0]-polar[-1,0])/dx)))*dx
+        # polar2[:, 1] = np.interp(polar2[:,0],[polar[-1,0],polar[0,0]],[polar[-1,1],polar[0,1]])
+        # polar2[:, 2] = CdMax
+        # polar = np.concatenate((polar, polar2))
 
         ind = [bisect.bisect_left(polar[:,0],aStart),bisect.bisect_left(polar[:, 0], aStart + aLength)]
 
@@ -83,18 +68,24 @@ def polarRead(UserIn,iii):
 
         if UserIn['check'] == 1:
             import matplotlib.pyplot as plt
-            polar[:,0] = (polar[:,0]*180/np.pi)
-            zeroInd = np.squeeze(np.where(polar[:,0]==alpha0%360))
-            maxInd = np.squeeze(np.where(polar[:,0]==alpha1%360))
-            plt.plot(polar[zeroInd:int(maxInd+2*padInd), 0], polar[zeroInd:maxInd+2*padInd, 1],label=airfoilName+', '+str(round(UserIn['omega'][iii]))+'RPM')
-            plt.plot(polar[ind[0]:ind[1],0],y,color='r')
-            plt.scatter(alpha0, ClMin,color='g')
-            plt.scatter(alpha1, ClMax,color='g')
 
-            plt.ylabel('Lift Coefficient')
-            plt.xlabel('Angle of Attack')
-            plt.xlim(-10, 20)
-            plt.ylim(-0.5,1.9)
+            color = ['tab:blue','tab:red']
+            fig,ax1 = plt.subplots(1,1,figsize = (6.4,4.5))
+            #,label=airfoilName+', '+str(round(UserIn['omega'][iii]
+            ax1.plot(polar[:,0]*180/np.pi, polar[:, 1],color = color[0],label=airfoilName+', '+str(round(UserIn['omega'][iii]))+' rpm')
+            ax1.plot(polar[ind[0]:ind[1],0]*180/np.pi,y,color='k')
+            ax1.tick_params(axis='y', labelcolor=color[0])
+            ax1.scatter(alpha0, ClMin,color='g')
+            ax1.scatter(alpha1, ClMax,color='g')
+            ax1.set_ylabel('Lift Coefficient',color = color[0])
+            ax1.set_xlabel('Angle of Attack')
+            ax1.set_xlim(-10, 20)
+            ax1.set_ylim(-0.5,1.9)
+            ax2 = ax1.twinx()
+            ax2.plot(polar[:,0]*180/np.pi, polar[:, 2],color = color[1],label=airfoilName+', '+str(round(UserIn['omega'][iii]))+' rpm')
+            ax2.set_ylabel('Drag Coefficient',color = color[1])
+            ax2.set_ylim(0,0.125)
+            ax2.tick_params(axis='y', labelcolor=color[1])
             plt.grid('on')
             plt.legend()
             plt.show()

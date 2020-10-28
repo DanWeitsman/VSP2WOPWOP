@@ -6,7 +6,6 @@
 #   The periodic blade loads are also computed.
 #%%
 import bisect
-import time
 import numpy as np
 from scipy.optimize import least_squares
 
@@ -30,7 +29,7 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         return res
 
 
-    def variable_pitch_residuals(th,mu_x, lamTPP_init):
+    def variable_pitch_residuals(th,mu, lamTPP_init):
         '''
         This function computes the residuals between the trim targets and computed trim variables for collective and cyclic pitch trim.
 
@@ -41,10 +40,10 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         '''
 
         if UserIn['trim'] == 2:
-            trimOut = variable_pitch_trim([th,0,0], mu_x, lamTPP_init)
+            trimOut = variable_pitch_trim([th,0,0], mu, lamTPP_init)
             res = trimTargs - trimOut[0]
         else:
-            trimOut = variable_pitch_trim(th, mu_x, lamTPP_init)
+            trimOut = variable_pitch_trim(th, mu, lamTPP_init)
             res = trimTargs - np.array([trimOut[0], trimOut[3], trimOut[4]])
         print(res)
         return res
@@ -61,7 +60,7 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         lamTPP_init = inflowModSelect(UserIn['inflowMod'], mu*np.tan(alphaInit), mu, CT)
 
         err = 1
-        while err > 0.0005:
+        while np.any(err > 0.0005):
 
             up = inflowModSelect(UserIn['inflowMod'],lamTPP_init, mu, CT)
             ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
@@ -245,7 +244,6 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     phi = np.linspace(0,2*np.pi,phiRes)
     a = np.ones((len(r)))*XsecPolar[list(XsecPolar.keys())[0]]['Lift Slope']
     th0 = UserIn['thetaInit']*np.pi/180
-    gamma = np.mean((rho * a * geomParams['chordDist'] * R ** 4) / UserIn['Ib'])
 
 # %% This section of code assigns the airfoil parameters from the XFoil polar to the corresponding radial section
 
@@ -282,7 +280,7 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     elif UserIn['trim'] == 2:
         trimTargs = W/(rho*np.pi*R**2*(omega*R)**2)
         lamTPP_init =  inflowModSelect(UserIn['inflowMod'], mu*np.tan(alphaInit), mu, trimTargs)
-        trim_sol = least_squares(variable_pitch_residuals, th0, args=[mu, lamTPP_init], method='lm',diff_step = 0.5)
+        trim_sol = least_squares(variable_pitch_residuals, th0, args=[mu, lamTPP_init], method='lm')
         th = [trim_sol.x,0,0]
         CT,dCT,dFz,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
@@ -292,7 +290,7 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         lamTPP_init =  inflowModSelect(UserIn['inflowMod'], mu*np.tan(alphaInit), mu, trimTargs[0])
         trim_sol = least_squares(variable_pitch_residuals, th ,args = [mu, lamTPP_init],method = 'lm')
         th = trim_sol.x
-        CT,dCT,dFz,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu_x, lamTPP_init)
+        CT,dCT,dFz,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
 
 #%%
@@ -318,6 +316,9 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         dFz = np.flip(dFz,axis = 0)
         dFx = np.flip(dFx, axis=0)
         AoA = np.flip(AoA, axis=0)
+        U = np.flip(U, axis=0)
+        if UserIn['inflowMod'] !=1:
+            lam = np.flip(lam, axis=0)
 
     #   hub force
     H = Nb/(2*np.pi)*np.trapz(np.trapz((dFr*np.expand_dims(np.cos(phi),axis = 1)+dFx*np.expand_dims(np.sin(phi),axis = 1)),r),phi)
@@ -331,17 +332,17 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
 
     #   assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
-    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'alpha':alphaInit,'gamma':gamma,'mu_x':mu_x,'phi':phi,'th':th,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
+    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'alpha':alphaInit,'mu':mu,'phi':phi,'th':th,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
                   'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFr,'dFz':dFz,'hubLM':hubLM}
     #
     return loadParams
 
 
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
 
-    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    quant = lam
-    levels = np.linspace(np.min(quant),np.max(quant),50)
-    dist = ax.contourf(phi, r, np.transpose(quant),levels = levels)
-    cbar = fig.colorbar(dist)
-    cbar.ax.set_ylabel('dFz')
+    # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    # quant = dFz
+    # levels = np.linspace(np.min(quant),np.max(quant),50)
+    # dist = ax.contourf(phi, r, np.transpose(quant),levels = levels)
+    # cbar = fig.colorbar(dist)
+    # cbar.ax.set_ylabel('$dFz$')

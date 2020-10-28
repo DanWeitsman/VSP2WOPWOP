@@ -23,7 +23,7 @@ dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/OLS Validation for
 
 # Directory were you would like to write out the patch and functional data flies. By default this path is configured
 # to be a separate folder in the 'dirDataFile'.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'full_trim'))
+dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'drees_trim'))
 
 #   Blade geometry patch file name (without the extension).
 geomFileName = "Geom"
@@ -73,7 +73,7 @@ check = 0
 # pitch), 2 for a collective pitch trim (the collective pitch is adjusted to attain the thrust coefficient computed
 # with the thrust and rpm specified below), and 3 for a full cyclic pitch trim (cyclic and collective pitch inputs
 # are varied to attain the desired thrust condition, while the longitudinal and lateral flapping angles are minimized).
-trim = 3
+trim = 1
 
 #   Direction of rotation set equal to 1 for CCW and 2 for CW
 rotation = 2
@@ -103,7 +103,7 @@ omega = [2250]
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.
-thetaInit = 5
+thetaInit = 3
 
 #   Position of loading line from the blade's leading edge as a percentage of the chord.
 loadPos = 0.25
@@ -120,18 +120,11 @@ c = 340
 #   Inflow model selection, set equal to 1 for constant inflow, 2 for Glauert's linear, or 3 for Drees's model.
 inflowMod = 3
 
-#   Blade mass moment of inertia about the flap hinge (only required for forward flight).
-Ib = 1/3*2.266*(0.958-0.17436)**2
-
-#   Nondimensionalized rotating flap frequency, this quantity is dependent on the non-rotating natural frequency and
-# hinge offset of the blade (only required for forward flight).
-nuBeta = 1
-
 # %%
 '''Broadband noise analysis configuration '''
 
 #   Set equal to '1' to conduct a broadband noise prediction,'0' otherwise.
-BBNoiseFlag = 0
+BBNoiseFlag = 1
 
 #   Broadband noise method, set equal to '1' for Pegg's and '2' for the BPM's method.
 BBNoiseModel = 2
@@ -142,7 +135,7 @@ BBNoiseModel = 2
 nmlWrite = 1
 
 #   Name of the namelist file that will be the same for all cases.
-NmlFileName = 'full_trim.nam'
+NmlFileName = 'OLS.nam'
 
 #%%
 '''Observer namelist configuration'''
@@ -199,7 +192,7 @@ zMax = [1.4888485708273682]
 # %%
 '''Spherical Observer Grid'''
 #   Radial position of the observers from the rotor hub.
-radius = [3.44]
+radius = [3.2]
 
 #   Number of in-plane observers
 nbTheta = 1
@@ -224,7 +217,7 @@ UserIn = {'dirDataFile': dirDataFile, 'OperMode': operMode, 'savePickle': savePi
           'airfoilPolarFileName': airfoilPolarFileName, 'XsecLocation': XsecLocation,
           'aStart': aStart, 'aLength': aLength, 'check': check,'trim':trim, 'Nb': Nb,'rotation':rotation, 'Vx': Vx, 'Vz': Vz, 'alphaShaft': alphaShaft,
           'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss, 'inflowMod':inflowMod,'rho': rho, 'c': c,
-          'Ib': Ib, 'nuBeta': nuBeta, 'nmlWrite': nmlWrite, 'dirPatchFile': dirPatchFile,
+          'nmlWrite': nmlWrite, 'dirPatchFile': dirPatchFile,
           'geomFileName': geomFileName, 'loadingFileName': loadingFileName, 'BBNoiseModel':BBNoiseModel,
           'BBNoiseFlag': BBNoiseFlag, 'NmlFileName': NmlFileName, 'nRev': nRev, 'nt': nt, 'obsType': obsType, 'xLoc': xLoc,
           'yLoc': yLoc, 'zLoc': zLoc, 'nbx': nbx, 'nby': nby, 'nbz': nbz, 'xMin': xMin, 'yMin': yMin, 'zMin': zMin,
