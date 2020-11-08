@@ -363,7 +363,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                         'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
                         'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
                         'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
-                        'nbBase': 1,
+                        'nbBase': 2,
                     },
                 'cb':
                     [
@@ -376,11 +376,10 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                         },
                         {
                             'Title': "'Pitch'",
-                            'AngleType': "'Periodic'",
-                            'A0': loadParams['th'][0],
-                            'A1': -loadParams['th'][1],
-                            'B1': -loadParams['th'][2],
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
                             'AxisValue': [0, 1, 0],
+                            'angleValue': loadParams['th'][0],
                         }
 
                     ]
@@ -394,7 +393,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                         'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
                         'periodicKeyOffset': 2 * np.pi / UserIn['Nb']*Nb,
                         # 'periodicKeyOffset': (nOmega/60)**-1/UserIn['Nb']*Nb,
-                        'nbBase': 1,
+                        'nbBase': 2,
                     },
                 'cb':
                     [

@@ -70,17 +70,14 @@ def geomProcess(dataSorted, indHeader, loadPos, Nb,rotation):
     # r = np.linspace(e / R, 1, len(solDist))
 
     #   Local solidity computed at cross-sections
-    solDist = np.cumsum(Nb * chordDist * sectLen) / (np.pi *rdim ** 2)
-    solDist[0] = 0
-
-    bladeArea = np.sum(Nb * chordDist * np.insert(np.diff(rdim), 0, np.diff(rdim)[0]))
-    sol = bladeArea/(np.pi*R**2)
+    solDist = Nb*chordDist/(np.pi*R)
+    sol = np.mean(solDist)
 
     #   Coordinates of the lifting line
     liftLineCoord = LENodes - (LENodes - TENodes) * loadPos
     liftLineNorm = np.transpose((np.sin(twistDist),np.zeros(len(twistDist)),np.cos(twistDist)))
 
-    geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'bladeArea':bladeArea,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,
+    geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,
                   'solidity':sol,'surfNodes':surfNodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r}
 
 

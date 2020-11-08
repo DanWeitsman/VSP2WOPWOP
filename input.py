@@ -23,7 +23,7 @@ dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/OLS Validation for
 
 # Directory were you would like to write out the patch and functional data flies. By default this path is configured
 # to be a separate folder in the 'dirDataFile'.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'drees_trim'))
+dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'pp_model'))
 
 #   Blade geometry patch file name (without the extension).
 geomFileName = "Geom"
@@ -73,7 +73,7 @@ check = 0
 # pitch), 2 for a collective pitch trim (the collective pitch is adjusted to attain the thrust coefficient computed
 # with the thrust and rpm specified below), and 3 for a full cyclic pitch trim (cyclic and collective pitch inputs
 # are varied to attain the desired thrust condition, while the longitudinal and lateral flapping angles are minimized).
-trim = 1
+trim =3
 
 #   Direction of rotation set equal to 1 for CCW and 2 for CW
 rotation = 2
@@ -103,13 +103,13 @@ omega = [2250]
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.
-thetaInit = 3
+thetaInit = 4
 
 #   Position of loading line from the blade's leading edge as a percentage of the chord.
 loadPos = 0.25
 
 #   Set equal to 1 to include Pardtl's tip loss formulation, only applies to hovering rotors
-tipLoss = 1
+tipLoss = 0
 
 # Density (kg/m^3)
 rho = 1.225
@@ -117,14 +117,14 @@ rho = 1.225
 # Speed of sound (m/s)
 c = 340
 
-#   Inflow model selection, set equal to 1 for constant inflow, 2 for Glauert's linear, or 3 for Drees's model.
-inflowMod = 3
+#   Inflow model selection (only applies in forward flight), set equal to 1 for constant inflow, 2 for Glauert's linear,  3 for Drees's model, or 4 for Pitt-Peter's steady inflow.
+inflowMod = 1
 
 # %%
 '''Broadband noise analysis configuration '''
 
 #   Set equal to '1' to conduct a broadband noise prediction,'0' otherwise.
-BBNoiseFlag = 1
+BBNoiseFlag = 0
 
 #   Broadband noise method, set equal to '1' for Pegg's and '2' for the BPM's method.
 BBNoiseModel = 2

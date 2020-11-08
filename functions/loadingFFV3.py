@@ -44,7 +44,7 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
             res = trimTargs - trimOut[0]
         else:
             trimOut = variable_pitch_trim(th, mu, lamTPP_init)
-            res = trimTargs - np.array([trimOut[0], trimOut[3], trimOut[4]])
+            res = trimTargs - np.array([trimOut[0], trimOut[2], trimOut[3]])
         print(res)
         return res
 
@@ -62,7 +62,7 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         err = 1
         while np.any(err > 0.0005):
 
-            up = inflowModSelect(UserIn['inflowMod'],lamTPP_init, mu, CT)
+            up = inflowModSelect(UserIn['inflowMod'],lamTPP_init, mu, CT,dCT)
             ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
             AoA = (geomParams['twistDist']-up/ut)%(2*np.pi)
             CL,CD = aeroParams(AoA)
@@ -109,17 +109,16 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
             dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))
             CT = 1/(2*np.pi)*np.trapz(np.trapz(dCT,r),phi)
 
-            lamTTP_temp = inflowModSelect(UserIn['inflowMod'], lamTPP_init, mu, CT)
+            lamTTP_temp = inflowModSelect(UserIn['inflowMod'], lamTPP_init, mu, CT, dCT)
             err = np.abs((lamTTP_temp - lamTPP_init) / lamTTP_temp)
             lamTPP_init = lamTTP_temp
 
-        dFz = rho * np.pi * R ** 2 * (omega * R) ** 2 * dCT/Nb
-        Mx = Nb/(2*np.pi)*np.trapz(np.trapz(geomParams['rdim']*dFz*np.expand_dims(np.sin(phi),axis = 1),r),phi)
-        My = -Nb/(2*np.pi)*np.trapz(np.trapz(geomParams['rdim']*dFz*np.expand_dims(np.cos(phi),axis = 1),r),phi)
+        Mx = 1/(2*np.pi)*np.trapz(np.trapz(r*Nb*dCT/Nb*np.expand_dims(np.sin(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
+        My = -1/(2*np.pi)*np.trapz(np.trapz(r*Nb*dCT/Nb*np.expand_dims(np.cos(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
 
-        return CT,dCT,dFz,Mx,My,lamTTP_temp,theta_expanded,ut,up,CL,CD,AoA
+        return CT,dCT,Mx,My,lamTTP_temp,theta_expanded,ut,up,CL,CD,AoA
 
-    def inflowModSelect(model, lam, mu,CT):
+    def inflowModSelect(model, lam, mu,CT, *args):
         '''
         This function selects and returns the converged inflow distribution based on the model specified in the user input module.
         :param model: integer specifing the model selected in the input module (UserIn['inflowMod'])
@@ -132,8 +131,10 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
             lam = constant_inflow(lam, mu, CT)
         elif model == 2:
             lam = linear_inflow(lam, mu, CT)
-        else:
+        elif model == 3:
             lam = drees_inflow(lam, mu, CT)
+        elif model == 4:
+            lam = pitt_peters_inflow(lam, mu, args[0])
         return lam
 
     def constant_inflow(lam,mu,CT):
@@ -184,12 +185,41 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         '''
         err = 1
         while np.any(err > 0.0005):
-            wake_skew = np.arctan(mu*np.cos(alphaInit)/(mu*np.sin(-alphaInit)+lam))
+            wake_skew = np.arctan(mu*np.cos(alphaInit)/lam)
             kx = 4/3*((1-np.cos(wake_skew)-1.8*mu**2)/np.sin(wake_skew))
             ky = -2*mu
             lam_temp = CT / (2 * np.sqrt(mu ** 2 + lam ** 2))*(1+kx*r*np.expand_dims(np.cos(phi),axis = 1)+ky*r*np.expand_dims(np.sin(phi),axis = 1))
             err = np.abs((lam_temp - lam) / lam_temp)
             lam = lam_temp
+        return lam
+
+    def pitt_peters_inflow(lam, mu, dCT):
+        '''
+        This function computes the inflow distribution based on the steady component of the Pitt-Peters model. This
+        formulation was originally presented in, Pitt, Dale M., and David A. Peters. "Theoretical prediction of
+        dynamic-inflow derivatives." (1980) and then again in Chen, Robert TN. "A survey of nonuniform inflow models
+        for rotorcraft flight dynamics and control applications." (1989). This model takes into account the effects
+        that the hub moments have on the steady (1st harmonic) induced velocity distribution. This model should be
+        used when performing the fixed/collective pitch trim since the inflow distribution would inevitably vary in
+        order to produce the necessary reaction to counteract the hub moments.
+        :param lam: initial guess for the inflow distribution
+        :param mu: advance ratio
+        :param dCT: radial and azimuthal distribution of the thrust coefficient
+        '''
+
+        CT = 1/(2*np.pi)*np.trapz(np.trapz(dCT,r),phi)
+        CMX = 1/(2 * np.pi) * np.trapz(np.trapz(r * Nb * dCT / Nb * np.expand_dims(np.sin(phi), axis=1), r), phi)
+        CMY = -1/(2 * np.pi) * np.trapz(np.trapz(r * Nb * dCT / Nb * np.expand_dims(np.cos(phi), axis=1), r), phi)
+
+        lam = constant_inflow(lam, mu, CT)
+        wake_skew = np.arctan(mu*np.cos(alphaInit)/lam)
+        vt = np.sqrt((mu*np.cos(alphaInit))**2+lam**2)
+        vm = ((mu*np.cos(alphaInit))**2+lam*(lam+CT/(2*np.sqrt(mu**2 + lam**2))))/vt
+
+        L = np.array([[0.5*vt,0,15*np.pi/(64*vm)*np.tan(wake_skew/2)],[0,-4/(vm*(1+np.cos(wake_skew))),0],[15*np.pi/(64*vt)*np.tan(wake_skew/2),0,-4*np.cos(wake_skew)/(vm*(1+np.cos(wake_skew)))]])
+        lam_0,lam_1c,lam_1s = np.dot(L,[CT,CMX,CMY])
+        lam = lam_0 + lam_1c*r*np.expand_dims(np.cos(phi),axis = 1)+ lam_1s*r*np.expand_dims(np.sin(phi),axis = 1)
+
         return lam
 
     def aeroParams(AoA):
@@ -246,8 +276,8 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     th0 = UserIn['thetaInit']*np.pi/180
 
 # %% This section of code assigns the airfoil parameters from the XFoil polar to the corresponding radial section
+# along the blade span
 
-    # along the blade span
     XsecPolarExp = {}
     if len(XsecLocation) > 1:
         polarInd = []
@@ -279,10 +309,10 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
 
     elif UserIn['trim'] == 2:
         trimTargs = W/(rho*np.pi*R**2*(omega*R)**2)
-        lamTPP_init =  inflowModSelect(UserIn['inflowMod'], mu*np.tan(alphaInit), mu, trimTargs)
+        lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs)
         trim_sol = least_squares(variable_pitch_residuals, th0, args=[mu, lamTPP_init], method='lm')
         th = [trim_sol.x,0,0]
-        CT,dCT,dFz,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
+        CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
     else:
         trimTargs = [W/(rho*np.pi*R**2*(omega*R)**2),0,0]
@@ -290,7 +320,7 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         lamTPP_init =  inflowModSelect(UserIn['inflowMod'], mu*np.tan(alphaInit), mu, trimTargs[0])
         trim_sol = least_squares(variable_pitch_residuals, th ,args = [mu, lamTPP_init],method = 'lm')
         th = trim_sol.x
-        CT,dCT,dFz,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
+        CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
 
 #%%
@@ -338,11 +368,11 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     return loadParams
 
 
-    # import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
 
-    # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    # quant = dFz
-    # levels = np.linspace(np.min(quant),np.max(quant),50)
-    # dist = ax.contourf(phi, r, np.transpose(quant),levels = levels)
-    # cbar = fig.colorbar(dist)
-    # cbar.ax.set_ylabel('$dFz$')
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    quant = dFz
+    levels = np.linspace(np.min(quant),np.max(quant),50)
+    dist = ax.contourf(phi, r, np.transpose(quant),levels = levels)
+    cbar = fig.colorbar(dist)
+    cbar.ax.set_ylabel('$dFz$')
