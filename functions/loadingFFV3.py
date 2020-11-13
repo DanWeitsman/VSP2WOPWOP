@@ -311,13 +311,13 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         trimTargs = W/(rho*np.pi*R**2*(omega*R)**2)
         lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs)
         trim_sol = least_squares(variable_pitch_residuals, th0, args=[mu, lamTPP_init], method='lm')
-        th = [trim_sol.x,0,0]
+        th = np.array([np.squeeze(trim_sol.x),0 ,0 ])
         CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
     else:
         trimTargs = [W/(rho*np.pi*R**2*(omega*R)**2),0,0]
         th = np.array([th0,np.pi/180,np.pi/180])
-        lamTPP_init =  inflowModSelect(UserIn['inflowMod'], mu*np.tan(alphaInit), mu, trimTargs[0])
+        lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs[0])
         trim_sol = least_squares(variable_pitch_residuals, th ,args = [mu, lamTPP_init],method = 'lm')
         th = trim_sol.x
         CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
@@ -368,11 +368,12 @@ def loadingFFv3(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
     return loadParams
 
 
-    import matplotlib.pyplot as plt
-
-    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    quant = dFz
-    levels = np.linspace(np.min(quant),np.max(quant),50)
-    dist = ax.contourf(phi, r, np.transpose(quant),levels = levels)
-    cbar = fig.colorbar(dist)
-    cbar.ax.set_ylabel('$dFz$')
+    # import matplotlib.pyplot as plt
+    #
+    # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    # quant = dFz
+    # levels = np.linspace(np.min(quant),np.max(quant),50)
+    # dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant),levels = levels)
+    # ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
+    # cbar = fig.colorbar(dist)
+    # cbar.ax.set_ylabel('$dFz \: [N]$')

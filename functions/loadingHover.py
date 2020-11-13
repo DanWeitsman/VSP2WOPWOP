@@ -104,15 +104,14 @@ def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
                 # froot = 0.5*Nb*(r/((1 - r)*lam/r))
                 f = 0.5 * Nb * ((1 - r) / lambdaInit)
                 F = (2 / np.pi) * np.arccos(np.e ** (-f))
-                # lam = np.sqrt((solDist*XsecPolarExp['Lift Slope']/16-lam_c/2)**2+solDist*XsecPolarExp['Lift Slope']/8*ThetaDist*r)-(solDist*XsecPolarExp['Lift Slope']/16-lam_c/2)
-                # lam = (solDist * XsecPolarExp['Lift Slope']/ (16 * F)) * (np.sqrt(1 + 32 * F / (solDist *XsecPolarExp['Lift Slope']) * ThetaDist * r) - 1)
                 lam = np.sqrt(1/4*(solDist*XsecPolarExp['Lift Slope']/(8*F)-lam_c)**2+solDist*XsecPolarExp['Lift Slope']*ThetaDist*r/(8*F))-(solDist*XsecPolarExp['Lift Slope']/(16*F)-lam_c/2)
                 err = np.abs((lam - lambdaInit) / lam)
                 err[np.where(np.isnan(err) == 1)] = 0
                 lambdaInit = lam
                 iter = iter + 1
         else:
-            lam = (solDist * XsecPolarExp['Lift Slope'] / 16) * (np.sqrt(1 + 32 / (solDist * XsecPolarExp['Lift Slope']) * ThetaDist * r) - 1)
+            F = 1
+            lam = np.sqrt(1/4*(solDist*XsecPolarExp['Lift Slope']/(8*F)-lam_c)**2+solDist*XsecPolarExp['Lift Slope']*ThetaDist*r/(8*F))-(solDist*XsecPolarExp['Lift Slope']/(16*F)-lam_c/2)
 
         lam[np.where(np.isnan(lam) == 1)] = 0
         # lam[0] = lam[1]

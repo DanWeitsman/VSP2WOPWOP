@@ -23,7 +23,7 @@ dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/OLS Validation for
 
 # Directory were you would like to write out the patch and functional data flies. By default this path is configured
 # to be a separate folder in the 'dirDataFile'.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'pp_model'))
+dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'cyc_trim_pp_inflow'))
 
 #   Blade geometry patch file name (without the extension).
 geomFileName = "Geom"
@@ -52,7 +52,7 @@ savePickle = 0
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
 # number of 'XsecLocation'.
-airfoilPolarFileName = [['b540olsRe11E5v3.dat']]
+airfoilPolarFileName = [['b540olsRe11E5.dat']]
 
 #   Non-dimensional radial location of each airfoil cross section
 XsecLocation = [0.182]
@@ -73,7 +73,7 @@ check = 0
 # pitch), 2 for a collective pitch trim (the collective pitch is adjusted to attain the thrust coefficient computed
 # with the thrust and rpm specified below), and 3 for a full cyclic pitch trim (cyclic and collective pitch inputs
 # are varied to attain the desired thrust condition, while the longitudinal and lateral flapping angles are minimized).
-trim =3
+trim = 3
 
 #   Direction of rotation set equal to 1 for CCW and 2 for CW
 rotation = 2
@@ -103,7 +103,7 @@ omega = [2250]
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.
-thetaInit = 4
+thetaInit = 2
 
 #   Position of loading line from the blade's leading edge as a percentage of the chord.
 loadPos = 0.25
@@ -118,7 +118,7 @@ rho = 1.225
 c = 340
 
 #   Inflow model selection (only applies in forward flight), set equal to 1 for constant inflow, 2 for Glauert's linear,  3 for Drees's model, or 4 for Pitt-Peter's steady inflow.
-inflowMod = 1
+inflowMod = 4
 
 # %%
 '''Broadband noise analysis configuration '''
@@ -140,7 +140,7 @@ NmlFileName = 'OLS.nam'
 #%%
 '''Observer namelist configuration'''
 #   Duration of the case, expressed as shaft revolutions
-nRev = 1
+nRev = 2
 
 #   Set sample rate (Hz), preferably as a power of two.
 nt = 2 ** 14

@@ -356,7 +356,36 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
 
     # Loop over the blade count and appends the container of each blade to the nml list.
     for Nb in range(0, UserIn['Nb']):
-        if nVx == 0:
+        if UserIn['trim'] == 3:
+            blade_nml = {
+                'containerin':
+                    {
+                        'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
+                        'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
+                        'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
+                        'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb,
+                        'nbBase': 2,
+                    },
+                'cb':
+                    [
+                        {
+                            'Title': "'Constant Rotation'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'AxisValue': [0, 0, 1],
+                            'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
+                        },
+                        {
+                            'Title': "'Pitch'",
+                            'AngleType': "'Periodic'",
+                            'A0': loadParams['th'][0],
+                            'A1': -loadParams['th'][1],
+                            'B1': -loadParams['th'][2],
+                            'AxisValue': [0, 1, 0],
+                        }
+                    ]
+            }
+        else:
             blade_nml = {
                 'containerin':
                     {
@@ -384,36 +413,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
 
                     ]
             }
-        else:
-            blade_nml = {
-                'containerin':
-                    {
-                        'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
-                        'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
-                        'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
-                        'periodicKeyOffset': 2 * np.pi / UserIn['Nb']*Nb,
-                        # 'periodicKeyOffset': (nOmega/60)**-1/UserIn['Nb']*Nb,
-                        'nbBase': 2,
-                    },
-                'cb':
-                    [
-                        {
-                            'Title': "'Constant Rotation'",
-                            'AngleType': "'Timeindependent'",
-                            'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 0, 1],
-                            'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
-                        },
-                        {
-                            'Title': "'Pitch'",
-                            'AngleType': "'Periodic'",
-                            'A0': loadParams['th'][0],
-                            'A1': -loadParams['th'][1],
-                            'B1': -loadParams['th'][2],
-                            'AxisValue': [0, 1, 0],
-                        }
-                    ]
-            }
+
         nml.append(blade_nml)
         # blade_load = {
         #     'containerin':
