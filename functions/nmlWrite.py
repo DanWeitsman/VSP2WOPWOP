@@ -74,6 +74,12 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
         [iter for iter, n in enumerate(abs(1 - ntIdeal / nt[ind])) if n == np.min(abs(1 - ntIdeal / nt[ind]))])
     nt = nt[ind[indSelect]]
 
+    if UserIn['rotation'] ==1:
+        zAxisValue = 1
+    else:
+        zAxisValue = -1
+
+
     # %%
     # Configuration of each namelist.
     environmentin = {
@@ -120,7 +126,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             'observerin':
                 {
                     'title': "'Observers'",
-                    'attachedto': "'Aircraft'",
+                    '!attachedto': "'Aircraft'",
                     'nt': nt,
                     'tmin': 0.0,
                     'tmax': (nOmega / 60) ** -1 * UserIn['nRev'],
@@ -133,7 +139,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'octaveFlag': octaveFlag,
                     'octaveNumber': 3,
                     'octaveApproxFlag': '.false.',
-                    'nbBase': 0,
+                    'nbBase': 1,
                 },
             'cb':
                 {
@@ -147,7 +153,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             'observerin':
                 {
                     'title': "'Observers'",
-                    'attachedto': "'Aircraft'",
+                    '!attachedto': "'Aircraft'",
                     'nt': nt,
                     'tmin': 0.0,
                     'tmax': (nOmega / 60) ** -1 * UserIn['nRev'],
@@ -166,7 +172,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'octaveFlag': octaveFlag,
                     'octaveNumber': 3,
                     'octaveApproxFlag':'.false.',
-                    'nbBase': 0,
+                    'nbBase': 1,
                 },
             'cb':
                 {
@@ -181,7 +187,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             'observerin':
                 {
                     'title': "'Observers'",
-                    'attachedto': "'Aircraft'",
+                    '!attachedto': "'Aircraft'",
                     'nt': nt,
                     'tmin': 0.0,
                     'tmax': (nOmega / 60) ** -1 * UserIn['nRev'],
@@ -197,7 +203,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'octaveFlag' : octaveFlag,
                     'octaveNumber': 3,
                     'octaveApproxFlag': '.false.',
-                    'nbBase': 0,
+                    'nbBase': 1,
                 },
             'cb':
                 {
@@ -212,86 +218,53 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             {
                 'Title': "'Aircraft'",
                 'nbContainer': 1,
-                'nbBase': 1,
+                'nbBase': 2,
                 'dTau': (nOmega / 60) ** -1 / 120,
             },
         'cb':
+        [
             {
                 'Title': "'Aircraft motion'",
                 'TranslationType': "'KnownFunction'",
                 'VH': [nVx, 0, nVz],
+            },
+            {
+                'Title': "'Rotor disk AoA tilt'",
+                'AngleType': "'Timeindependent'",
+                'AxisType': "'Timeindependent'",
+                'AxisValue': [0, 1, 0],
+                'angleValue': - alphaShaft * np.pi / 180,
             }
+        ]
     }
 
     if UserIn['BBNoiseFlag'] == 0:
-        if UserIn['rotation'] == 1:
-            rotor = {
-                'containerin':
+        rotor = {
+            'containerin':
+                {
+                    'Title': "'Rotor'",
+                    'nbContainer': UserIn['Nb'],
+                    'nbBase': 2,
+                },
+            'cb':
+                [
                     {
-                        'Title': "'Rotor'",
-                        'nbContainer': UserIn['Nb'],
-                        'nbBase': 3,
+                        'Title': "'Rotation'",
+                        'rotation': '.true.',
+                        'AngleType': "'KnownFunction'",
+                        'Omega': nOmega / 60 * 2 * np.pi,
+                        'Psi0': 0,
+                        'AxisValue': [0, 0, zAxisValue],
                     },
-                'cb':
-                    [
-                        {
-                            'Title': "'Rotation'",
-                            'rotation': '.true.',
-                            'AngleType': "'KnownFunction'",
-                            'Omega': nOmega / 60 * 2 * np.pi,
-                            'Psi0': 0,
-                            'AxisValue': [0, 0, 1],
-                        },
-                        {
-                            'Title': "'Rotate to align blades with zero azimuth'",
-                            'AngleType': "'Timeindependent'",
-                            'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 0, 1],
-                            'angleValue': -np.pi / 2,
-                        },
-                        {
-                            'Title': "'Rotor disk AoA tilt'",
-                            'AngleType': "'Timeindependent'",
-                            'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 1, 0],
-                            'angleValue': - alphaShaft * np.pi / 180,
-                        }
-                    ]
-            }
-        else:
-            rotor = {
-                'containerin':
                     {
-                        'Title': "'Rotor'",
-                        'nbContainer': UserIn['Nb'],
-                        'nbBase': 3,
-                    },
-                'cb':
-                    [
-                        {
-                            'Title': "'Rotation'",
-                            'rotation': '.true.',
-                            'AngleType': "'KnownFunction'",
-                            'Omega': nOmega / 60 * 2 * np.pi,
-                            'Psi0': 0,
-                            'AxisValue': [0, 0, -1],
-                        },
-                        {
-                            'Title': "'Rotate to align blades with zero azimuth'",
-                            'AngleType': "'Timeindependent'",
-                            'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 0, 1],
-                            'angleValue': -np.pi / 2,
-                        },
-                        {
-                            'Title': "'Rotor disk AoA tilt'",
-                            'AngleType': "'Timeindependent'",
-                            'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 1, 0],
-                            'angleValue': - alphaShaft * np.pi / 180,
-                        }
-                    ]
-            }
+                        'Title': "'Rotate to align blades with zero azimuth'",
+                        'AngleType': "'Timeindependent'",
+                        'AxisType': "'Timeindependent'",
+                        'AxisValue': [0, 0, 1],
+                        'angleValue': -np.pi / 2,
+                    }
+                ]
+        }
 
     else:
         rotor = {
@@ -299,7 +272,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                 {
                     'Title': "'Rotor'",
                     'nbContainer': UserIn['Nb'],
-                    'nbBase': 3,
+                    'nbBase': 2,
                     'PeggNoiseFlag': PeggNoiseFlag,
                     'BPMNoiseFlag' : BPMNoiseFlag,
                 },
@@ -311,7 +284,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                         'AngleType': "'KnownFunction'",
                         'Omega': nOmega / 60 * 2 * np.pi,
                         'Psi0': 0,
-                        'AxisValue': [0, 0, 1],
+                        'AxisValue': [0, 0, zAxisValue],
                     },
                     {
                         'Title': "'Rotate to align blades with zero azimuth'",
@@ -319,14 +292,8 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                         'AxisType': "'Timeindependent'",
                         'AxisValue': [0, 0, 1],
                         'angleValue': -np.pi / 2,
-                    },
-                    {
-                        'Title': "'Rotor disk AoA tilt'",
-                        'AngleType': "'Timeindependent'",
-                        'AxisType': "'Timeindependent'",
-                        'AxisValue': [0, 1, 0],
-                        'angleValue': - alphaShaft * np.pi / 180,
                     }
+
                 ],
             'BPMin':
             [
@@ -357,6 +324,17 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
     # Loop over the blade count and appends the container of each blade to the nml list.
     for Nb in range(0, UserIn['Nb']):
         if UserIn['trim'] == 3:
+
+            if UserIn['rotation'] == 1:
+                A0 = loadParams['th'][0]
+                A1 = -(loadParams['th'][1]*np.cos(2*np.pi/UserIn['Nb']*Nb)+loadParams['th'][2]*np.sin(2*np.pi/UserIn['Nb']*Nb))
+                A2 = -(loadParams['th'][2]*np.cos(2*np.pi/UserIn['Nb']*Nb)-loadParams['th'][1]*np.sin(2*np.pi/UserIn['Nb']*Nb))
+            else:
+                A0 = -loadParams['th'][0]
+                A1 = loadParams['th'][1]*np.cos(2*np.pi/UserIn['Nb']*Nb)+loadParams['th'][2]*np.sin(2*np.pi/UserIn['Nb']*Nb)
+                A2 = loadParams['th'][2]*np.cos(2*np.pi/UserIn['Nb']*Nb)-loadParams['th'][1]*np.sin(2*np.pi/UserIn['Nb']*Nb)
+
+            # if Nb ==
             blade_nml = {
                 'containerin':
                     {
@@ -372,20 +350,25 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                             'Title': "'Constant Rotation'",
                             'AngleType': "'Timeindependent'",
                             'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 0, 1],
+                            'AxisValue': [0, 0, zAxisValue],
                             'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
                         },
                         {
                             'Title': "'Pitch'",
                             'AngleType': "'Periodic'",
-                            'A0': loadParams['th'][0],
-                            'A1': -loadParams['th'][1],
-                            'B1': -loadParams['th'][2],
+                            'A0': A0,
+                            'A1': A1,
+                            'B1': A2,
                             'AxisValue': [0, 1, 0],
                         }
                     ]
             }
         else:
+            if UserIn['rotation'] == 1:
+                A0 = loadParams['th'][0]
+            else:
+                A0 = -loadParams['th'][0]
+
             blade_nml = {
                 'containerin':
                     {
@@ -400,7 +383,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                             'Title': "'Constant Rotation'",
                             'AngleType': "'Timeindependent'",
                             'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 0, 1],
+                            'AxisValue': [0, 0, zAxisValue],
                             'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
                         },
                         {
@@ -408,7 +391,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                             'AngleType': "'Timeindependent'",
                             'AxisType': "'Timeindependent'",
                             'AxisValue': [0, 1, 0],
-                            'angleValue': loadParams['th'][0],
+                            'angleValue': A0,
                         }
 
                     ]

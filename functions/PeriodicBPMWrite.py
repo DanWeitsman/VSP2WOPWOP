@@ -13,7 +13,6 @@ import numpy as np
 
 def PeriodicBPMWrite(geomParams,loadParams,nRev,omega,dirSaveFile):
 
-    TEThickness = np.ones(len(geomParams['chordDist']))*0.001
     TEflowAngle = np.zeros(len(geomParams['chordDist']))*1*(np.pi/180)
 
     #%%
@@ -62,7 +61,7 @@ def PeriodicBPMWrite(geomParams,loadParams,nRev,omega,dirSaveFile):
             #   sectional length
             f_bin.write(struct.pack('>f', geomParams['sectLen'][i]))
             #   TE Thickness
-            f_bin.write(struct.pack('>f', TEThickness[i]))
+            f_bin.write(struct.pack('>f',  geomParams['TE_thick'][i]))
             #   TE Flow Angle
             f_bin.write(struct.pack('>f', TEflowAngle[i]))
 

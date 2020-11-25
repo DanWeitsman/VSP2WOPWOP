@@ -18,7 +18,6 @@ from functions.DegenGeom import ParseDegenGeom
 from functions.GeomProcess import geomProcess
 from functions.polarRead import polarRead
 from functions.loadingHover import loadingAxialHover
-from functions.loadingFF import loadingFF
 from functions.ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
 from functions.PeriodicLoadingPatchFileWrite import PeriodicLoadingPatchFileWrite
 from functions.nmlWrite import nml_write
@@ -28,7 +27,7 @@ from functions.ConstantBPMWrite import ConstantBPMWrite
 from functions.PeriodicBPMWrite import PeriodicBPMWrite
 from functions.GeomPatchFileWrite import GeomPatchFileWrite
 from functions.ErrorHandles import ErrorHandles
-from functions.loadingFFV3 import  loadingFFv3
+from functions.loadingFF import  loadingFF
 from functions.designModeVal import designModeVal
 # %%
 def main():
@@ -86,7 +85,7 @@ def main():
                 loadParams = loadingAxialHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vz)
                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
-                loadParams = loadingFFv3(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vx, Vz, alphaShaft)
+                loadParams = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vx, Vz, alphaShaft)
                 PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega, dirSaveFile)
 
             if UserIn['BBNoiseFlag'] == 1:
@@ -135,8 +134,7 @@ def main():
                                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
                                                               dirCaseFile)
                             else:
-                                loadingOut = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_omega]], nThrust,
-                                                       nOmega, nVx, nVz, alphaShaft)
+                                loadingOut = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_omega]], nThrust, nOmega, nVx, nVz, alphaShaft)
                                 PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
                                                               nOmega, dirCaseFile)
 

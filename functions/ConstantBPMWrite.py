@@ -13,7 +13,6 @@ import numpy as np
 
 def ConstantBPMWrite(geomParams,loadParams,dirSaveFile):
 
-    TEThickness = np.ones(len(geomParams['chordDist']))*0.001
     TEflowAngle = np.zeros(len(geomParams['chordDist']))*1*(np.pi/180)
 
     #%%
@@ -54,7 +53,7 @@ def ConstantBPMWrite(geomParams,loadParams,dirSaveFile):
             #   sectional length
             f_bin.write(struct.pack('>f', geomParams['sectLen'][i]))
             #   TE Thickness
-            f_bin.write(struct.pack('>f', TEThickness[i]))
+            f_bin.write(struct.pack('>f', geomParams['TE_thick'][i]))
             #   TE Flow Angle
             f_bin.write(struct.pack('>f', TEflowAngle[i]))
 
@@ -67,5 +66,5 @@ def ConstantBPMWrite(geomParams,loadParams,dirSaveFile):
         #     f_bin.write(struct.pack('<f', loadParams['ClaDist'][i]))
         # for i in range(0,nSect):
             #   Sectional freestream velocity
-        f_bin.write(struct.pack('>'+str(len(loadParams['UP']))+'f', *loadParams['UP']))
+        f_bin.write(struct.pack('>'+str(len(loadParams['U']))+'f', *loadParams['U']))
 

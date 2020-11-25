@@ -6,91 +6,78 @@
 #   The periodic blade loads are also computed.
 #%%
 import bisect
-import time
 import numpy as np
-from scipy.optimize import least_squares,minimize
+from scipy.optimize import least_squares
+
 #%%
 
-def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
+def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
-    def searchPolar(AoA):
+
+    def fixed_pitch_residuals(omega):
         '''
-        This function uses the bisection search algorithm to locate the  lift and drag coefficients from the XFoil
-        polar for a given angle of attack (AoA). If the angle of attack exceeds that corresponding to the maximum
-        AoA, the maximum lift and drag coefficients would be set.
+        This function computes the residuals between the trim targets and computed trim variables for rpm trim.
 
-        :param AoA: matrix filled with the angles of attack
-        [rad] for each azimuthal and radial station
-        :return CL: matrix of corresponding lift coefficients, having the same dimensions as AoA.
-        :return CD: matrix of corresponding drag coefficients, having the same
-        dimensions as AoA
+        :param th: an array of three elements the first being the collective pitch setting, followed by the lateral and longituinal cyclic pitch amplitudes.
+        :param mu_x: advance ratio
+        :param lamTPP_init: initial estimate for the inflow ratio
+        :return: difference between the trim targets and computes CT, beta1c, and beta1s.
         '''
+        trimOut = fixed_pitch_trim(omega)
+        res = trimTargs - trimOut[0]
+        print(res)
+        return res
 
-        CL = np.zeros(np.shape(AoA))
-        CD = np.zeros(np.shape(AoA))
-        for i, azimuth in enumerate(AoA):
-            for ii, radial in enumerate(azimuth):
-                if radial >= XsecPolar['b540ols']['alphaMax']:
-                    # CL[i, ii] = XsecPolar['b540ols']['ClMax']
-                    CL[i, ii] = 0
-                    CD[i, ii] = XsecPolar['b540ols']['CdMax']
-                else:
-                    ind = bisect.bisect_right(XsecPolar['b540ols']['Polar'][:, 0], radial)
-                    CL[i,ii] = XsecPolar['b540ols']['Polar'][ind,1]
-                    CD[i, ii] = XsecPolar['b540ols']['Polar'][ind, 2]
-        return CL, CD
 
-    def beta_solve(th,mu_x,lamTPP):
+    def variable_pitch_residuals(th,mu, lamTPP_init):
         '''
-        This function solves for the flapping angles by evaluating the aerodynamic flap moment
-        about the hinge of the blade, while retaining only the first harmonics of the flap and pitch response (HELICOPTER DYNAMICS by Chopra et al, (Chapter 1.3.4)).
+        This function computes the residuals between the trim targets and computed trim variables for collective and cyclic pitch trim.
 
-        :param th: an array of three elements the first being the collective pitch setting, followed by the lateral and longituinal cyclic pitch amplitudes, expressed in radians.
-        :param mu_x: the advance ratio
-        :param lamTPP: a constant inflow ratio with respect to the tip path plane (TTP)
-        :return: an array consisting of the coning, longitudinal, and lateral flapping angles, expressed in radians.
+        :param th: an array of three elements the first being the collective pitch setting, followed by the lateral and longituinal cyclic pitch amplitudes.
+        :param mu_x: advance ratio
+        :param lamTPP_init: initial estimate for the inflow ratio
+        :return: difference between the trim targets and computes CT, beta1c, and beta1s.
         '''
 
-        beta0 = gamma/nuBeta**2*(th[0]/8*(1-(e/R)**4)-geomParams['twistDist']/8*(1-(e/R)**4)+th[0]/8*mu_x**2*(1-(e/R)**2)
-                                 -geomParams['twistDist']/8*mu_x**2*(1-(e/R)**2)+th[2]/6*mu_x*(1-(e/R)**3)-lamTPP/6*(1-(e/R)**3))
+        if UserIn['trim'] == 2:
+            trimOut = variable_pitch_trim([th,0,0], mu, lamTPP_init)
+            res = trimTargs - trimOut[0]
+        else:
+            trimOut = variable_pitch_trim(th, mu, lamTPP_init)
+            res = trimTargs - np.array([trimOut[0], trimOut[2], trimOut[3]])
+        print(res)
+        return res
 
-        A = np.array([[(nuBeta**2-1),(gamma/16*mu_x**2*(1-(e/R)**2)+gamma/8*(1-(e/R)**4))],
-             [(gamma/16*mu_x**2*(1-(e/R)**2)-gamma/8*(1-(e/R)**4)),(nuBeta**2-1)]])
-
-        B = np.array([gamma*(th[1]/8*(1-(e/R)**4)+th[1]/16*mu_x**2*(1-(e/R)**2)-beta0/6*mu_x*(1-(e/R)**3)),
-             gamma*(th[0]/3*mu_x*(1-(e/R)**3)-geomParams['twistDist']/3*mu_x*(1-(e/R)**3)+th[2]/8*(1-(e/R)**4)
-                    +3/16*th[2]*mu_x**2*(1-(e/R)**2)-lamTPP/4*mu_x*(1-(e/R)**2))])
-
-        beta1c,beta1s = np.linalg.solve(A,B)
-
-        return np.array([beta0[0],beta1c[0],beta1s[0]])
-
-    def lam_fixed_pnt(lam,mu,alpha,CT):
+    def fixed_pitch_trim(omega):
         '''
-        This function applies the fixed point iteration method to converge the inflow ratio. At this stage only uniform inflow
-         is supported with the intent of incorporating an inflow model in the future.
-
-        :param lam: the estimate of the inflow ratio
-        :param mu: the advance ratio
-        :param alpha: angle of attack of the rotor disk
-        :param CT: thrust/weight coefficient
-        :return: converged inflow ratio
+        This function performs an rpm trim, whereby the rotational rate is varied until the desired thrust is achieved.
+        :param omega: rotational rate [rad/s]
+        :return:
         '''
-        errFP = 1
-        iii = 0
-        while np.any(errFP > 0.0005):
 
-            lam_temp = mu * np.tan(alpha) + CT / (2 * np.sqrt(mu ** 2 + lam ** 2))
-            errFP = np.abs((lam_temp - lam) / lam_temp)
-            lam = lam_temp
-            iii = iii+1
+        mu = U / (omega * R)
+        CT =  W/(rho * np.pi * R ** 2 * (omega * R) ** 2)
+        lamTPP_init = inflowModSelect(UserIn['inflowMod'], mu*np.tan(alphaInit), mu, CT)
 
-        return lam
+        err = 1
+        while np.any(err > 0.0005):
 
-    def WT_trim(th,mu_x,lamTPP_init):
+            up = inflowModSelect(UserIn['inflowMod'],lamTPP_init, mu, CT,dCT)
+            ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
+            AoA = (geomParams['twistDist']-up/ut)%(2*np.pi)
+            CL,CD = aeroParams(AoA)
+            dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*AoA*np.sin(up/ut))
+            CT = 1 / (2 * np.pi) * np.trapz(np.trapz(dCT, r), phi)
+            err = np.abs((up - lamTPP_init) / up)
+            lamTPP_init = up
+
+        T = CT * rho * np.pi * R ** 2 * (omega * R) ** 2
+
+        return T,CT,dCT,lamTPP_init,ut,up,CL,CD,AoA,mu
+
+    def variable_pitch_trim(th,mu, lamTPP_init):
         '''
-        This function performs a wind tunnel trim on the rotor, whereby the trim targets are the thrust coefficient, longitudinal, and lateral flapping angles.
-        Since the flapping angles are dependent on the advance ratio and inflow ratio the trim procedure is solved itterativley until the inflow ratio is converged.
+        This function performs a collective/cyclic pitch trim, whereby the thrust coefficient, roll, and pitching moments are the trim targets.
 
         :param th: an array of three elements the first being the collective pitch setting, followed by the lateral and longituinal cyclic pitch amplitudes, expressed in radians.
         :param mu_x: the advance ratio
@@ -107,274 +94,297 @@ def loadingFF(UserIn,geomParams,XsecPolar,W, omega,Vx,Vz,alphaShaft):
         :param ut: nondimensionalized tangential velocity component, evaluated with respect to the hub plane.
         :param up: nondimensionalized normal velocity component, evaluated with respect to the hub plane.
         '''
-
         err = 1
-        while np.any(err > 0.0001):
+        i = 0
+        while np.any(err > 0.0005):
 
-            beta = beta_solve(th, mu_x, lamTPP_init)
-            alpha = alphaShaft+beta[1]+thFP
+            theta_expanded = geomParams['twistDist']+th[0]+np.expand_dims(th[1]*np.cos(phi),axis=1)+np.expand_dims(th[2]*np.sin(phi),axis = 1)
+            ut = r + mu*np.cos(alphaInit) * np.expand_dims(np.sin(phi), axis = 1)
+            up = lamTPP_init
 
-            # if alpha <-20*np.pi/180:
-            #     alpha =-20*np.pi/180
+            AoA = (theta_expanded-up/ut)%(2*np.pi)
 
-            mu = U / (omega * R) * np.cos(alpha)
-            lam = lamTPP_init-mu*beta[1]
+            CL,CD = aeroParams(AoA)
 
-            theta_expanded = geomParams['twistDist']+np.expand_dims(th[0],axis=0)+np.expand_dims(th[1]*np.cos(phi),axis=1)+np.expand_dims(th[2]*np.sin(phi),axis = 1)
-            beta_expanded = beta[0]+beta[1]*np.cos(phi)+beta[2]*np.sin(phi)
+            dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))
+            CT = 1/(2*np.pi)*np.trapz(np.trapz(dCT,r),phi)
 
-            ut = r + mu * np.expand_dims(np.sin(phi), axis = 1)
-            up = lam + r * np.expand_dims(beta[2] * np.cos(phi) - beta[1] * np.sin(phi), axis = 1) + np.expand_dims(beta_expanded * mu * np.cos(phi), axis = 1)
-
-            # todo  insert condition for determining stalled sections if AoA > AoA_max Cl = 0, Cd = cd_max
-            AoA = theta_expanded-up/ut
-            # CL,CD = searchPolar(AoA)
-            CL = a*(theta_expanded-up/ut)
-            # ct_dist = 1/2*solDist*ut**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))*np.expand_dims(np.cos(beta_expanded),axis = 1)
-            ct_dist = 1/2*solDist*ut**2*(CL*np.cos(up/ut)-0.1*CL*np.sin(up/ut))
-
-            # ct_dist = 1/(4*np.pi) * solDist * ut ** 2 * a * (theta_expanded - up / ut)
-            # ct_dist = 1/(4*np.pi)*solDist*a*(ut**2*theta_expanded-ut*up)
-            CT = 1/(2*np.pi)*np.trapz(np.trapz(ct_dist,r),phi)
-
-            lamTTP_temp = lam_fixed_pnt(lamTPP_init,mu,alpha,CT)
-
+            lamTTP_temp = inflowModSelect(UserIn['inflowMod'], lamTPP_init, mu, CT, dCT)
             err = np.abs((lamTTP_temp - lamTPP_init) / lamTTP_temp)
             lamTPP_init = lamTTP_temp
-            mu_x = mu
 
-        return beta,alpha,mu,CT,ct_dist,lamTTP_temp,theta_expanded,beta_expanded,ut,up,CL
+        Mx = 1/(2*np.pi)*np.trapz(np.trapz(r*Nb*dCT/Nb*np.expand_dims(np.sin(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
+        My = -1/(2*np.pi)*np.trapz(np.trapz(r*Nb*dCT/Nb*np.expand_dims(np.cos(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
 
-    def fixed_pitch_trim(omega, lamTPP_init):
+        return CT,dCT,Mx,My,lamTTP_temp,theta_expanded,ut,up,CL,CD,AoA
 
-        mu = U / (omega * R) * np.cos(alphaInit)
-        CT_temp =  W/(rho * np.pi * R ** 2 * (omega * R) ** 2)
-        i = 0
-        err = 1
-        while err > 0.0001:
-
-            up = lam_fixed_pnt(lamTPP_init, mu, alphaInit, CT_temp)
-            ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
-            CT_temp_dist = 1/2*solDist*r**2*(a*(geomParams['twistDist']-up/ut)*np.cos(up/ut)-cd0*np.sin(up/ut))
-            CT_temp = 1 / (2 * np.pi) * np.trapz(np.trapz(CT_temp_dist, r), phi)
-            err = np.abs((lamTPP_init - up) / lamTPP_init)
-            lamTPP_init = up
-            i =+1
-
-        T = CT_temp * rho * np.pi * R ** 2 * (omega * R) ** 2
-        # print(omega)
-        return T,up,ut,CT_temp_dist,CT_temp
-
-    def variable_pitch_residuals(th,*args):
+    def inflowModSelect(model, lam, mu,CT, *args):
         '''
-        This function computes the residuals from the target trim variables.
-
-        :param th: an array of three elements the first being the collective pitch setting, followed by the lateral and longituinal cyclic pitch amplitudes.
-        :param mu_x: advance ratio
-        :param lamTPP_init: initial estimate for the inflow ratio
-        :return: difference between the trim targets and computes CT, beta1c, and beta1s.
-        '''
-        weights = np.array([1, 1, 1])
-        trimOut = WT_trim(th,mu_x,lamTPP_init)
-        res = (trimTargs - np.array([trimOut[3], trimOut[0][1], trimOut[0][2]]))*weights
-        print(res)
-        return res
-
-    def fixed_pitch_residuals(omega, lamTPP_init):
-        '''
-        This function computes the residuals from the target trim variables.
-
-        :param th: an array of three elements the first being the collective pitch setting, followed by the lateral and longituinal cyclic pitch amplitudes.
-        :param mu_x: advance ratio
-        :param lamTPP_init: initial estimate for the inflow ratio
-        :return: difference between the trim targets and computes CT, beta1c, and beta1s.
-        '''
-
-        trimOut = fixed_pitch_trim(omega, lamTPP_init)
-        lamTPP_init = trimOut[1]
-        res = trimTargs - trimOut[0]
-        print(res)
-        return res
-
-    def loads_moments(ut, up, beta, theta_expanded, beta_expanded):
-        '''
-        This function computes the averaged hub loads and moments.
-
-        :param ut: nondimensionalized tangential velocity component, evaluated with respect to the hub plane.
-        :param up: nondimensionalized normal velocity component, evaluated with respect to the hub plane.
-        :param beta: array consisting of the coning, longitudinal, and lateral flapping angles.
-        :param theta_expanded: expanded form of the pitch variations, accounting for first harmonic fluctuations in cyclic pitch (len(phi)xlen(r)).
-        :param beta_expanded: expanded form of the flap variations, accounting for first harmonic fluctuations in longitudinal and lateral flapping
+        This function selects and returns the converged inflow distribution based on the model specified in the user input module.
+        :param model: integer specifing the model selected in the input module (UserIn['inflowMod'])
+        :param lam: initial guess for the inflow distribution, can be an arbitrary sized array
+        :param mu: = standard advance ratio (V/(omega*R)), unresolved into parallel and perpendicular components to the rotor disk.
+        :param CT: thrust coefficient
         :return:
-        :param CT: averaged thrust coefficient
-        :param CH: averaged rotor drag force coefficient
-        :param CY: averaged side force coefficient
-        :param CQ: averaged torque coefficient
-        :param CMX: averaged roll moment coefficient
-        :param CMY: averaged pitch moment coefficient
+        '''
+        if model ==1:
+            lam = constant_inflow(lam, mu, CT)
+        elif model == 2:
+            lam = linear_inflow(lam, mu, CT)
+        elif model == 3:
+            lam = drees_inflow(lam, mu, CT)
+        elif model == 4:
+            lam = pitt_peters_inflow(lam, mu, args[0])
+        return lam
+
+    def constant_inflow(lam,mu,CT):
+        '''
+        This function applies the fixed point iteration method to converge the constant inflow ratio.
+
+        :param lam: the estimate of the inflow ratio
+        :param mu: the advance ratio
+        :param alpha: angle of attack of the rotor disk
+        :param CT: thrust/weight coefficient
+        :return: converged inflow ratio
+        '''
+        errFP = 1
+        mu = mu * np.cos(alphaInit)
+        while np.any(errFP > 0.0005):
+            lam_temp = mu * np.tan(alphaInit) + CT / (2 * np.sqrt(mu ** 2 + lam ** 2))
+            errFP = np.abs((lam_temp - lam) / lam_temp)
+            lam = lam_temp
+        return lam
+
+    def linear_inflow(lam,mu,CT):
+        '''
+        This function utilizes the fixed point itteration method to converge the Glauert's linear inflow model.
+
+        :param lam: the estimate of the inflow ratio
+        :param mu: the advance ratio
+        :param alpha: angle of attack of the rotor disk
+        :param CT: thrust/weight coefficient
+        :return: converged inflow ratio
+        '''
+        err = 1
+        mu = mu*np.cos(alphaInit)
+        while np.any(err > 0.0005):
+            lam_temp = CT / (2 * np.sqrt(mu ** 2 + lam ** 2))*(1+1.2*r*np.expand_dims(np.cos(phi),axis = 1))
+            err = np.abs((lam_temp - lam) / lam_temp)
+            lam = lam_temp
+        return lam
+
+    def drees_inflow(lam,mu,CT):
+        '''
+        This function utilizes the fixed point itteration method to converge the Drees's inflow model.
+
+        :param lam: the estimate of the inflow ratio
+        :param mu: the advance ratio
+        :param alpha: angle of attack of the rotor disk
+        :param CT: thrust/weight coefficient
+        :return: converged inflow ratio
+        '''
+        err = 1
+        while np.any(err > 0.0005):
+            wake_skew = np.arctan(mu*np.cos(alphaInit)/lam)
+            kx = 4/3*((1-np.cos(wake_skew)-1.8*mu**2)/np.sin(wake_skew))
+            ky = -2*mu
+            lam_temp = CT / (2 * np.sqrt(mu ** 2 + lam ** 2))*(1+kx*r*np.expand_dims(np.cos(phi),axis = 1)+ky*r*np.expand_dims(np.sin(phi),axis = 1))
+            err = np.abs((lam_temp - lam) / lam_temp)
+            lam = lam_temp
+        return lam
+
+    def pitt_peters_inflow(lam, mu, dCT):
+        '''
+        This function computes the inflow distribution based on the steady component of the Pitt-Peters model. This
+        formulation was originally presented in, Pitt, Dale M., and David A. Peters. "Theoretical prediction of
+        dynamic-inflow derivatives." (1980) and then again in Chen, Robert TN. "A survey of nonuniform inflow models
+        for rotorcraft flight dynamics and control applications." (1989). This model takes into account the effects
+        that the hub moments have on the steady (1st harmonic) induced velocity distribution. This model should be
+        used when performing the fixed/collective pitch trim since the inflow distribution would inevitably vary in
+        order to produce the necessary reaction to counteract the hub moments.
+        :param lam: initial guess for the inflow distribution
+        :param mu: advance ratio
+        :param dCT: radial and azimuthal distribution of the thrust coefficient
         '''
 
-        gam = np.transpose(mu_x*np.cos(phi)/(np.expand_dims(r,axis = 1)+mu_x*np.sin(phi)))
-        distCH = 0.5*solDist*ut**2*(a*(theta_expanded-up/ut)*(np.expand_dims(np.sin(phi),axis = 1)*np.sin(up/ut)-np.sin(beta_expanded)*np.expand_dims(np.cos(phi),axis = 1))+cd0*(np.cos(up/ut)*np.cos(gam)*np.expand_dims(np.sin(phi),axis = 1)+np.sin(gam)*np.expand_dims(np.cos(phi),axis = 1)))
-        CH = 1/(2*np.pi)*np.trapz(np.trapz(distCH,r),phi)
-        CH_TTP = CH+beta[1]*CT
-        H = rho * np.pi * R ** 2 * (omega * R) ** 2 * CH
+        CT = 1/(2*np.pi)*np.trapz(np.trapz(dCT,r),phi)
+        CMX = 1/(2 * np.pi) * np.trapz(np.trapz(r * Nb * dCT / Nb * np.expand_dims(np.sin(phi), axis=1), r), phi)
+        CMY = -1/(2 * np.pi) * np.trapz(np.trapz(r * Nb * dCT / Nb * np.expand_dims(np.cos(phi), axis=1), r), phi)
 
-        # distCY = 0.5*solDist*a*(-(up * ut * theta_expanded - up ** 2 + cd0 / a * ut ** 2) * np.expand_dims(np.cos(phi), axis = 1) - np.expand_dims(beta_expanded * np.sin(phi), axis = 1) * (ut ** 2 * theta_expanded - up * ut))
-        distCY = 0.5*solDist*ut**2*(-a*(theta_expanded-up/ut)*(np.expand_dims(np.cos(phi),axis = 1)*np.sin(up/ut)+np.sin(beta_expanded)*np.expand_dims(np.sin(phi),axis = 1))+cd0*(np.cos(up/ut)*np.cos(gam)*np.expand_dims(np.cos(phi),axis = 1)+np.sin(gam)*np.expand_dims(np.sin(phi),axis = 1)))
-        CY = 1/(2*np.pi)*np.trapz(np.trapz(distCY,r),phi)
-        CY_TTP = CY+beta[2]*CT
-        Y = rho * np.pi * R ** 2 * (omega * R) ** 2 * CY
+        lam = constant_inflow(lam, mu, CT)
+        wake_skew = np.arctan(mu*np.cos(alphaInit)/lam)
+        vt = np.sqrt((mu*np.cos(alphaInit))**2+lam**2)
+        vm = ((mu*np.cos(alphaInit))**2+lam*(lam+CT/(2*np.sqrt(mu**2 + lam**2))))/vt
 
-        distCMX = solDist * a / (2*gamma) * (nuBeta**2-1-3/2*e/R) * beta[2] + e / R * 1 / (4*np.pi) * solDist * a * (ut ** 2 * theta_expanded - up * ut) * np.expand_dims(np.cos(phi), axis = 1)
-        CMX = np.trapz(np.trapz(distCMX, r), phi)
-        MX = rho * np.pi * R ** 3 * (omega * R) ** 2 * CMX
+        L = np.array([[0.5*vt,0,15*np.pi/(64*vm)*np.tan(wake_skew/2)],[0,-4/(vm*(1+np.cos(wake_skew))),0],[15*np.pi/(64*vt)*np.tan(wake_skew/2),0,-4*np.cos(wake_skew)/(vm*(1+np.cos(wake_skew)))]])
+        lam_0,lam_1c,lam_1s = np.dot(L,[CT,CMX,CMY])
+        lam = lam_0 + lam_1c*r*np.expand_dims(np.cos(phi),axis = 1)+ lam_1s*r*np.expand_dims(np.sin(phi),axis = 1)
 
-        distCMY = -solDist * a / (2*gamma) * (nuBeta**2-1-3/2*e/R) * beta[1] + e / R * 1 / (4*np.pi) * solDist * a * (ut ** 2 * theta_expanded - up * ut) * np.expand_dims(np.sin(phi), axis = 1)
-        CMY = np.trapz(np.trapz(distCMY, r), phi)
-        MY = rho * np.pi * R ** 3 * (omega * R) ** 2 * CMY
+        return lam
 
-        return H,CH,Y,CY,MX,CMX,MY,CMY
+    def aeroParams(AoA):
+        '''
+        This function returns the lift and drag coefficients corresponding to a radial and azimuthal distribution of the
+        angles of attack. The lift coefficient for stalled blade sections is linearly interpolated between the
+        section's airfoil minimum and maximum lift coefficients. The drag coefficient is assumed to be 10% of the
+        lift coefficient tunless the blade section is stalled. In that case, the sectional drag coefficient is set to
+        the airfoil's drag coefficient at the angle of attack corresponding to the maximum lift coefficient
+        :param AoA: array of size [phiRes x len(r)] filled with the computed angles of attack
+        :return:
+        :param CL: lift coefficient, linearly interpolated for the stalled blade sections
+        :param CD:  drag coefficient, set equal to its value at the angle of attack corresponding to themaximum lift
+        coefficient for the stalled blade sections
+        '''
+
+        #   assume that the airfoil is symmetric and therefore the CL can be estimated by the product of the
+        # lift-curve slope and the angle of attack
+        CL = XsecPolarExp['Lift Slope'] * AoA
+        #   CD is assumed to be 10% of CL
+        CD = 0.1 * CL
+
+        #   reruns the indices of stalled blade sections
+        azInd, rInd = np.where(AoA > XsecPolarExp['alphaMax'])
+        #   sets the CD of these sections equal to the CD @ CLmax
+        CD[azInd, rInd] = XsecPolarExp['CdMax'][azInd, rInd]
+        # CL[azInd, rInd] = XsecPolarExp['ClMin'][azInd, rInd]
+        #   linearly interpolates CL between CLmin and CL
+        CL[azInd, rInd] = XsecPolarExp['ClMax'][azInd, rInd]+(AoA[azInd, rInd]-XsecPolarExp['alphaMax'][azInd, rInd])*(XsecPolarExp['ClMin'][azInd, rInd]-XsecPolarExp['ClMax'][azInd, rInd])/(XsecPolarExp['Alpha0'][azInd, rInd]+2*np.pi-XsecPolarExp['alphaMax'][azInd, rInd])
+        return CL, CD
 
 #%%
-    '''
-    This block of code processes the input parameters and determines the initial estimates for the trim procedure 
-    '''
-
     omega = omega/60*2*np.pi
     rho = UserIn['rho']
     Nb = UserIn['Nb']
     R = geomParams['R']
     e = geomParams['e']
     r = geomParams['r']
-    sig = geomParams['solidity']
     solDist = geomParams['solDist']
     XsecLocation = UserIn['XsecLocation']
-    airfoilName = list(XsecPolar.keys())
 
     alphaShaft = alphaShaft*(np.pi/180)
     thFP = np.arctan(Vz / Vx)
-
     alphaInit = alphaShaft+thFP
     U = np.linalg.norm((Vx,Vz))
-    mu_z = U/(omega*R) * np.sin(alphaInit)
+
+    mu = U/(omega*R)
     mu_x = U/(omega*R) * np.cos(alphaInit)
+    mu_z = U/(omega*R) * np.sin(alphaInit)
 
     phiRes = 361
     phi = np.linspace(0,2*np.pi,phiRes)
+    a = np.ones((len(r)))*XsecPolar[list(XsecPolar.keys())[0]]['Lift Slope']
+    th0 = UserIn['thetaInit']*np.pi/180
 
-    th0 = UserIn['thetaInit'] * (np.pi / 180)
-    th1c = 1* (np.pi / 180)
-    th1s = 1* (np.pi / 180)
-    thInit = np.array([th0,th1c,th1s])
+# %% This section of code assigns the airfoil parameters from the XFoil polar to the corresponding radial section
+# along the blade span
 
-    # nuBeta = np.sqrt(1+3/2*(e/R))
-    nuBeta = UserIn['nuBeta']
-
-    targ_CT = W/(rho*np.pi*R**2*(omega*R)**2)
-    targ_beta1c = 0
-    targ_beta1s = 0
-    if UserIn['trim'] == 3:
-        trimTargs = [targ_CT,targ_beta1c,targ_beta1s]
-    else:
-        trimTargs = W
-
-    # if -2 < Vz/np.sqrt(W/(2*rho*np.pi*R**2)) < 0:
-    #     raise ValueError('Non-physical solution, 1D assumption of momentum theory is violated')
-
-#%%
-    '''
-    This block of code populates an array of indices corresponding to the variety of airfoil sections used along the blade span.   
-    '''
+    XsecPolarExp = {}
     if len(XsecLocation) > 1:
         polarInd = []
-        for ii in range(1, len(XsecLocation)):
-            polarInd.append(np.squeeze(np.where((XsecLocation[ii - 1] <= np.round(r, 5)) == (XsecLocation[ii] >= np.round(r, 5)))))
-        polarInd.append(np.arange(polarInd[-1][-1] + 1, len(r)))
+        ind = np.zeros((len(XsecLocation)+1))
+        for i,Xsec in enumerate(XsecLocation):
+            ind[i] = bisect.bisect(r, Xsec)
+        ind[0] = 0
+        ind[-1] = len(r)
+
+        for i,Xsec in enumerate(XsecPolar.keys()):
+            polarInd.extend([Xsec]*int(ind[i+1]-ind[i]))
+            for ii, param in enumerate(list(XsecPolar[Xsec].keys())[1:]):
+                if i ==0:
+                    XsecPolarExp = {**XsecPolarExp, **{param:XsecPolar[Xsec][param]*np.ones(len(r))}}
+                else:
+                    XsecPolarExp[param][int(ind[i]):] = XsecPolar[Xsec][param]
     else:
-        polarInd = np.arange(0,len(r))
+        for i,key in enumerate(list(XsecPolar[list(XsecPolar.keys())[0]].keys())[1:]):
+            XsecPolarExp[key] = np.ones((phiRes,len(r)))*XsecPolar[list(XsecPolar.keys())[0]][key]
 
-    a = np.ones((len(r)))
-    a0 = np.ones((len(r)))
-    cd0 = np.ones((len(r)))
-
-    if len(XsecLocation) > 1:
-        for ii in range(0, len(polarInd)):
-            a[polarInd[ii]] = XsecPolar[airfoilName[ii]]['Lift Slope']
-            a0[polarInd[ii]] = XsecPolar[airfoilName[ii]]['Alpha0'] * (np.pi / 180)
-            cd0[polarInd[ii]] = XsecPolar[airfoilName[ii]]['CdMin']
-    else:
-        a = a*XsecPolar[airfoilName[0]]['Lift Slope']
-        a0 = a0*XsecPolar[airfoilName[0]]['Alpha0'] * (np.pi / 180)
-        cd0 = cd0*XsecPolar[airfoilName[0]]['CdMin']
-
-    gamma = np.mean((rho*a*geomParams['chordDist']*R**4)/UserIn['Ib'])
-
-    #%%
-    #   Initial estimate  of the inflow ratio after completing the fixed point iteration procedure
-    lamTPP_init = lam_fixed_pnt(mu_x * np.tan(alphaInit), mu_x, alphaInit, targ_CT)
-
-    # Employs non-linear least square optimization method (LM) to compute the necessary rpm (fixed pitch) or
-    # collective and cyclic pitch settings (variable pitch) to minimize the residuals of the trim targets. Separate
-    # functions were written for each variety of pitch since the independent variable (th and omega),
-    # which is optimized must be the first argument of each of these functions in order for scipy.least_squares to
-    # run properly.
-    if UserIn['trim'] == 3:
-        trim_sol = least_squares(variable_pitch_residuals, thInit, args = [targ_CT,omega,mu_x,lamTPP_init] ,method='lm',diff_step=0.5)
-        th = trim_sol.x
-        #   Run WT_trim once again with the trimmed values to return quantities necessary in computing the blade loads
-        beta, alpha, mu, CT, distCT, lamTPP, theta_expanded, beta_expanded, ut, up,CL = WT_trim(th, mu_x, lamTPP_init)
-
-    else:
-        trim_sol = least_squares(fixed_pitch_residuals,omega, args = [lamTPP_init],method = 'lm')
+#%%
+    if UserIn['trim']==1:
+        trimTargs = W
+        trim_sol = least_squares(fixed_pitch_residuals, omega, method = 'lm',diff_step = 0.5)
         omega = trim_sol.x
-        theta_expanded = geomParams['twistDist']
-        beta_expanded = np.zeros(1)
-        beta = np.zeros(3)
-        T,up,ut,distCT,CT = fixed_pitch_trim(omega,lamTPP_init)
+        th = np.zeros(3)
+        T,CT,dCT,lam,ut,up,CL,CD,AoA,mu = fixed_pitch_trim(omega)
 
-    #%%
 
-    #   Run to return hub loads
-    # hubLM = loads_moments(ut, up, beta, theta_expanded, beta_expanded)
+    elif UserIn['trim'] == 2:
+        trimTargs = W/(rho*np.pi*R**2*(omega*R)**2)
+        lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs)
+        trim_sol = least_squares(variable_pitch_residuals, th0, args=[mu, lamTPP_init], method='lm')
+        th = np.array([np.squeeze(trim_sol.x),0 ,0 ])
+        CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
-    #   Dimensionalized tangential, normal, and radial velocities
-    UT = ut*(omega*R)
-    UP = up*(omega*R)
-    UR = mu_x*np.cos(phi)*(omega*R)
-
-    U = np.sqrt(UT**2+UP**2)
-    AoA = theta_expanded-UP/UT
-
-    #   Computes the distributed and integrated thrust as well as the vertical force component
-    dT = rho*np.pi*R**2*(omega*R)**2*distCT
-    T = 1/(2*np.pi)*np.trapz(np.trapz(dT,r),phi)
-    dFz = dT/Nb
-
-    #   Computes distributed and integrated thrust as well as the in-plane force component
-    distCQ = 0.5*solDist*r**3*(CL*np.sin(up/ut)+cd0*np.cos(up/ut))
-    CQ = 1/(2*np.pi)*np.trapz(np.trapz(distCQ,r),phi)
-    dQ = rho*np.pi*R**3*(omega*R)**2*distCQ
-    Q = 1/(2*np.pi)*np.trapz(np.trapz(dQ,r),phi)
-
-    #   Power required
-    P = Q * omega
-    dFx = dQ / (Nb * r * R)
-    #   Radial force component, computed using eq. 1.31 of HELICOPTER DYNAMICS (2011, Chopra et al.)
-    # dFy = 0.5*rho*geomParams['chordDist']*U**2*(-a*(theta_expanded-up/ut)*np.expand_dims(np.sin(beta_expanded),axis = 1)+cd0*np.sin(np.expand_dims(UR,axis=1)/UT))
-    dFy = np.zeros((np.shape(dFz)))
+    else:
+        trimTargs = [W/(rho*np.pi*R**2*(omega*R)**2),0,0]
+        th = np.array([th0,np.pi/180,np.pi/180])
+        lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs[0])
+        trim_sol = least_squares(variable_pitch_residuals, th ,args = [mu, lamTPP_init],method = 'lm')
+        th = trim_sol.x
+        CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
 
 #%%
-    # assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
-    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'lamTPP': lamTPP ,'alpha':alpha,'gamma':gamma,'mu_x':mu_x,'phi':phi,'th':th,'beta':beta,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
-                  'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFy,'dFz':dFz}
+    UT = ut*omega*R
+    UP = up * omega * R
+    U = np.sqrt(UT**2+UP**2)
 
-    return loadParams
+    dT = rho*np.pi*R**2*(omega*R)**2*dCT
+    T = 1/(2*np.pi)*np.trapz(np.trapz(dT,r),phi)
+
+    dCQ = 0.5*solDist*r**3*(CL*np.sin(up/ut)+CD*np.cos(up/ut))
+    CQ = 1/(2*np.pi)*np.trapz(np.trapz(dCQ,r),phi)
+    dQ = rho*np.pi*R**3*(omega*R)**2*dCQ
+    Q = 1/(2*np.pi)*np.trapz(np.trapz(dQ,r),phi)
+    P = Q * omega
+
+    dFz = dT*np.cos(-theta_expanded) / Nb
+    dFx = dQ*np.sin(-theta_expanded)/ (Nb * r * R)
+    # dFr = rho*np.pi*R**2*(omega*R)**2*(1/2*solDist*r**2*(-CL*np.expand_dims(np.sin(beta_exp),axis = 1)+CD*np.sin(np.expand_dims(mu_x*np.cos(phi),axis = 1)/ut)))
+    dFr = np.zeros((np.shape(dFz)))
+
+    #   if the rotor is rotating CW the force distributions are flipped along the longitudinal axis of the rotor disk.
+    if UserIn['rotation'] == 2:
+
+        dFz = np.flip(dFz,axis = 0)
+        dFx = np.flip(dFx, axis=0)
+        AoA = np.flip(AoA, axis=0)
+        U = np.flip(U, axis=0)
+
+        if UserIn['inflowMod'] !=1:
+            lam = np.flip(lam, axis=0)
+        th[2] = -th[2]
+
+
+    #   hub force
+    H = Nb/(2*np.pi)*np.trapz(np.trapz((dFr*np.expand_dims(np.cos(phi),axis = 1)+dFx*np.expand_dims(np.sin(phi),axis = 1)),r),phi)
+    #   side force
+    Y = Nb/(2*np.pi)*np.trapz(np.trapz((dFr*np.expand_dims(np.sin(phi),axis = 1)-dFx*np.expand_dims(np.cos(phi),axis = 1)),r),phi)
+    #   roll moment
+    Mx = Nb / (2 * np.pi) * np.trapz(np.trapz(geomParams['rdim'] * dFz * np.expand_dims(np.sin(phi), axis=1), r), phi)
+    #   pitch moment
+    My = -Nb / (2 * np.pi) * np.trapz(np.trapz(geomParams['rdim'] * dFz * np.expand_dims(np.cos(phi), axis=1), r), phi)
+    hubLM = [H,Y,Mx,My]
+
+
+    #   assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
+    loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'alpha':alphaInit,'mu':mu,'phi':phi,'th':th,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
+                  'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFr,'dFz':dFz,'hubLM':hubLM}
     #
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    # dist = ax.contourf(phi, r, np.expand_dims(geomParams['twistDist'],axis = 1)-np.transpose(up/ut))
-    levels = np.linspace(np.min(dFz),np.max(dFz),200)
-    dist = ax.contourf(phi, r, np.transpose((dFz)),levels = levels)
-    plt.colorbar(dist)
+    return loadParams
+
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    # quant = up/ut
+    # levels = np.linspace(np.min(quant),np.max(quant),50)
+    # dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant),levels = levels)
+    # ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
+    # cbar = fig.colorbar(dist)
+    # cbar.ax.set_ylabel('$dFz \: [N]$')
+    #
+    # N = 3
+    # for i in range(N):
+    #     print(th[1]*np.cos(2*np.pi/N*i)+th[2]*np.sin(2*np.pi/N*i))
+    # for i in range(N):
+    #     print(-th[1]*np.sin(2*np.pi/N*i)+th[2]*np.cos(2*np.pi/N*i))

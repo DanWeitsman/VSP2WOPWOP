@@ -16,14 +16,14 @@ dirPyScript = os.getcwd()
 
 # Directory where the DegenGeom and airfoil polars are located, by default this is set to the location of the
 # test case folder.
-dirDataFile = '/Users/danielweitsman/Desktop/Masters_Research/OLS Validation for Forward Flight'
+dirDataFile = os.path.abspath(os.path.join(dirPyScript, 'TestCase','BoeingModel360'))
 
 # %%
 ''''Patch file write directory setup'''
 
 # Directory were you would like to write out the patch and functional data flies. By default this path is configured
 # to be a separate folder in the 'dirDataFile'.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'cyc_trim_pp_inflow'))
+dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'Case1'))
 
 #   Blade geometry patch file name (without the extension).
 geomFileName = "Geom"
@@ -34,7 +34,7 @@ loadingFileName = "Load"
 # %%
 
 # Names of DegenGeom files add as many geometry cases as you wish separated by commas.
-dataFileNames = ["OLS_DegenGeom.csv"]
+dataFileNames = ["Boeing360_DegenGeom.csv"]
 
 # Operational mode: set equal to one for design mode, which is ideal for geometric parametric studies, where each
 # variant of the blade geometry geometry corresponds to a different operating condition. Set this quantity equal to
@@ -52,10 +52,10 @@ savePickle = 0
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
 # number of 'XsecLocation'.
-airfoilPolarFileName = [['b540olsRe11E5.dat']]
+airfoilPolarFileName = [['vr12Re14E5.dat','vr15Re6E5.dat']]
 
 #   Non-dimensional radial location of each airfoil cross section
-XsecLocation = [0.182]
+XsecLocation = [0.268,0.85]
 
 # Starting angle of attack over which to evaluate the lift curve slop (degrees). The airfoil properties must have
 # been evaluated at this angle of attack.
@@ -73,37 +73,37 @@ check = 0
 # pitch), 2 for a collective pitch trim (the collective pitch is adjusted to attain the thrust coefficient computed
 # with the thrust and rpm specified below), and 3 for a full cyclic pitch trim (cyclic and collective pitch inputs
 # are varied to attain the desired thrust condition, while the longitudinal and lateral flapping angles are minimized).
-trim = 3
+trim = 2
 
 #   Direction of rotation set equal to 1 for CCW and 2 for CW
-rotation = 2
+rotation = 1
 
 # Number of Blades
-Nb = 2
+Nb = 4
 
 #   Forward velocity, set to zero for hover, input as many comma-delimited forward flight velocities as you wish to be
 # evaluated.
-Vx = [37.02464]
+Vx = [0]
 
 #   Vertical climb velocity (m/s), set to positive for ascent and negative for descent
 Vz = [0]
 
 #   Shaft tilt angle (degrees), forward tilt is designated by a negative tilt angle
-alphaShaft = [-2]
+alphaShaft = [0]
 
 #   Set the gross weight of the aircraft (N). Add as many comma-delimited thrust conditions as you wish into the list.
 # Separate functional data files will be written for each case. If you are running in the design mode ('OperMode' = 1),
 # the length of this list should be equal to the number of geometric cases ('dataFileNames').
-T = [974.9446]
+T = [3460]
 
 # Populate this list with the rotational rates (rpm) of the rotor. If you are running in the design mode ('OperMode'
 # = 1), the length of this list should be equal to the number of geometric cases ('dataFileNames').
-omega = [2250]
+omega = [1323]
 
 #   Initial collective pitch setting (degrees) used for trimming the rotor. This is an arbitrary value that should be
 # adjusted to achieve convergence by ensuring that the computed angles of attack along the blade span lie within the
 # limits of the Xfoil polars.
-thetaInit = 2
+thetaInit = 7
 
 #   Position of loading line from the blade's leading edge as a percentage of the chord.
 loadPos = 0.25
@@ -117,8 +117,8 @@ rho = 1.225
 # Speed of sound (m/s)
 c = 340
 
-#   Inflow model selection (only applies in forward flight), set equal to 1 for constant inflow, 2 for Glauert's linear,  3 for Drees's model, or 4 for Pitt-Peter's steady inflow.
-inflowMod = 4
+#   Inflow model selection (only applies in forward flight), set equal to 1 for constant inflow, 2 for Glauert's linear, or 3 for Drees's , or 4 for the steady Pitt-Peters (applicable when trimming to non-zero hub moments) model.
+inflowMod = 3
 
 # %%
 '''Broadband noise analysis configuration '''
@@ -135,19 +135,19 @@ BBNoiseModel = 2
 nmlWrite = 1
 
 #   Name of the namelist file that will be the same for all cases.
-NmlFileName = 'OLS.nam'
+NmlFileName = 'Model360.nam'
 
 #%%
 '''Observer namelist configuration'''
 #   Duration of the case, expressed as shaft revolutions
-nRev = 2
+nRev = 1
 
 #   Set sample rate (Hz), preferably as a power of two.
 nt = 2 ** 14
 
 # Observer type set equal to '1' for a single observer, '2' for a rectangular observer grid, and '3' for a
 # spherical grid. Then complete the respective section below.
-obsType = 3
+obsType = 2
 
 # %%
 '''Single Observer'''

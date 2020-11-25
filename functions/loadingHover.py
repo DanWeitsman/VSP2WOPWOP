@@ -84,6 +84,7 @@ def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
         AoA = th - lam / r
         dCL, dCD = PolarLookup(AoA)
         dCT = 0.5 * solDist * (dCL*np.cos(lam/r)-dCD*np.sin(lam/r))* r ** 2
+        # dCT = 0.5 * solDist * dCL * r ** 2
         CT = np.trapz(dCT, r)
 
         return CT, dCT, dCL, dCD, lam, AoA
@@ -199,7 +200,6 @@ def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
         polarInd = list(XsecPolar.keys())*len(r)
         for i,key in enumerate(list(XsecPolar[list(XsecPolar.keys())[0]].keys())[1:]):
             XsecPolarExp[key] = np.ones(len(r))*XsecPolar[list(XsecPolar.keys())[0]][key]
-    XsecPolarExp['Lift Slope'] = XsecPolarExp['Lift Slope']*np.pi/180
 
     # %%
 
@@ -215,6 +215,7 @@ def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
         th = np.array([np.squeeze(trim_sol.x), 0, 0])
 
 #%%
+    U =np.sqrt((omega*geomParams['rdim'])**2+(omega*R*lam)**2)
     #   Integrated lift and drag coefficients
     CL = np.trapz(dCL, r)
     CD = np.trapz(dCD, r)
@@ -230,15 +231,17 @@ def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     dT = dCT * rho * Adisk * (omega * R) ** 2
     T = np.trapz(dT, r)
 
-    #   Resolved force component that is normal to the rotor plane
-    dFz = dT / Nb
+    # Resolved normal force component. The vector is effectively rotated by the collective pitch setting, so that a single
+    # a change of base (CB) can be applied to the blade geometry and loading vector in the namelist file.
+    dFz = dT*np.cos(-th[0]) / Nb
 
     #   Distribution and integrated torque
     dQ = dCP * rho * Adisk * (omega * R) ** 2 * R
     Q = np.trapz(dQ, r)
 
-    #   Resolved in-plane force component
-    dFx = dQ / (Nb * r * R)
+    # Resolved in-plane force component. The vector is effectively rotated by the collective pitch setting, so that a single
+    # a change of base (CB) can be applied to the blade geometry and loading vector in the namelist file.
+    dFx = dQ*np.sin(-th[0]) / (Nb * r * R)
 
     #   Figure of merit, induced power factor = 1.15
     FM = CP / (1.15 * CP + sol / 8 * CD)
@@ -248,46 +251,50 @@ def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     dFz[np.where(np.isnan(dFz) == 1)] = 0
     dFy = np.zeros(len(r))
 
+    #   if the rotor is rotating CW the force distributions are flipped along the longitudinal axis of the rotor disk.
+    if UserIn['rotation'] == 2:
+        dFz = np.flip(dFz,axis = 0)
+        dFx = np.flip(dFx, axis=0)
+        AoA = np.flip(AoA, axis=0)
+        lam = np.flip(lam, axis=0)
+        U = np.flip(U, axis=0)
+
 
 #%%
     # Assembles all computed load parameters into a dictionary
     loadParams = {'coll_residuals':trim_sol.fun,'th': th, 'beta': [0, 0, 0], 'CT': CT, 'T': T, 'dCT': dCT, 'dT': dT, 'CP': CP, 'P': P,
                   'Q': Q, 'dCP': dCP, 'dQ': dQ, 'dCL': dCL, 'dCD': dCD, 'CL': CL, 'CD': CD, 'FM': FM, 'AoA': AoA,'ClaDist':XsecPolarExp['Lift Slope'], 'lambda': lam,
-                  'dFx': dFx, 'dFy': dFy, 'dFz': dFz, 'omega': omega,'UP':UP}
+                  'dFx': dFx, 'dFy': dFy, 'dFz': dFz, 'omega': omega,'U':U}
     return loadParams
 
 #
 # %% # figdir = os.path.abspath(os.path.join(input.dirDataFile,'Figures/CL.png')) # with cbook.get_sample_data(figdir) as
-#  image_file:
 #
-# # fig, ax = plt.subplots()
-# # image = plt.imread(figdir)
-# # im = ax.imshow(image)
-#
-#
-# fig = plt.figure(figsize=[6.4, 4.5], )
-# ax = fig.gca()
-# plt.plot(r, CL)
-# ax.set_ylabel('Lift Coefficient')
-# ax.set_xlabel('Nondimensional radial position, r/R')
-# ax.set_title('CT/$\sigma$=0.01')
-# plt.grid()
-#
-# fig = plt.figure(figsize=[6.4, 4.5], )
-# ax = fig.gca()
-# plt.plot(r, CD)
-# ax.set_ylabel('Drag Coefficient')
-# ax.set_xlabel('Nondimensional radial position, r/R')
-# ax.set_title('CT/$\sigma$=0.01')
-# plt.grid()
-# # plt.axes([0.25 ,1, 0.4 ,0.9])
-# # [lam, F, err, i] = TipLoss(lamInit,thInit,r)
-# # lam[np.where(np.isnan(lam) == 1)] = 0
-# # AoA = th_init-lam/r
-# # [Cl,Cd]=PolarLookup(AoA)
-# # dCT = 0.5*sig*Cl*r**2*dr
-# # CT_temp = np.trapz(dCT)
 # #
+#     import matplotlib.pyplot as plt
+#     fig = plt.figure(figsize=[6.4, 4.5], )
+#     ax = fig.gca()
+#     plt.plot(r, dCL)
+#     ax.set_ylabel('Lift Coefficient')
+#     ax.set_xlabel('Nondimensional radial position, r/R')
+#     ax.set_title('CT/$\sigma$=0.01')
+#     plt.grid()
+#
+#     fig = plt.figure(figsize=[6.4, 4.5], )
+#     ax = fig.gca()
+#     plt.plot(r, dCD)
+#     ax.set_ylabel('Drag Coefficient')
+#     ax.set_xlabel('Nondimensional radial position, r/R')
+#     ax.set_title('CT/$\sigma$=0.01')
+#     plt.grid()
+#     plt.axes([0.25 ,1, 0.4 ,0.9])
+#     [lam, F, err, i] = TipLoss(lamInit,thInit,r)
+#     lam[np.where(np.isnan(lam) == 1)] = 0
+#     AoA = th_init-lam/r
+#     [Cl,Cd]=PolarLookup(AoA)
+#     dCT = 0.5*sig*Cl*r**2*dr
+#     CT_temp = np.trapz(dCT)
+
 #
 # # errCT= abs((CT_temp-CT)/CT_temp)
 # # th_init = 6*CT_temp/(np.mean(chord)*a)+3/2*np.sqrt(CT_temp/2)
