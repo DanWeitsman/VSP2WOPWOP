@@ -11,8 +11,6 @@ import csv
 import numpy as np
 
 def ParseDegenGeom(dirDataFile, dataFileName):
-    os.chdir(dirDataFile)
-
     data = {}
     n = 0
 
