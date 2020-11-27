@@ -11,7 +11,6 @@ blades, the lift curve characteristics, and the aerodynamic loading/performance 
 '''
 # %%
 
-from input import UserIn
 import os
 from shutil import rmtree
 from functions.DegenGeom import ParseDegenGeom
@@ -30,7 +29,7 @@ from functions.ErrorHandles import ErrorHandles
 from functions.loadingFF import  loadingFF
 from functions.designModeVal import designModeVal
 # %%
-def main():
+def VSP2WOPWOP(UserIn):
 
     #   Checks that the user inputs were provided correctly
     ErrorHandles(UserIn)
@@ -174,10 +173,4 @@ def main():
         # pickle.load(open("file.pkl", "rb"))
 
     return MainDict
-
-
-if __name__ == '__main__':
-    print(__name__)
-    MainDict = main()
-
     # f = h5py.File(os.path.abspath(os.path.expanduser(UserIn['dirPatchFile'] + os.path.sep + 'MainDict.hdf5')),'w')

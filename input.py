@@ -11,6 +11,7 @@ containing the patch and namelist files for each loading condition, will be gene
 # %%
 '''Package import and directory setup'''
 import os
+from VSP2WOPWOP import VSP2WOPWOP
 
 dirPyScript = os.getcwd()
 
@@ -223,3 +224,6 @@ UserIn = {'dirDataFile': dirDataFile, 'OperMode': operMode, 'savePickle': savePi
           'yLoc': yLoc, 'zLoc': zLoc, 'nbx': nbx, 'nby': nby, 'nbz': nbz, 'xMin': xMin, 'yMin': yMin, 'zMin': zMin,
           'xMax': xMax, 'yMax': yMax, 'zMax': zMax, 'radius': radius, 'nbtheta': nbTheta,
           'thetamin': thetaMin, 'thetamax': thetaMax, 'nbpsi': nbPsi, 'psimin': psiMin, 'psimax': psiMax}
+
+# %% Run VSP2WOPWOP on User Dict
+VSP2WOPWOP(UserIn)
