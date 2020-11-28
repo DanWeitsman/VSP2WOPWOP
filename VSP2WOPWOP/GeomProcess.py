@@ -7,7 +7,7 @@
 
 # %%
 import numpy as np
-from functions.NodeCenteredNorms import NodeCenteredNorms
+from VSP2WOPWOP.NodeCenteredNorms import NodeCenteredNorms
 #%%
 
 def geomProcess(dataSorted, indHeader, loadPos, Nb,rotation):

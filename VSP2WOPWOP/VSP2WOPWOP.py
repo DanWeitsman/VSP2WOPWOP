@@ -1,10 +1,10 @@
 '''
 
-VSP2WOPWOP Main Script
+VSP2WOPWOP PSU-WOPWOP case generator
 
 Author: Daniel Weitsman
 
-This is the main script which calls on and coordinates the executes of all the functions comprising the program.
+This is the main script which calls on and coordinates the executes of all the VSP2WOPWOP comprising the program.
 There really shouldn't be a need to edit this script. If the code is ran in a python IDE three dictionaries,
 titled geomParams,XsecPolar,loadParams will be returned these contain the analyzed geometric parameters of the
 blades, the lift curve characteristics, and the aerodynamic loading/performance information, respectively.
@@ -13,23 +13,26 @@ blades, the lift curve characteristics, and the aerodynamic loading/performance 
 
 import os
 from shutil import rmtree
-from functions.DegenGeom import ParseDegenGeom
-from functions.GeomProcess import geomProcess
-from functions.polarRead import polarRead
-from functions.loadingHover import loadingAxialHover
-from functions.ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
-from functions.PeriodicLoadingPatchFileWrite import PeriodicLoadingPatchFileWrite
-from functions.nmlWrite import nml_write
-from functions.CaseFileWrite import caseFile_write
-from functions.PeggWrite import PeggBBDataFileWrite
-from functions.ConstantBPMWrite import ConstantBPMWrite
-from functions.PeriodicBPMWrite import PeriodicBPMWrite
-from functions.GeomPatchFileWrite import GeomPatchFileWrite
-from functions.ErrorHandles import ErrorHandles
-from functions.loadingFF import  loadingFF
-from functions.designModeVal import designModeVal
+
+from VSP2WOPWOP.CaseFileWrite import caseFile_write
+from VSP2WOPWOP.ConstantBPMWrite import ConstantBPMWrite
+from VSP2WOPWOP.ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
+from VSP2WOPWOP.DegenGeom import ParseDegenGeom
+from VSP2WOPWOP.ErrorHandles import ErrorHandles
+from VSP2WOPWOP.GeomPatchFileWrite import GeomPatchFileWrite
+from VSP2WOPWOP.GeomProcess import geomProcess
+from VSP2WOPWOP.PeggWrite import PeggBBDataFileWrite
+from VSP2WOPWOP.PeriodicBPMWrite import PeriodicBPMWrite
+from VSP2WOPWOP.PeriodicLoadingPatchFileWrite import PeriodicLoadingPatchFileWrite
+from VSP2WOPWOP.designModeVal import designModeVal
+from VSP2WOPWOP.loadingFF import loadingFF
+from VSP2WOPWOP.loadingHover import loadingAxialHover
+from VSP2WOPWOP.nmlWrite import nml_write
+from VSP2WOPWOP.polarRead import polarRead
+
+
 # %%
-def VSP2WOPWOP(UserIn):
+def generate_cases(UserIn):
 
     #   Checks that the user inputs were provided correctly
     ErrorHandles(UserIn)

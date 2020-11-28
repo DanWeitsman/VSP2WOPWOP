@@ -11,13 +11,14 @@ containing the patch and namelist files for each loading condition, will be gene
 # %%
 '''Package import and directory setup'''
 import os
-from VSP2WOPWOP import VSP2WOPWOP
+
+from VSP2WOPWOP.VSP2WOPWOP import generate_cases
 
 dirPyScript = os.getcwd()
 
 # Directory where the DegenGeom and airfoil polars are located, by default this is set to the location of the
 # test case folder.
-dirDataFile = os.path.abspath(os.path.join(dirPyScript, 'TestCase','BoeingModel360'))
+dirDataFile = os.path.abspath(os.path.join(dirPyScript, 'TestCase', 'BoeingModel360'))
 
 # %%
 ''''Patch file write directory setup'''
@@ -48,15 +49,15 @@ operMode = 1
 # "file.pkl", "rb"))
 savePickle = 0
 
-#%%
+# %%
 '''Airfoil Cross Section Configuration'''
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
 # number of 'XsecLocation'.
-airfoilPolarFileName = [['vr12Re14E5.dat','vr15Re6E5.dat']]
+airfoilPolarFileName = [['vr12Re14E5.dat', 'vr15Re6E5.dat']]
 
 #   Non-dimensional radial location of each airfoil cross section
-XsecLocation = [0.268,0.85]
+XsecLocation = [0.268, 0.85]
 
 # Starting angle of attack over which to evaluate the lift curve slop (degrees). The airfoil properties must have
 # been evaluated at this angle of attack.
@@ -138,7 +139,7 @@ nmlWrite = 1
 #   Name of the namelist file that will be the same for all cases.
 NmlFileName = 'Model360.nam'
 
-#%%
+# %%
 '''Observer namelist configuration'''
 #   Duration of the case, expressed as shaft revolutions
 nRev = 1
@@ -216,14 +217,17 @@ psiMax = 0
 # %% Packs user input parameters into a dictionary (no need to edit)
 UserIn = {'dirDataFile': dirDataFile, 'OperMode': operMode, 'savePickle': savePickle, 'dataFileName': dataFileNames,
           'airfoilPolarFileName': airfoilPolarFileName, 'XsecLocation': XsecLocation,
-          'aStart': aStart, 'aLength': aLength, 'check': check,'trim':trim, 'Nb': Nb,'rotation':rotation, 'Vx': Vx, 'Vz': Vz, 'alphaShaft': alphaShaft,
-          'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss, 'inflowMod':inflowMod,'rho': rho, 'c': c,
+          'aStart': aStart, 'aLength': aLength, 'check': check, 'trim': trim, 'Nb': Nb, 'rotation': rotation, 'Vx': Vx,
+          'Vz': Vz, 'alphaShaft': alphaShaft,
+          'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss,
+          'inflowMod': inflowMod, 'rho': rho, 'c': c,
           'nmlWrite': nmlWrite, 'dirPatchFile': dirPatchFile,
-          'geomFileName': geomFileName, 'loadingFileName': loadingFileName, 'BBNoiseModel':BBNoiseModel,
-          'BBNoiseFlag': BBNoiseFlag, 'NmlFileName': NmlFileName, 'nRev': nRev, 'nt': nt, 'obsType': obsType, 'xLoc': xLoc,
+          'geomFileName': geomFileName, 'loadingFileName': loadingFileName, 'BBNoiseModel': BBNoiseModel,
+          'BBNoiseFlag': BBNoiseFlag, 'NmlFileName': NmlFileName, 'nRev': nRev, 'nt': nt, 'obsType': obsType,
+          'xLoc': xLoc,
           'yLoc': yLoc, 'zLoc': zLoc, 'nbx': nbx, 'nby': nby, 'nbz': nbz, 'xMin': xMin, 'yMin': yMin, 'zMin': zMin,
           'xMax': xMax, 'yMax': yMax, 'zMax': zMax, 'radius': radius, 'nbtheta': nbTheta,
           'thetamin': thetaMin, 'thetamax': thetaMax, 'nbpsi': nbPsi, 'psimin': psiMin, 'psimax': psiMax}
 
 # %% Run VSP2WOPWOP on User Dict
-VSP2WOPWOP(UserIn)
+generate_cases(UserIn)
