@@ -1,0 +1,198 @@
+&environmentin
+nbSourceContainers = 1
+nbObserverContainers = 1
+spectrumFlag = .true.
+SPLdBFLAG = .true.
+SPLdBAFlag = .false.
+OASPLdBAFlag = .false.
+OASPLdBFlag = .false.
+broadbandFlag = .false.
+thicknessNoiseFlag = .true.
+loadingNoiseFlag = .true.
+acousticPressureFlag = .true.
+totalNoiseFlag = .true.
+debugLevel = 1
+ASCIIOutputFlag = .true.
+sigmaflag = .false.
+loadingSigmaFlag = .true.
+pressureSigmaFlag = .true.
+normalSigmaFlag = .true.
+observerSigmaflag = .true.
+loadingNoisesigmaFlag = .true.
+thicknessNoiseSigmaFlag = .true.
+totalNoiseSigmaFlag = .true.
+accelerationSigmaFlag = .true.
+MdotrSigmaFlag = .true.
+velocitySigmaFlag = .true.
+/
+
+&environmentconstants
+rho = 1.225
+c = 340.2939
+/
+
+&observerin
+title = 'Observers'
+!attachedto = 'Aircraft'
+nt = 1024
+tmin = 0.0
+tmax = 0.045351473922902494
+highpassfrequency = 10
+lowpassfrequency = 20000
+nbx = 1
+xMin = 0
+xMax = 0
+nby = 1
+yMin = 14.165447920000007
+yMax = 14.165447920000007
+nbz = 3
+zMin = -1.4888485708273682
+zMax = 1.4888485708273682
+nbBase = 1
+octaveFlag = .false.
+octaveNumber = 3
+octaveApproxFlag = .false.
+/
+
+&cb
+Title = 'Observer motion'
+TranslationType = 'KnownFunction'
+VH = 0, 0, 0
+/
+
+&containerin
+Title = 'Aircraft'
+nbContainer = 1
+nbBase = 2
+dTau = 0.0003779289493575208
+/
+
+&cb
+Title = 'Aircraft motion'
+TranslationType = 'KnownFunction'
+VH = 0, 0, 0
+/
+
+&cb
+Title = 'Rotor disk AoA tilt'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 1, 0
+angleValue = 0.0
+/
+
+&containerin
+Title = 'Rotor'
+nbContainer = 4
+nbBase = 2
+/
+
+&cb
+Title = 'Rotation'
+rotation = .true.
+AngleType = 'KnownFunction'
+Omega = 138.54423602330988
+Psi0 = 0
+AxisValue = 0, 0, 1
+/
+
+&cb
+Title = 'Rotate to align blades with zero azimuth'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 0, 1
+angleValue = -1.5707963267948966
+/
+
+&containerin
+Title = 'Blade 1'
+patchGeometryFile = 'Geom.dat'
+patchLoadingFile = 'Load.dat'
+nbBase = 2
+/
+
+&cb
+Title = 'Constant Rotation'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 0, 1
+angleValue = 0.0
+/
+
+&cb
+Title = 'Pitch'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 1, 0
+angleValue = 0.1184602283304208
+/
+
+&containerin
+Title = 'Blade 2'
+patchGeometryFile = 'Geom.dat'
+patchLoadingFile = 'Load.dat'
+nbBase = 2
+/
+
+&cb
+Title = 'Constant Rotation'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 0, 1
+angleValue = 1.5707963267948966
+/
+
+&cb
+Title = 'Pitch'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 1, 0
+angleValue = 0.1184602283304208
+/
+
+&containerin
+Title = 'Blade 3'
+patchGeometryFile = 'Geom.dat'
+patchLoadingFile = 'Load.dat'
+nbBase = 2
+/
+
+&cb
+Title = 'Constant Rotation'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 0, 1
+angleValue = 3.141592653589793
+/
+
+&cb
+Title = 'Pitch'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 1, 0
+angleValue = 0.1184602283304208
+/
+
+&containerin
+Title = 'Blade 4'
+patchGeometryFile = 'Geom.dat'
+patchLoadingFile = 'Load.dat'
+nbBase = 2
+/
+
+&cb
+Title = 'Constant Rotation'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 0, 1
+angleValue = 4.71238898038469
+/
+
+&cb
+Title = 'Pitch'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 1, 0
+angleValue = 0.1184602283304208
+/
+

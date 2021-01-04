@@ -42,10 +42,10 @@ def geomProcess(dataSorted, indHeader, loadPos, Nb,rotation):
 
     # precone = np.arctan(LENodes[:, 2][-1]/LENodes[:, 1][-1])
     # preconez = LENodes[:, 1]*np.tan(precone)
-
+    sweep = np.arctan(-(LENodes - TENodes)[:,1]/(LENodes - TENodes)[:,0])
     #   computes the twist distribution along the blade span [rad] (this quantitiy varies based on the orientation of the blade in OpenVSP)
-    twistDist =np.arctan(-LENodes[:,2]/LENodes[:,0])
-
+    # twistDist =np.arctan(-LENodes[:,2]/LENodes[:,0])
+    twistDist = np.arctan(-(LENodes - TENodes)[:, 2] / (LENodes - TENodes)[:, 0])
     # stickNodes = np.float64(comp1Data['SURFACE_FACE'][1:, :])
     # plateNodes = np.float64(comp1Data['PLATE_NODE'][1:, :3])
 
@@ -79,26 +79,28 @@ def geomProcess(dataSorted, indHeader, loadPos, Nb,rotation):
     liftLineCoord = LENodes - (LENodes - TENodes) * loadPos
     liftLineNorm = np.transpose((np.sin(twistDist),np.zeros(len(twistDist)),np.cos(twistDist)))
     # liftLineNorm = np.transpose((np.zeros(len(twistDist)), np.zeros(len(twistDist)), np.ones(len(twistDist))))
-    geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,
+    geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,'sweep':sweep,
                   'solidity':sol,'surfNodes':surfNodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r,'TE_thick':TE_thick}
 
 
     return geomParams
 
+# #
+#     import matplotlib.pyplot as plt
+#     fig = plt.figure()
+#     ax = fig.gca(projection = '3d')
+#     ax.auto_scale_xyz([-2, 2], [10, 60], [-1, 1])
+#     ax.pbaspect = [.09, 1, .05]
+#     ax.set(xlabel = 'x',ylabel = 'y',zlabel = 'z')
+#     # ax.scatter3D(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],c = 'red',linewidths = 1)
+#     ax.scatter3D(LENodes[:,0], LENodes[:,1], LENodes[:,2],c = 'green',linewidths = 1)
+#     ax.scatter3D(TENodes[:,0], TENodes[:,1], TENodes[:,2],c = 'blue',linewidths = 1)
+#     ax.scatter3D(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2], c='yellow', linewidths=.2)
+#     ax.scatter3D(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2], c='red', linewidths=.2)
 #
-    # import matplotlib.pyplot as plt
-    # fig = plt.figure()
-    # ax = fig.gca(projection = '3d')
-    # ax.auto_scale_xyz([-2, 2], [10, 60], [-1, 1])
-    # ax.pbaspect = [.09, 1, .05]
-    # ax.set(xlabel = 'x',ylabel = 'y',zlabel = 'z')
-    # # ax.scatter3D(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],c = 'red',linewidths = 1)
-    # ax.scatter3D(LENodes[:,0], LENodes[:,1], LENodes[:,2],c = 'green',linewidths = 1)
-    # ax.scatter3D(TENodes[:,0], TENodes[:,1], TENodes[:,2],c = 'blue',linewidths = 1)
-    # ax.scatter3D(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2], c='yellow', linewidths=.2)
-    # ax.scatter3D(surfNodes[1::pntsPerXsec,0], surfNodes[1::pntsPerXsec,1], surfNodes[1::pntsPerXsec,2], c='red', linewidths=1)
-    # ax.scatter3D(surfNodes[(pntsPerXsec-2)::pntsPerXsec,0], surfNodes[(pntsPerXsec-2)::pntsPerXsec,1], surfNodes[(pntsPerXsec-2)::pntsPerXsec,2], c='red', linewidths=1)
-    #
-    # plt.show()
-    # # ax.quiver(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],ScaledNodeCenteredSurfNorms[:,0]*0.005,ScaledNodeCenteredSurfNorms[:,1]*0.005,ScaledNodeCenteredSurfNorms[:,2]*0.005)
-    # ax.quiver(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2],liftLineNorm[:,0]*0.005,liftLineNorm[:,1]*0.005,liftLineNorm[:,2]*0.005)
+#     # ax.scatter3D(surfNodes[1::pntsPerXsec,0], surfNodes[1::pntsPerXsec,1], surfNodes[1::pntsPerXsec,2], c='red', linewidths=1)
+#     # ax.scatter3D(surfNodes[(pntsPerXsec-2)::pntsPerXsec,0], surfNodes[(pntsPerXsec-2)::pntsPerXsec,1], surfNodes[(pntsPerXsec-2)::pntsPerXsec,2], c='red', linewidths=1)
+#
+#     plt.show()
+#     # # ax.quiver(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],ScaledNodeCenteredSurfNorms[:,0]*0.005,ScaledNodeCenteredSurfNorms[:,1]*0.005,ScaledNodeCenteredSurfNorms[:,2]*0.005)
+#     # ax.quiver(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2],liftLineNorm[:,0]*0.005,liftLineNorm[:,1]*0.005,liftLineNorm[:,2]*0.005)

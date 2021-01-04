@@ -51,10 +51,13 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
     if UserIn['BBNoiseFlag'] == 1:
         broadbandFlag = '.true.'
         octaveFlag =  '.true.'
+        spectrumFlag = '.false.'
+        SPLdBFLAG= '.false.'
     else:
         broadbandFlag = '.false.'
         octaveFlag =  '.false.'
-
+        spectrumFlag = '.false.'
+        SPLdBFLAG = '.false.'
     #   Configures which broadband noise model to enable
     if UserIn['BBNoiseModel'] == 1:
         PeggNoiseFlag = '.true.'
@@ -87,8 +90,8 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             {
                 'nbSourceContainers': 1,
                 'nbObserverContainers': 1,
-                'spectrumFlag': '.false.',
-                'SPLdBFLAG': '.false.',
+                'spectrumFlag': '.true.',
+                'SPLdBFLAG': '.true.',
                 'SPLdBAFlag': '.false.',
                 'OASPLdBAFlag': '.false.',
                 'OASPLdBFlag': '.false.',

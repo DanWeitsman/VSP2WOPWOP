@@ -6,7 +6,7 @@
 # When using the design mode (operMode = 1), distinct operating conditions can be defined for each blade geometry.
 # This module returns the correct quantity corresponding to each geometry variant.
 
-def designModeVal(UserIn, i):
+def designModeVal(UserIn,XsecPolar, i):
     # In the design mode each  can be trimmed to a distinct operating condition. This set of if
     # statement checks the length of the quantities specified as lists in the input module. If the list consists of a
     # single element, this value is retained for all subsequent DegenGeom variant. However, if its length is greater
@@ -37,4 +37,9 @@ def designModeVal(UserIn, i):
     else:
         alphaShaft = UserIn['alphaShaft'][0]
 
-    return T,Vz,Vx,omega,alphaShaft
+    if len(UserIn['airfoilPolarFileName']) > 1:
+        XsecPolar = XsecPolar[list(XsecPolar.keys())[i]]
+    else:
+        XsecPolar = XsecPolar[list(XsecPolar.keys())[0]]
+
+    return T,Vz,Vx,omega,alphaShaft,XsecPolar

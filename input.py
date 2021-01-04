@@ -11,19 +11,16 @@ containing the patch and namelist files for each loading condition, will be gene
 # %%
 '''Package import and directory setup'''
 import os
-
-dirPyScript = os.getcwd()
-
 # Directory where the DegenGeom and airfoil polars are located, by default this is set to the location of the
 # test case folder.
-dirDataFile = os.path.abspath(os.path.join(dirPyScript, 'TestCase','BoeingModel360'))
+dirDataFile = os.path.abspath(os.path.join(os.getcwd(), 'TestCase', 'BoeingModel360'))
 
 # %%
 ''''Patch file write directory setup'''
 
 # Directory were you would like to write out the patch and functional data flies. By default this path is configured
 # to be a separate folder in the 'dirDataFile'.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'Case1'))
+dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'test'))
 
 #   Blade geometry patch file name (without the extension).
 geomFileName = "Geom"
@@ -43,9 +40,8 @@ dataFileNames = ["Boeing360_DegenGeom.csv"]
 operMode = 1
 
 # Set equal to one in order to save the main dictionary, which contains all the computed geometric and loading
-# parameters for the case to a .pkl file. This file can be read using the following command: pickle.load(open(
-# "file.pkl", "rb"))
-savePickle = 0
+# parameters for each case as an HDF5 file. This file can be read using the following command: h5py.File("file path", 'MainDict.h5')), 'r')
+saveHDF5 = 1
 
 #%%
 '''Airfoil Cross Section Configuration'''
@@ -213,7 +209,7 @@ psiMin = -45
 psiMax = 0
 
 # %% Packs user input parameters into a dictionary (no need to edit)
-UserIn = {'dirDataFile': dirDataFile, 'OperMode': operMode, 'savePickle': savePickle, 'dataFileName': dataFileNames,
+UserIn = {'dirDataFile': dirDataFile, 'OperMode': operMode, 'saveHDF5': saveHDF5, 'dataFileName': dataFileNames,
           'airfoilPolarFileName': airfoilPolarFileName, 'XsecLocation': XsecLocation,
           'aStart': aStart, 'aLength': aLength, 'check': check,'trim':trim, 'Nb': Nb,'rotation':rotation, 'Vx': Vx, 'Vz': Vz, 'alphaShaft': alphaShaft,
           'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss, 'inflowMod':inflowMod,'rho': rho, 'c': c,

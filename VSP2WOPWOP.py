@@ -12,6 +12,7 @@ blades, the lift curve characteristics, and the aerodynamic loading/performance 
 # %%
 
 from input import UserIn
+import numpy as np
 import os
 from shutil import rmtree
 from functions.DegenGeom import ParseDegenGeom
@@ -77,15 +78,15 @@ def main():
 
             # This function returns the values, which are specified as lists in the input module, corresponding to the
             # current DegenGeom index
-            T, Vz, Vx, omega, alphaShaft = designModeVal(UserIn, iter_geom)
+            T, Vz, Vx, omega, alphaShaft,XsecPolar_select = designModeVal(UserIn,XsecPolar, iter_geom)
 
             # This section of code determines whether to run the hover/axial or forward flight module and writes out
             # the corresponding constant or periodic functional data file, respectively.
             if Vx == 0:
-                loadParams = loadingAxialHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vz)
+                loadParams = loadingAxialHover(UserIn, geomParams, XsecPolar_select, T, omega, Vz)
                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
-                loadParams = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_geom]], T, omega, Vx, Vz, alphaShaft)
+                loadParams = loadingFF(UserIn, geomParams, XsecPolar_select, T, omega, Vx, Vz, alphaShaft)
                 PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega, dirSaveFile)
 
             if UserIn['BBNoiseFlag'] == 1:
@@ -160,18 +161,33 @@ def main():
                                    dataFileName[:-4]: {'geomParams': geomParams, 'XsecPolar': XsecPolar,
                                                        'loadParams': loadParams}}}
 
-        if UserIn['savePickle'] == 1:
-            import pickle
-            with open(os.path.abspath(os.path.expanduser(UserIn['dirPatchFile'] + os.path.sep + 'MainDict.pkl')),
-                      "wb") as f:
-                pickle.dump(MainDict, f)
+        if UserIn['saveHDF5'] == 1:
+            import h5py
+            with h5py.File(os.path.abspath(os.path.join(UserIn['dirPatchFile'], 'MainDict.h5')), 'w') as f_write:
 
-            # import h5py
-            # f = h5py.File(os.path.abspath(os.path.expanduser(UserIn['dirPatchFile'] + os.path.sep + 'MainDict.hdf5')),'w')
+                def encode_str_list(str_list):
+                    for i, elem in enumerate(str_list):
+                        if isinstance(elem, list):
+                            encode_str_list(elem)
+                        elif isinstance(elem, str):
+                            str_list[i] = elem.encode()
+                        else:
+                            break
+                    return str_list
 
+                def write_dict_hdf5(d,parent=''):
+                    for key , value in d.items():
+                        if isinstance(value, dict):
+                            write_dict_hdf5(value, parent+'/'+key)
+                        else:
+                            # print(key)
+                            if isinstance(value, list):
+                                value = encode_str_list(value)
+                            elif isinstance(value, str):
+                                value = value.encode()
+                            f_write.create_dataset(parent+'/'+key, shape=np.shape(value), data=value)
 
-        # Use the following command to load data
-        # pickle.load(open("file.pkl", "rb"))
+                write_dict_hdf5(MainDict)
 
     return MainDict
 
