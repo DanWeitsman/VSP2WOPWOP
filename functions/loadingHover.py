@@ -12,7 +12,7 @@ from scipy.optimize import least_squares,minimize
 import bisect
 
 # %%
-def loadingAxialHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
+def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
 
     def rpm_residuals(omega):
         '''

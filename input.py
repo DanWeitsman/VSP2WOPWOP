@@ -61,7 +61,7 @@ aStart = 2
 aLength = 3
 
 # Set equal to one for the airfoil polars to be plotted, along with the interval that the lift curve slope is evaluated.
-check = 0
+check = 1
 
 # %%
 ''' Operating condition configuration '''
@@ -114,7 +114,7 @@ rho = 1.225
 c = 340
 
 #   Inflow model selection (only applies in forward flight), set equal to 1 for constant inflow, 2 for Glauert's linear, or 3 for Drees's , or 4 for the steady Pitt-Peters (applicable when trimming to non-zero hub moments) model.
-inflowMod = 3
+inflowMod = 4
 
 # %%
 '''Broadband noise analysis configuration '''

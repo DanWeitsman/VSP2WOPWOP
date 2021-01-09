@@ -18,7 +18,7 @@ from shutil import rmtree
 from functions.DegenGeom import ParseDegenGeom
 from functions.GeomProcess import geomProcess
 from functions.polarRead import polarRead
-from functions.loadingHover import loadingAxialHover
+from functions.loadingHover import loadingHover
 from functions.ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
 from functions.PeriodicLoadingPatchFileWrite import PeriodicLoadingPatchFileWrite
 from functions.nmlWrite import nml_write
@@ -83,7 +83,7 @@ def main():
             # This section of code determines whether to run the hover/axial or forward flight module and writes out
             # the corresponding constant or periodic functional data file, respectively.
             if Vx == 0:
-                loadParams = loadingAxialHover(UserIn, geomParams, XsecPolar_select, T, omega, Vz)
+                loadParams = loadingHover(UserIn, geomParams, XsecPolar_select, T, omega, Vz)
                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
                 loadParams = loadingFF(UserIn, geomParams, XsecPolar_select, T, omega, Vx, Vz, alphaShaft)
@@ -130,8 +130,8 @@ def main():
                                 alphaShaft = UserIn['alphaShaft'][0]
 
                             if nVx == 0:
-                                loadingOut = loadingAxialHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_omega]],
-                                                               nThrust, nOmega,nVz)
+                                loadingOut = loadingHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_omega]],
+                                                          nThrust, nOmega, nVz)
                                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
                                                               dirCaseFile)
                             else:
@@ -196,4 +196,3 @@ if __name__ == '__main__':
     print(__name__)
     MainDict = main()
 
-    # f = h5py.File(os.path.abspath(os.path.expanduser(UserIn['dirPatchFile'] + os.path.sep + 'MainDict.hdf5')),'w')
