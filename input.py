@@ -114,17 +114,17 @@ rho = 1.225
 # Speed of sound (m/s)
 c = 340
 
-#   Inflow model selection (only applies in forward flight), set equal to 1 for constant inflow, 2 for Glauert's linear, or 3 for Drees's , or 4 for the steady Pitt-Peters (applicable when trimming to non-zero hub moments) model.
+# Inflow model selection (only applies in forward flight), set equal to 1 for constant inflow, 2 for Glauert's
+# linear, or 3 for Drees's , or 4 for the steady Pitt-Peters (applicable when trimming to non-zero hub moments) model.
 inflowMod = 4
 
 # %%
 '''Broadband noise analysis configuration '''
 
-#   Set equal to '1' to conduct a broadband noise prediction,'0' otherwise.
+# Set equal to '1' to conduct a broadband noise prediction,'0' otherwise. The Brooks, Pope, and Marcolini (BPM)
+# semi-empirical method is used for the prediction.
 BBNoiseFlag = 0
 
-#   Broadband noise method, set equal to '1' for Pegg's and '2' for the BPM's method.
-BBNoiseModel = 2
 
 # %%
 '''Namelist file configuration'''

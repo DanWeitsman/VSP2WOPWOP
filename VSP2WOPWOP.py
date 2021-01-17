@@ -17,7 +17,6 @@ from sys import path
 path.insert(0, os.getcwd())
 from input import UserIn
 
-import numpy as np
 from shutil import rmtree
 from AnalyzeDegenGeom import AnalyzeDegenGeom
 from ProcessGeom import ProcessGeom
