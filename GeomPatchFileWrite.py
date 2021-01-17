@@ -5,12 +5,16 @@
 # This function writes a binary patch file that specifies the constant structured blade geometry and the compact
 # lifting line upon which the blade loads are prescribed.
 
-#%%
-import struct
-import numpy as np
-import os
+
 #%%
 def GeomPatchFileWrite(geomFileName, geomParams,dirSaveFile):
+
+    #%% imports necessary modules
+    import struct
+    import numpy as np
+    import os
+    #%%
+
 
     fileName = geomFileName
     magic_number = 42                                               # 4-byte signed

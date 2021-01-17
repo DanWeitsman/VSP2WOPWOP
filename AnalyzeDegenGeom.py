@@ -6,16 +6,16 @@
 #   This is an independent function that supports any arbitrary number of components, which do not necessarily need to be rotor blades.
 
 #%%
-import os
-import csv
-import numpy as np
 
-def ParseDegenGeom(dirDataFile, dataFileName):
-    os.chdir(dirDataFile)
+def AnalyzeDegenGeom(dirDataFile, dataFileName):
 
+#%% imports necessary modules
+    import os
+    import csv
+    import numpy as np
+#%%
     data = {}
     n = 0
-
     # Opens and reads csv data
     with open(os.path.abspath(os.path.expanduser(dirDataFile+'/'+dataFileName)), 'r') as csvfile:
         csvreader = csv.reader(csvfile)

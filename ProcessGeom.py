@@ -5,13 +5,13 @@
 #   This function analyzes the blade geometry to determine various geometric parameters, such as the solidity, twist, tapper distributionss.
 #   These quantities are then assembled into a dictionary.
 
-# %%
-import numpy as np
-from functions.NodeCenteredNorms import NodeCenteredNorms
 #%%
 
-def geomProcess(dataSorted, indHeader, loadPos, Nb,rotation):
-
+def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
+    #%% imports necessary modules
+    import numpy as np
+    from NodeCenteredNorms import NodeCenteredNorms
+    #%%
     #   number of spanwise airfoil sections
     nXsecs = int(indHeader[0][1][1])
     #   number of points per section

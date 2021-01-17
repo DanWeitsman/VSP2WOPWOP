@@ -5,13 +5,14 @@
 #   This function writes a compact periodic loading binary functional data file for a structured blade geometry. The comments and zoneName variables
 #   are most likely the only parameters that the user may wish to vary.
 
-#%%
-import numpy as np
-import struct
-import os
+
 #%%
 def PeriodicLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs, omega,dirSaveFile):
-
+    #%% imports necessary modules
+    import numpy as np
+    import struct
+    import os
+    #%%
     loads = [loadParams['dFx'],loadParams['dFy'],loadParams['dFz']]
     # aeroLoads = aeroLoads/np.expand_dims(loadParams['compactArea'],axis = 1)
 

@@ -4,15 +4,15 @@
 
 #   This function writes out the binary BPM broadband data file for constant cases.
 
-import os
-import struct
-import numpy as np
-
 #%%
 
-
 def ConstantBPMWrite(geomParams,loadParams,dirSaveFile):
+    #%% imports necessary modules
+    import os
+    import struct
+    import numpy as np
 
+    #%% TEflow angle is hard coded to 1 degree
     TEflowAngle = np.zeros(len(geomParams['chordDist']))*1*(np.pi/180)
 
     #%%

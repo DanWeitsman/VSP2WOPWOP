@@ -9,30 +9,34 @@ There really shouldn't be a need to edit this script. If the code is ran in a py
 titled geomParams,XsecPolar,loadParams will be returned these contain the analyzed geometric parameters of the
 blades, the lift curve characteristics, and the aerodynamic loading/performance information, respectively.
 '''
-# %%
-
-from input import UserIn
-import numpy as np
+# %% Adds current command line path to the sys.path list so that the input.py module can be imported from the users
+# current directory
 import os
+from sys import path
+
+path.insert(0, os.getcwd())
+from input import UserIn
+
+import numpy as np
 from shutil import rmtree
-from functions.DegenGeom import ParseDegenGeom
-from functions.GeomProcess import geomProcess
-from functions.polarRead import polarRead
-from functions.loadingHover import loadingHover
-from functions.ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
-from functions.PeriodicLoadingPatchFileWrite import PeriodicLoadingPatchFileWrite
-from functions.nmlWrite import nml_write
-from functions.CaseFileWrite import caseFile_write
-from functions.PeggWrite import PeggBBDataFileWrite
-from functions.ConstantBPMWrite import ConstantBPMWrite
-from functions.PeriodicBPMWrite import PeriodicBPMWrite
-from functions.GeomPatchFileWrite import GeomPatchFileWrite
-from functions.ErrorHandles import ErrorHandles
-from functions.loadingFF import  loadingFF
-from functions.designModeVal import designModeVal
+from AnalyzeDegenGeom import AnalyzeDegenGeom
+from ProcessGeom import ProcessGeom
+from polarRead import polarRead
+from loadingHover import loadingHover
+from loadingFF import loadingFF
+from ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
+from PeriodicLoadingPatchFileWrite import PeriodicLoadingPatchFileWrite
+from nmlWrite import nml_write
+from CaseFileWrite import caseFile_write
+from ConstantBPMWrite import ConstantBPMWrite
+from PeriodicBPMWrite import PeriodicBPMWrite
+from GeomPatchFileWrite import GeomPatchFileWrite
+from ErrorHandles import ErrorHandles
+from designModeVal import designModeVal
+from writeHDF5 import writeHDF5
+
 # %%
 def main():
-
     #   Checks that the user inputs were provided correctly
     ErrorHandles(UserIn)
 
@@ -50,11 +54,11 @@ def main():
     for iter_geom, dataFileName in enumerate(UserIn['dataFileName']):
 
         #   Parses and returns data contained in the DegenGeom file
-        [dataSorted, indHeader] = ParseDegenGeom(UserIn['dirDataFile'], dataFileName)
+        [dataSorted, indHeader] = AnalyzeDegenGeom(UserIn['dirDataFile'], dataFileName)
 
         # Processes the DegenGeom to extract the blade geometric properties (e.g. radius, root cut-out, local solidity,
         # radial pitch and chord distributions)
-        geomParams = geomProcess(dataSorted, indHeader, UserIn['loadPos'], UserIn['Nb'],UserIn['rotation'])
+        geomParams = ProcessGeom(dataSorted, indHeader, UserIn['loadPos'], UserIn['Nb'], UserIn['rotation'])
 
         # Reads and evaluates the XFoil polars, this is only done once during the first iteration of the outer for
         # loop.
@@ -78,7 +82,7 @@ def main():
 
             # This function returns the values, which are specified as lists in the input module, corresponding to the
             # current DegenGeom index
-            T, Vz, Vx, omega, alphaShaft,XsecPolar_select = designModeVal(UserIn,XsecPolar, iter_geom)
+            T, Vz, Vx, omega, alphaShaft, XsecPolar_select = designModeVal(UserIn, XsecPolar, iter_geom)
 
             # This section of code determines whether to run the hover/axial or forward flight module and writes out
             # the corresponding constant or periodic functional data file, respectively.
@@ -87,23 +91,21 @@ def main():
                 ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
                 loadParams = loadingFF(UserIn, geomParams, XsecPolar_select, T, omega, Vx, Vz, alphaShaft)
-                PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega, dirSaveFile)
+                PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega,
+                                              dirSaveFile)
 
             if UserIn['BBNoiseFlag'] == 1:
-                if UserIn['BBNoiseModel'] == 1:
-                    PeggBBDataFileWrite(geomParams, loadParams,dirSaveFile)
-                if UserIn['BBNoiseModel'] == 2:
-                    if Vx == 0:
-                        ConstantBPMWrite(geomParams, loadParams,dirSaveFile)
-                    else:
-                        PeriodicBPMWrite(geomParams,loadParams,UserIn['nRev'],omega,dirSaveFile)
+                if Vx == 0:
+                    ConstantBPMWrite(geomParams, loadParams, dirSaveFile)
+                else:
+                    PeriodicBPMWrite(geomParams, loadParams, UserIn['nRev'], omega, dirSaveFile)
 
             if UserIn['nmlWrite'] == 1:
-                nml_write(UserIn, loadParams, dirSaveFile, Vx, Vz, omega, alphaShaft, iter_geom,geomParams['nXsecs'])
+                nml_write(UserIn, loadParams, dirSaveFile, Vx, Vz, omega, alphaShaft, iter_geom, geomParams['nXsecs'])
 
             globalFolder.append(dataFileName[:-4])
 
-            if iter_geom == len(UserIn['dataFileName'])-1:
+            if iter_geom == len(UserIn['dataFileName']) - 1:
                 caseFile_write(globalFolder, UserIn['NmlFileName'], UserIn['dirPatchFile'])
 
         #   Analysis Mode: Multiple loading condition per geometry
@@ -114,9 +116,10 @@ def main():
                     for iter_Vz, nVz in enumerate(UserIn['Vz']):
                         for iter_omega, nOmega in enumerate(UserIn['omega']):
 
-                            globalFolderName = 'T_'+'{:.2e}'.format(nThrust) + 'N_Vx_' + str(round(nVx * 1.944))\
-                                               +'Kts_Vz_' + str(round(nVz)) + 'ms_Nr_'+ str(round(nOmega)) + 'RPM'
-                            dirCaseFile = os.path.abspath(os.path.expanduser(dirSaveFile + os.path.sep + globalFolderName))
+                            globalFolderName = 'T_' + '{:.2e}'.format(nThrust) + 'N_Vx_' + str(round(nVx * 1.944)) \
+                                               + 'Kts_Vz_' + str(round(nVz)) + 'ms_Nr_' + str(round(nOmega)) + 'RPM'
+                            dirCaseFile = os.path.abspath(
+                                os.path.expanduser(dirSaveFile + os.path.sep + globalFolderName))
 
                             if os.path.exists(dirCaseFile) == 1:
                                 rmtree(dirCaseFile)
@@ -130,26 +133,29 @@ def main():
                                 alphaShaft = UserIn['alphaShaft'][0]
 
                             if nVx == 0:
-                                loadingOut = loadingHover(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_omega]],
+                                loadingOut = loadingHover(UserIn, geomParams,
+                                                          XsecPolar[list(XsecPolar.keys())[iter_omega]],
                                                           nThrust, nOmega, nVz)
-                                ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
+                                ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut,
+                                                              geomParams['nXsecs'],
                                                               dirCaseFile)
                             else:
-                                loadingOut = loadingFF(UserIn, geomParams, XsecPolar[list(XsecPolar.keys())[iter_omega]], nThrust, nOmega, nVx, nVz, alphaShaft)
-                                PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut, geomParams['nXsecs'],
+                                loadingOut = loadingFF(UserIn, geomParams,
+                                                       XsecPolar[list(XsecPolar.keys())[iter_omega]], nThrust, nOmega,
+                                                       nVx, nVz, alphaShaft)
+                                PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadingOut,
+                                                              geomParams['nXsecs'],
                                                               nOmega, dirCaseFile)
 
                             if UserIn['BBNoiseFlag'] == 1:
-                                if UserIn['BBNoiseModel'] == 1:
-                                    PeggBBDataFileWrite(geomParams, loadingOut,dirCaseFile)
-                                if UserIn['BBNoiseModel'] == 2:
-                                    if nVx == 0:
-                                        ConstantBPMWrite(geomParams, loadingOut, dirSaveFile)
-                                    else:
-                                        PeriodicBPMWrite(geomParams, loadingOut, UserIn['nRev'], nOmega, dirSaveFile)
+                                if nVx == 0:
+                                    ConstantBPMWrite(geomParams, loadingOut, dirSaveFile)
+                                else:
+                                    PeriodicBPMWrite(geomParams, loadingOut, UserIn['nRev'], nOmega, dirSaveFile)
 
                             if UserIn['nmlWrite'] == 1:
-                                nml_write(UserIn, loadingOut, dirCaseFile,nVx, nVz, nOmega, alphaShaft, iter_geom,geomParams['nXsecs'])
+                                nml_write(UserIn, loadingOut, dirCaseFile, nVx, nVz, nOmega, alphaShaft, iter_geom,
+                                          geomParams['nXsecs'])
 
                             loadParams = {**loadParams, **{globalFolderName: loadingOut}}
 
@@ -162,37 +168,10 @@ def main():
                                                        'loadParams': loadParams}}}
 
         if UserIn['saveHDF5'] == 1:
-            import h5py
-            with h5py.File(os.path.abspath(os.path.join(UserIn['dirPatchFile'], 'MainDict.h5')), 'w') as f_write:
-
-                def encode_str_list(str_list):
-                    for i, elem in enumerate(str_list):
-                        if isinstance(elem, list):
-                            encode_str_list(elem)
-                        elif isinstance(elem, str):
-                            str_list[i] = elem.encode()
-                        else:
-                            break
-                    return str_list
-
-                def write_dict_hdf5(d,parent=''):
-                    for key , value in d.items():
-                        if isinstance(value, dict):
-                            write_dict_hdf5(value, parent+'/'+key)
-                        else:
-                            # print(key)
-                            if isinstance(value, list):
-                                value = encode_str_list(value)
-                            elif isinstance(value, str):
-                                value = value.encode()
-                            f_write.create_dataset(parent+'/'+key, shape=np.shape(value), data=value)
-
-                write_dict_hdf5(MainDict)
+            writeHDF5(MainDict, UserIn)
 
     return MainDict
 
 
 if __name__ == '__main__':
-    print(__name__)
     MainDict = main()
-

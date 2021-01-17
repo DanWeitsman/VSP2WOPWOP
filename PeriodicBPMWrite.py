@@ -4,16 +4,17 @@
 
 #   This function writes out the binary BPM broadband data file for a non-uniform blade with periodic loading data.
 
-import os
-import struct
-import numpy as np
 
 #%%
 
 
 def PeriodicBPMWrite(geomParams,loadParams,nRev,omega,dirSaveFile):
-
-    TEflowAngle = np.zeros(len(geomParams['chordDist']))*1*(np.pi/180)
+    #%% imports necessary modules
+    import os
+    import struct
+    import numpy as np
+    #%% TEflowAngle hardcoded to 1 degree
+    TEflowAngle = np.zeros(len(geomParams['chordDist']))*(np.pi/180)
 
     #%%
 
