@@ -215,7 +215,7 @@ UserIn = {'dirDataFile': dirDataFile, 'OperMode': operMode, 'saveHDF5': saveHDF5
           'aStart': aStart, 'aLength': aLength, 'check': check,'trim':trim, 'Nb': Nb,'rotation':rotation, 'Vx': Vx, 'Vz': Vz, 'alphaShaft': alphaShaft,
           'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss, 'inflowMod':inflowMod,'rho': rho, 'c': c,
           'nmlWrite': nmlWrite, 'dirPatchFile': dirPatchFile,
-          'geomFileName': geomFileName, 'loadingFileName': loadingFileName, 'BBNoiseModel':BBNoiseModel,
+          'geomFileName': geomFileName, 'loadingFileName': loadingFileName,
           'BBNoiseFlag': BBNoiseFlag, 'NmlFileName': NmlFileName, 'nRev': nRev, 'nt': nt, 'obsType': obsType, 'xLoc': xLoc,
           'yLoc': yLoc, 'zLoc': zLoc, 'nbx': nbx, 'nby': nby, 'nbz': nbz, 'xMin': xMin, 'yMin': yMin, 'zMin': zMin,
           'xMax': xMax, 'yMax': yMax, 'zMax': zMax, 'radius': radius, 'nbtheta': nbTheta,

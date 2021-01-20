@@ -33,7 +33,9 @@ from GeomPatchFileWrite import GeomPatchFileWrite
 from ErrorHandles import ErrorHandles
 from designModeVal import designModeVal
 from writeHDF5 import writeHDF5
+import argparse
 
+import h5py
 # %%
 def main():
     #   Checks that the user inputs were provided correctly
@@ -86,8 +88,21 @@ def main():
             # This section of code determines whether to run the hover/axial or forward flight module and writes out
             # the corresponding constant or periodic functional data file, respectively.
             if Vx == 0:
-                loadParams = loadingHover(UserIn, geomParams, XsecPolar_select, T, omega, Vz)
-                ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
+
+                if isinstance(args.mat_loading_file,str):
+                    import numpy as np
+                    mat_read = h5py.File(os.path.join(os.getcwd(), args.mat_loading_file), 'r')
+
+                    if args.load_type:
+                        loadParams = {'dFx':mat_read[args.rotor]['inplane'][args.azimuth,:],'dFy':np.zeros(np.shape(mat_read[args.rotor]['inplane'][args.azimuth,:])),'dFz':mat_read[args.rotor]['outplane'][args.azimuth,:],'th':[0,0,0]}
+                        ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
+                    else:
+                        loadParams = {'dFx':mat_read[args.rotor]['inplane'][:],'dFy':np.zeros(np.shape(mat_read[args.rotor]['inplane'][:])),'dFz':mat_read[args.rotor]['outplane'][:],'th':[0,0,0],'phi': np.linspace(0,2*np.pi,np.shape(mat_read[args.rotor]['inplane'][:])[0])}
+                        PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega,dirSaveFile)
+
+                else:
+                    loadParams = loadingHover(UserIn, geomParams, XsecPolar_select, T, omega, Vz)
+                    ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
                 loadParams = loadingFF(UserIn, geomParams, XsecPolar_select, T, omega, Vx, Vz, alphaShaft)
                 PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega,
@@ -170,6 +185,19 @@ def main():
             writeHDF5(MainDict, UserIn)
 
     return MainDict
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('mat_loading_file', help="Name of mat file containing blade loading information.",type = str)
+parser.add_argument('-op','--rotor',help = "Rotor from which to reference the loads from (op1 or op2), defaults to op1.",type=str,default = 'op1')
+
+group = parser.add_mutually_exclusive_group()
+group.add_argument('-p',"--load_type",help = "Specifies if the loads are constant or periodic (include -p as a command line argument if loads are periodic and vary around the rotor disk but repeat every rotor revolution, exclude otherwise).",action='store_false')
+group.add_argument('-phi','--azimuth',help = 'If the loads are specified as constant, select a corresponding azimuthal index from which to reference the loads',type = int)
+
+# parser.add_argument("-l","--load type",help = "Are the loads constant or periodic",action=store_true)
+
+args = parser.parse_args()
 
 
 if __name__ == '__main__':

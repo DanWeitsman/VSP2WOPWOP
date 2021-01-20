@@ -6,6 +6,7 @@ like MATLAB .mat files. The content of HDF5 files can be read using the followin
 h5py.File("path+file"), 'r').
 '''
 def writeHDF5(MainDict,UserIn):
+
     #%% import necessary modules
     import os
     import h5py
