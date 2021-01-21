@@ -189,11 +189,11 @@ def main():
 
 parser = argparse.ArgumentParser()
 parser.add_argument('mat_loading_file', help="Name of mat file containing blade loading information.",type = str)
-parser.add_argument('-op','--rotor',help = "Rotor from which to reference the loads from (op1 or op2), defaults to op1.",type=str,default = 'op1')
+parser.add_argument('-op','--rotor',help = "Rotor from which to reference the loads (op1 or op2), defaults to op1.",type=str,default = 'op1')
 
 group = parser.add_mutually_exclusive_group()
-group.add_argument('-p',"--load_type",help = "Specifies if the loads are constant or periodic (include -p as a command line argument if loads are periodic and vary around the rotor disk but repeat every rotor revolution, exclude otherwise).",action='store_false')
-group.add_argument('-phi','--azimuth',help = 'If the loads are specified as constant, select a corresponding azimuthal index from which to reference the loads',type = int)
+group.add_argument('-p',"--load_type",help = "Specifies if the loads are constant or periodic. Include -p as a command line argument if loads are periodic and vary around the rotor disk but repeat every rotor revolution, exclude otherwise.",action='store_false')
+group.add_argument('-phi','--azimuth',help = 'If the loads are specified as constant, select a corresponding azimuthal index from which to reference the loads.',type = int)
 
 # parser.add_argument("-l","--load type",help = "Are the loads constant or periodic",action=store_true)
 
