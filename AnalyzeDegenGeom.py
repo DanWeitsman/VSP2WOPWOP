@@ -7,7 +7,7 @@
 
 #%%
 
-def AnalyzeDegenGeom(dirDataFile, dataFileName):
+def AnalyzeDegenGeom(dataFileName):
 
 #%% imports necessary modules
     import os
@@ -17,7 +17,7 @@ def AnalyzeDegenGeom(dirDataFile, dataFileName):
     data = {}
     n = 0
     # Opens and reads csv data
-    with open(os.path.abspath(os.path.expanduser(dirDataFile+'/'+dataFileName)), 'r') as csvfile:
+    with open(os.path.abspath(os.path.join(os.getcwd(),dataFileName)), 'r') as csvfile:
         csvreader = csv.reader(csvfile)
         # Detects and deletes empty rows
         for row in csvreader:

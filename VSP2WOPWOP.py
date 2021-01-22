@@ -40,8 +40,8 @@ def main():
     ErrorHandles(UserIn)
 
     #   Creates a parent directory for the case files to be written out to
-    if os.path.exists(UserIn['dirPatchFile']) == 0:
-        os.mkdir(UserIn['dirPatchFile'])
+    if os.path.exists(os.path.join(os.getcwd(),UserIn['outputFolderName'])) == 0:
+        os.mkdir(os.path.join(os.getcwd(),UserIn['outputFolderName']))
 
     #   Initializes empty dictionary and lists
     MainDict = {}
@@ -53,7 +53,7 @@ def main():
     for iter_geom, dataFileName in enumerate(UserIn['dataFileName']):
 
         #   Parses and returns data contained in the DegenGeom file
-        [dataSorted, indHeader] = AnalyzeDegenGeom(UserIn['dirDataFile'], dataFileName)
+        [dataSorted, indHeader] = AnalyzeDegenGeom(dataFileName)
 
         # Processes the DegenGeom to extract the blade geometric properties (e.g. radius, root cut-out, local solidity,
         # radial pitch and chord distributions)
@@ -68,7 +68,7 @@ def main():
 
         # Creates a directory for each geometry where the respective loading, patch, and namelist files will be
         # written.
-        dirSaveFile = os.path.abspath(os.path.expanduser(UserIn['dirPatchFile'] + os.path.sep + dataFileName[:-4]))
+        dirSaveFile = os.path.abspath(os.path.join(os.getcwd(),UserIn['outputFolderName'], dataFileName[:-4]))
         if os.path.exists(dirSaveFile) == 1:
             rmtree(dirSaveFile)
         os.mkdir(dirSaveFile)
@@ -105,7 +105,7 @@ def main():
             globalFolder.append(dataFileName[:-4])
 
             if iter_geom == len(UserIn['dataFileName']) - 1:
-                caseFile_write(globalFolder, UserIn['NmlFileName'], UserIn['dirPatchFile'])
+                caseFile_write(globalFolder, UserIn['NmlFileName'], os.path.join(os.getcwd(),UserIn['outputFolderName']))
 
         #   Analysis Mode: Multiple loading condition per geometry
         if UserIn['OperMode'] == 2:
@@ -117,8 +117,7 @@ def main():
 
                             globalFolderName = 'T_' + '{:.2e}'.format(nThrust) + 'N_Vx_' + str(round(nVx * 1.944)) \
                                                + 'Kts_Vz_' + str(round(nVz)) + 'ms_Nr_' + str(round(nOmega)) + 'RPM'
-                            dirCaseFile = os.path.abspath(
-                                os.path.expanduser(dirSaveFile + os.path.sep + globalFolderName))
+                            dirCaseFile = os.path.abspath(os.path.join(dirSaveFile , globalFolderName))
 
                             if os.path.exists(dirCaseFile) == 1:
                                 rmtree(dirCaseFile)
@@ -167,7 +166,7 @@ def main():
                                                        'loadParams': loadParams}}}
 
         if UserIn['saveHDF5'] == 1:
-            writeHDF5(MainDict, UserIn)
+            writeHDF5(MainDict, os.path.join(os.getcwd(),UserIn['outputFolderName']))
 
     return MainDict
 

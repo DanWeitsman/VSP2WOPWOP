@@ -10,18 +10,16 @@ containing the patch and namelist files for each loading condition, will be gene
 '''
 # %%
 '''Package import and directory setup'''
-import os
+
 # Directory where the DegenGeom and airfoil polars are located, by default this is set to the location of the
 # test case folder.
 # dirDataFile = os.path.abspath(os.path.join(os.getcwd(), 'TestCase', 'BoeingModel360'))
-dirDataFile = os.path.abspath(os.getcwd())
 
 # %%
 ''''Patch file write directory setup'''
 
-# Directory were you would like to write out the patch and functional data flies. By default this path is configured
-# to be a separate folder in the 'dirDataFile'.
-dirPatchFile = os.path.abspath(os.path.join(dirDataFile, 'test'))
+# Name of the folder in which to place the written patch and functional data flies.
+outputFolderName = 'example_case'
 
 #   Blade geometry patch file name (without the extension).
 geomFileName = "Geom"
@@ -210,12 +208,12 @@ psiMin = -45
 psiMax = 0
 
 # %% Packs user input parameters into a dictionary (no need to edit)
-UserIn = {'dirDataFile': dirDataFile, 'OperMode': operMode, 'saveHDF5': saveHDF5, 'dataFileName': dataFileNames,
+UserIn = {'OperMode': operMode, 'saveHDF5': saveHDF5, 'dataFileName': dataFileNames,
           'airfoilPolarFileName': airfoilPolarFileName, 'XsecLocation': XsecLocation,
           'aStart': aStart, 'aLength': aLength, 'check': check,'trim':trim, 'Nb': Nb,'rotation':rotation, 'Vx': Vx, 'Vz': Vz, 'alphaShaft': alphaShaft,
           'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss, 'inflowMod':inflowMod,'rho': rho, 'c': c,
-          'nmlWrite': nmlWrite, 'dirPatchFile': dirPatchFile,
-          'geomFileName': geomFileName, 'loadingFileName': loadingFileName, 'BBNoiseModel':BBNoiseModel,
+          'nmlWrite': nmlWrite, 'outputFolderName': outputFolderName,
+          'geomFileName': geomFileName, 'loadingFileName': loadingFileName,
           'BBNoiseFlag': BBNoiseFlag, 'NmlFileName': NmlFileName, 'nRev': nRev, 'nt': nt, 'obsType': obsType, 'xLoc': xLoc,
           'yLoc': yLoc, 'zLoc': zLoc, 'nbx': nbx, 'nby': nby, 'nbz': nbz, 'xMin': xMin, 'yMin': yMin, 'zMin': zMin,
           'xMax': xMax, 'yMax': yMax, 'zMax': zMax, 'radius': radius, 'nbtheta': nbTheta,

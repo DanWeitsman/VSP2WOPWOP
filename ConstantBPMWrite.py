@@ -31,7 +31,7 @@ def ConstantBPMWrite(geomParams,loadParams,dirSaveFile):
 
 #%%
 
-    with open(os.path.abspath(os.path.expanduser(dirSaveFile + '/BPM.dat')), 'bw') as f_bin:
+    with open(os.path.abspath(os.path.join(dirSaveFile ,'BPM.dat')), 'bw') as f_bin:
 
         f_bin.write(struct.pack('>i', magic_number))
         f_bin.write(struct.pack('>i', nSect))

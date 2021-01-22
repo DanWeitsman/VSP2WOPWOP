@@ -5,13 +5,13 @@ This function writes the main dictionary (MainDict) to an HDF5 file. HDF5 is a u
 like MATLAB .mat files. The content of HDF5 files can be read using the following function in the h5py package:
 h5py.File("path+file"), 'r').
 '''
-def writeHDF5(MainDict,UserIn):
+def writeHDF5(MainDict,save_path):
     #%% import necessary modules
     import os
     import h5py
     import numpy as np
     #%%
-    with h5py.File(os.path.abspath(os.path.join(UserIn['dirPatchFile'], 'MainDict.h5')), 'w') as f_write:
+    with h5py.File(os.path.abspath(os.path.join(save_path, 'MainDict.h5')), 'w') as f_write:
 
         def encode_str_list(str_list):
             for i, elem in enumerate(str_list):

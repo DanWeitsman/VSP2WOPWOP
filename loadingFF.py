@@ -4,15 +4,14 @@
 
 #   This function trims a rotor for operating in forward flight by equating the drag and side force to zero.
 #   The periodic blade loads are also computed.
-#%%
-import bisect
-import numpy as np
-from scipy.optimize import least_squares
 
 #%%
 
 def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
+    import bisect
+    import numpy as np
+    from scipy.optimize import least_squares
 
     def fixed_pitch_residuals(omega):
         '''
