@@ -6,17 +6,15 @@
 #   as well as the angle of attack that corresponds to the nominal lift coefficient. The lift curve slope is also computed based on the
 #   angle of attack interval specified in the input file. These quantities are assembled into a dictionary which is returned to the user.
 
-#%%
-import os
-import numpy as np
-import bisect
-import time
+
 #%%
 def polarRead(UserIn,iii):
 
-    dirDataFile = UserIn['dirDataFile']
+    import os
+    import numpy as np
+    import bisect
+
     airfoilPolarFileName = UserIn['airfoilPolarFileName'][iii]
-    # airfoilName = UserIn['airfoilName']
     aStart =  UserIn['aStart']
     aLength = UserIn['aLength']
     XsecPolar = {}
@@ -29,7 +27,7 @@ def polarRead(UserIn,iii):
 
     #%%
     for i, file in enumerate(airfoilPolarFileName):
-        with open(os.path.expanduser(dirDataFile+os.path.sep+file)) as f:
+        with open(os.path.join(os.getcwd(),file)) as f:
             data = f.read()
         data = data.split("\n")
         dataParse = [x.split(" ")[1:] for x in data[12:-1]]

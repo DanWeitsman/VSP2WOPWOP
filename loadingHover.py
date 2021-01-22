@@ -6,13 +6,13 @@
 # the aerodynamic loads using BEMT. These quantities are then assembled into a dictionary, which is returned to the
 # user.
 
-# %%
-import numpy as np
-from scipy.optimize import least_squares,minimize
-import bisect
 
 # %%
 def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
+
+    import numpy as np
+    from scipy.optimize import least_squares
+    import bisect
 
     def rpm_residuals(omega):
         '''

@@ -12,14 +12,13 @@ like to add or omit a 'cb' namelist, simply edit the respective dictionary. If m
 used in a single container the corresponding dictionaries must be placed into a list.
 '''
 
-# %%
-import os
-import numpy as np
 
 
 # %%
 def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter_geom,nXsecs):
 
+    import os
+    import numpy as np
     # The position of the observers can be maintained constant or varied for each geometry variant by
     # populating the list of any dimension of the observer grid in the input file with multiple comma
     # delimited values. This set of if statements checks if multiple observer position have been
@@ -58,13 +57,6 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
         octaveFlag =  '.false.'
         spectrumFlag = '.false.'
         SPLdBFLAG = '.false.'
-    #   Configures which broadband noise model to enable
-    if UserIn['BBNoiseModel'] == 1:
-        PeggNoiseFlag = '.true.'
-        BPMNoiseFlag = '.false.'
-    else:
-        PeggNoiseFlag = '.false.'
-        BPMNoiseFlag = '.true.'
 
 
     # Determines the sampling rate, as a power of 2, based on the desired sampling rate and the duration of the run
@@ -276,8 +268,8 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'Title': "'Rotor'",
                     'nbContainer': UserIn['Nb'],
                     'nbBase': 2,
-                    'PeggNoiseFlag': PeggNoiseFlag,
-                    'BPMNoiseFlag' : BPMNoiseFlag,
+                    'PeggNoiseFlag': '.false.',
+                    'BPMNoiseFlag' : '.true.',
                 },
             'cb':
                 [
