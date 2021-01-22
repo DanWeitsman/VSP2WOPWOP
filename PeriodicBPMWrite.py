@@ -13,6 +13,7 @@ def PeriodicBPMWrite(geomParams,loadParams,nRev,omega,dirSaveFile):
     import os
     import struct
     import numpy as np
+
     #%% TEflowAngle hardcoded to 1 degree
     TEflowAngle = np.zeros(len(geomParams['chordDist']))*(np.pi/180)
 
@@ -37,7 +38,7 @@ def PeriodicBPMWrite(geomParams,loadParams,nRev,omega,dirSaveFile):
 
 #%%
 
-    with open(os.path.abspath(os.path.expanduser(dirSaveFile + '/BPM.dat')), 'bw') as f_bin:
+    with open(os.path.abspath(os.path.join(dirSaveFile ,'BPM.dat')), 'bw') as f_bin:
 
         f_bin.write(struct.pack('>i', magic_number))
         f_bin.write(struct.pack('>i', nSect))

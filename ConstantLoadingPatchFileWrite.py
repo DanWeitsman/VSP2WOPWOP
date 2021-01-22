@@ -48,7 +48,7 @@ def ConstantLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs,dirSaveFil
     #%%
     # os.chdir(dirPatchFile)
 
-    with open(os.path.abspath(os.path.expanduser(dirSaveFile+ '/'+ loadingFileName + '.dat')),'bw') as f_bin:
+    with open(os.path.abspath(os.path.join(dirSaveFile, loadingFileName + '.dat')),'bw') as f_bin:
 
         f_bin.write(struct.pack('<i', magic_number))
         f_bin.write(struct.pack('<i', version_number[0]))
