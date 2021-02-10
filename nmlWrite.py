@@ -59,12 +59,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
         spectrumFlag = '.false.'
         SPLdBFLAG = '.false.'
     #   Configures which broadband noise model to enable
-    if UserIn['BBNoiseModel'] == 1:
-        PeggNoiseFlag = '.true.'
-        BPMNoiseFlag = '.false.'
-    else:
-        PeggNoiseFlag = '.false.'
-        BPMNoiseFlag = '.true.'
+
 
 
     # Determines the sampling rate, as a power of 2, based on the desired sampling rate and the duration of the run
@@ -276,8 +271,8 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'Title': "'Rotor'",
                     'nbContainer': UserIn['Nb'],
                     'nbBase': 2,
-                    'PeggNoiseFlag': PeggNoiseFlag,
-                    'BPMNoiseFlag' : BPMNoiseFlag,
+                    'PeggNoiseFlag': '.false.',
+                    'BPMNoiseFlag' : '.true.',
                 },
             'cb':
                 [
