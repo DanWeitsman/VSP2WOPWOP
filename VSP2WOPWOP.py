@@ -70,7 +70,7 @@ def main():
 
         # Creates a directory for each geometry where the respective loading, patch, and namelist files will be
         # written.
-        dirSaveFile = os.path.abspath(os.path.expanduser(UserIn['dirPatchFile'] + os.path.sep + dataFileName[:-4]))
+        dirSaveFile = os.path.abspath(os.path.expanduser(os.getcwd() + os.path.sep + dataFileName[:-4]))
         if os.path.exists(dirSaveFile) == 1:
             rmtree(dirSaveFile)
         os.mkdir(dirSaveFile)
