@@ -11,7 +11,7 @@ def apply_to_namelist(functions, cases_directory='', cases='cases.nam'):
     :param cases_directory: directory containing cases namelist, default ''
     :param cases: name of cases namelist, default 'cases.nam'
     """
-    namelist = f90nml.read(os.path.abspath(os.path.expanduser(cases_directory + '/' + cases)))
+    namelist = f90nml.read(os.path.abspath(os.path.join(cases_directory , cases)))
     casenames = namelist['casename']
     if type(casenames) is not list:
         casenames = [casenames]
@@ -20,7 +20,7 @@ def apply_to_namelist(functions, cases_directory='', cases='cases.nam'):
         if os.path.isabs(globalfoldername):
             casefolder = os.path.abspath(os.path.expanduser(casename['globalfoldername']))
         else:
-            casefolder = os.path.abspath(os.path.expanduser(cases_directory + casename['globalfoldername']))
+            casefolder = os.path.abspath(os.path.join(cases_directory , casename['globalfoldername']))
         for f in functions:
             f(casefolder)
 
@@ -31,7 +31,7 @@ def import_from_namelist(file, cases_directory='', cases='cases.nam'):
     :param cases_directory: directory containing cases namelist, default ''
     :param cases: name of cases namelist, default 'cases.nam'
     """
-    namelist = f90nml.read(os.path.abspath(os.path.expanduser(cases_directory + '/' + cases)))
+    namelist = f90nml.read(os.path.abspath(os.path.join(cases_directory , cases)))
     casenames = namelist['casename']
 
     extract = {}
@@ -42,13 +42,13 @@ def import_from_namelist(file, cases_directory='', cases='cases.nam'):
         if os.path.isabs(globalfoldername):
             casefolder = os.path.abspath(os.path.expanduser(casename['globalfoldername']))
         else:
-            casefolder = os.path.abspath(os.path.expanduser(cases_directory + casename['globalfoldername']))
+            casefolder = os.path.abspath(os.path.join(cases_directory , casename['globalfoldername']))
 
         if type(file) is list:
             temp_extract = {}
             for i,f in enumerate(file):
                 data_extract = {}
-                data = np.load(os.path.abspath(os.path.expanduser(casefolder + '/' + f)))
+                data = np.load(os.path.abspath(os.path.join(casefolder , f)))
                 keys = ['names', 'function_values', 'geometry_values']
                 for ii, arrg in enumerate(data.files):
                     data_extract = {**data_extract, **{keys[ii]: data[arrg]}}
@@ -57,7 +57,7 @@ def import_from_namelist(file, cases_directory='', cases='cases.nam'):
 
         else:
             data_extract = {}
-            data = np.load(os.path.abspath(os.path.expanduser(casefolder+'/'+file)))
+            data = np.load(os.path.abspath(os.path.join(casefolder,file)))
             keys = ['names','function_values','geometry_values']
             for i, arrg in enumerate(data.files):
                 data_extract = {**data_extract,**{keys[i]:data[arrg]}}
@@ -110,10 +110,10 @@ def read_wopwop_output(prefix, name_postfix='.nam', function_postfix='.fn', geom
     if save_npz:
         np.savez(os.path.abspath(os.path.expanduser(prefix+name_postfix[:-4])) ,names, function_values, geometry_values)
     if save_h5:
-        data = {'names':names,'geometry_values':geometry_values,'function_values':function_values}
-        names = [elem.encode() for elem in names]
+        #not able to write out names due to a string encoding issue this is not critical names
+        # data = {'names':names,'geometry_values':geometry_values,'function_values':function_values}
+        data = {'names':[elem.encode() for elem in names],'geometry_values':geometry_values,'function_values':function_values}
         with h5py.File(os.path.abspath(os.path.expanduser(prefix+name_postfix[:-4]+'.h5')),'w') as h5_file:
-            # grp = h5_file.create_group('data')
             for k,v in data.items():
                 h5_file.create_dataset(k,shape=np.shape(v), data=v)
     return names, function_values, geometry_values
