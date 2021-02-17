@@ -97,8 +97,8 @@ def main():
                         loadParams = {'dFx':mat_read[args.rotor]['inplane'][args.azimuth,:],'dFy':np.zeros(np.shape(mat_read[args.rotor]['inplane'][args.azimuth,:])),'dFz':mat_read[args.rotor]['outplane'][args.azimuth,:],'th':[0,0,0]}
                         ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
                     else:
-                        loadParams = {'dFx':mat_read[args.rotor]['inplane'][:],'dFy':np.zeros(np.shape(mat_read[args.rotor]['inplane'][:])),'dFz':mat_read[args.rotor]['outplane'][:],'th':[0,0,0],'phi': np.linspace(0,2*np.pi,np.shape(mat_read[args.rotor]['inplane'][:])[0])}
-                        PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], omega,dirSaveFile)
+                        loadParams = {'dFx':mat_read[args.rotor]['inplane'][:],'dFy':np.zeros(np.shape(mat_read[args.rotor]['inplane'][:])),'dFz':mat_read[args.rotor]['outplane'][:],'th':[0,0,0],'phi': np.linspace(0,2*np.pi,np.shape(mat_read[args.rotor]['inplane'][:])[0]+1)}
+                        PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], np.squeeze(mat_read[args.rotor]['rpm'][()]) ,dirSaveFile)
 
                 else:
                     loadParams = loadingHover(UserIn, geomParams, XsecPolar_select, T, omega, Vz)

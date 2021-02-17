@@ -252,12 +252,12 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     dFy = np.zeros(len(r))
 
     #   if the rotor is rotating CW the force distributions are flipped along the longitudinal axis of the rotor disk.
-    if UserIn['rotation'] == 2:
-        dFz = np.flip(dFz,axis = 0)
-        dFx = np.flip(dFx, axis=0)
-        AoA = np.flip(AoA, axis=0)
-        lam = np.flip(lam, axis=0)
-        U = np.flip(U, axis=0)
+    # if UserIn['rotation'] == 2:
+    #     dFz = np.flip(dFz,axis = 0)
+    #     dFx = np.flip(dFx, axis=0)
+    #     AoA = np.flip(AoA, axis=0)
+    #     lam = np.flip(lam, axis=0)
+    #     U = np.flip(U, axis=0)
 
 
 #%%

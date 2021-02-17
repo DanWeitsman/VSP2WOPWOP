@@ -12,6 +12,7 @@ def PeriodicLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs, omega,dir
     import numpy as np
     import struct
     import os
+
     #%%
     loads = [loadParams['dFx'],loadParams['dFy'],loadParams['dFz']]
     # aeroLoads = aeroLoads/np.expand_dims(loadParams['compactArea'],axis = 1)
