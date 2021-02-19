@@ -252,15 +252,10 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     dFy = np.zeros(len(r))
 
     #   if the rotor is rotating CW the force distributions are flipped along the longitudinal axis of the rotor disk.
-    # if UserIn['rotation'] == 2:
-    #     dFz = np.flip(dFz,axis = 0)
-    #     dFx = np.flip(dFx, axis=0)
-    #     AoA = np.flip(AoA, axis=0)
-    #     lam = np.flip(lam, axis=0)
-    #     U = np.flip(U, axis=0)
+    if UserIn['rotation'] == 2:
+        dFx = -dFx
 
-
-#%%
+    #%%
     # Assembles all computed load parameters into a dictionary
     loadParams = {'coll_residuals':trim_sol.fun,'th': th, 'beta': [0, 0, 0], 'CT': CT, 'T': T, 'dCT': dCT, 'dT': dT, 'CP': CP, 'P': P,
                   'Q': Q, 'dCP': dCP, 'dQ': dQ, 'dCL': dCL, 'dCD': dCD, 'CL': CL, 'CD': CD, 'FM': FM, 'AoA': AoA,'ClaDist':XsecPolarExp['Lift Slope'], 'lambda': lam,

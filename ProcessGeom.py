@@ -11,6 +11,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     #%% imports necessary modules
     import numpy as np
     from NodeCenteredNorms import NodeCenteredNorms
+
     #%%
     #   number of spanwise airfoil sections
     nXsecs = int(indHeader[0][1][1])
@@ -29,25 +30,23 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     #   computes the node centered surface normals that are scaled by the area of each surface element
     ScaledNodeCenteredSurfNorms = NodeCenteredNorms(surfNodes,pntsPerXsec,nXsecs)
 
-
     #   reflects blade over y-z plane if the blade is rotating CW
     if rotation == 2:
         surfNodes[:,0] = -surfNodes[:,0]
-        LENodes[:,0] = -LENodes[:,0]
-        TENodes[:,0] = -TENodes[:,0]
         ScaledNodeCenteredSurfNorms[:,0] = -ScaledNodeCenteredSurfNorms[:,0]
 
     #   computes the chord distribution along the blade span
     chordDist = np.linalg.norm(abs(LENodes - TENodes), axis=1)
 
+    #   precone is not referenced in blade load calculation - 1/18/21
     # precone = np.arctan(LENodes[:, 2][-1]/LENodes[:, 1][-1])
     # preconez = LENodes[:, 1]*np.tan(precone)
+
+    #   sweep is not properly accounted for in the twist distribution and therefore is not referenced in load calculations - 1/18/21
     sweep = np.arctan(-(LENodes - TENodes)[:,1]/(LENodes - TENodes)[:,0])
+
     #   computes the twist distribution along the blade span [rad] (this quantitiy varies based on the orientation of the blade in OpenVSP)
-    # twistDist =np.arctan(-LENodes[:,2]/LENodes[:,0])
     twistDist = np.arctan(-(LENodes - TENodes)[:, 2] / (LENodes - TENodes)[:, 0])
-    # stickNodes = np.float64(comp1Data['SURFACE_FACE'][1:, :])
-    # plateNodes = np.float64(comp1Data['PLATE_NODE'][1:, :3])
 
     # blade radius and root cutout
     R = LENodes[:,1][-1]
@@ -66,11 +65,6 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
 
     sectLen = np.insert(np.diff(rdim), 0, np.diff(rdim)[0])
 
-     # Local solidity computed between cross-sections
-    # solDist = np.cumsum(Nb * (planformChord[:-1] + np.diff(planformChord) / 2) * np.diff(rdim)) / \
-    #           (np.pi * ((rdim[:-1] + np.diff(rdim) / 2) ** 2))
-    # r = np.linspace(e / R, 1, len(solDist))
-
     #   Local solidity computed at cross-sections
     solDist = Nb*chordDist/(np.pi*R)
     sol = np.mean(solDist)
@@ -85,7 +79,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
 
     return geomParams
 
-# #
+# #%% This section of the code can be used to plot the blade surface nodes/normal vectors and ensure that the blade geometry is analyzed properly
 #     import matplotlib.pyplot as plt
 #     fig = plt.figure()
 #     ax = fig.gca(projection = '3d')
