@@ -71,7 +71,7 @@ check = 0
 trim = 2
 
 #   Direction of rotation set equal to 1 for CCW and 2 for CW
-rotation = 2
+rotation = 1
 
 # Number of Blades
 Nb = 4
