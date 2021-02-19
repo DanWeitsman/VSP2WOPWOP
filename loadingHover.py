@@ -231,17 +231,19 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     dT = dCT * rho * Adisk * (omega * R) ** 2
     T = np.trapz(dT, r)
 
-    # Resolved normal force component. The vector is effectively rotated by the collective pitch setting, so that a single
-    # a change of base (CB) can be applied to the blade geometry and loading vector in the namelist file.
-    dFz = dT*np.cos(-th[0]) / Nb
-
     #   Distribution and integrated torque
     dQ = dCP * rho * Adisk * (omega * R) ** 2 * R
     Q = np.trapz(dQ, r)
 
-    # Resolved in-plane force component. The vector is effectively rotated by the collective pitch setting, so that a single
-    # a change of base (CB) can be applied to the blade geometry and loading vector in the namelist file.
-    dFx = dQ*np.sin(-th[0]) / (Nb * r * R)
+    # Rotates the normal force component by the collective pitch setting, so that a single change of base (CB) can be
+    # applied to the blade geometry and loading vector in the namelist file. If the collective pitch CB is
+    # unnecessary, then dFz = dT/Nb.
+    dFz = dT/Nb*np.cos(-th[0])-dQ/(Nb*r*R)*np.sin(-th[0])
+
+    # Rotates the inplane force component by the collective pitch setting, so that a single change of base (CB) can be
+    # applied to the blade geometry and loading vector in the namelist file. If the collective pitch CB is
+    # unnecessary, then dFx =dQ/(Nb*r*R).
+    dFx = dT/Nb*np.sin(-th[0])+dQ/(Nb*r*R)*np.cos(-th[0])
 
     #   Figure of merit, induced power factor = 1.15
     FM = CP / (1.15 * CP + sol / 8 * CD)

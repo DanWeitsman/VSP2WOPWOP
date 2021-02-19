@@ -333,9 +333,10 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     Q = 1/(2*np.pi)*np.trapz(np.trapz(dQ,r),phi)
     P = Q * omega
 
-    # resolves loading vectors to vertical and horizantal directions so that a change of base can be applied to the balde geometry account for the pitching motion in the namelist file - 1/18/21
-    dFz = dT*np.cos(-theta_expanded) / Nb
-    dFx = dQ*np.sin(-theta_expanded)/ (Nb * r * R)
+    # resolves loading vectors to vertical and horizontal directions so that a change of base can be applied to the
+    # blade geometry account for the pitching motion in the namelist file - 1/18/21
+    dFz =  dT/Nb*np.cos(-theta_expanded)-dQ/(Nb*r*R)*np.sin(-theta_expanded)
+    dFx = dT/Nb*np.sin(-theta_expanded)+dQ/(Nb*r*R)*np.cos(-theta_expanded)
     # dFr = rho*np.pi*R**2*(omega*R)**2*(1/2*solDist*r**2*(-CL*np.expand_dims(np.sin(beta_exp),axis = 1)+CD*np.sin(np.expand_dims(mu_x*np.cos(phi),axis = 1)/ut)))
     dFr = np.zeros((np.shape(dFz)))
 
