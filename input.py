@@ -19,7 +19,7 @@ containing the patch and namelist files for each loading condition, will be gene
 ''''Patch file write directory setup'''
 
 # Name of the folder in which to place the written patch and functional data flies.
-outputFolderName = 'example_case'
+outputFolderName = 'TestCase'
 
 #   Blade geometry patch file name (without the extension).
 geomFileName = "Geom"
@@ -60,7 +60,7 @@ aStart = 2
 aLength = 3
 
 # Set equal to one for the airfoil polars to be plotted, along with the interval that the lift curve slope is evaluated.
-check = 1
+check = 0
 
 # %%
 ''' Operating condition configuration '''
@@ -71,7 +71,7 @@ check = 1
 trim = 2
 
 #   Direction of rotation set equal to 1 for CCW and 2 for CW
-rotation = 1
+rotation = 2
 
 # Number of Blades
 Nb = 4

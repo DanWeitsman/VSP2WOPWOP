@@ -235,11 +235,11 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         coefficient for the stalled blade sections
         '''
 
-        #   assume that the airfoil is symmetric and therefore the CL can be estimated by the product of the
-        # lift-curve slope and the angle of attack
-        CL = XsecPolarExp['Lift Slope'] * AoA
-        #   CD is assumed to be 10% of CL
-        CD = 0.1 * CL
+        # #   assume that the airfoil is symmetric and therefore the CL can be estimated by the product of the
+        # # lift-curve slope and the angle of attack
+        # CL = XsecPolarExp['Lift Slope'] * AoA
+        # #   CD is assumed to be 10% of CL
+        # CD = 0.1 * CL
 
         #   reruns the indices of stalled blade sections
         azInd, rInd = np.where(AoA > XsecPolarExp['alphaMax'])
@@ -255,7 +255,6 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     rho = UserIn['rho']
     Nb = UserIn['Nb']
     R = geomParams['R']
-    e = geomParams['e']
     r = geomParams['r']
     solDist = geomParams['solDist']
     XsecLocation = UserIn['XsecLocation']
@@ -266,8 +265,6 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     U = np.linalg.norm((Vx,Vz))
 
     mu = U/(omega*R)
-    mu_x = U/(omega*R) * np.cos(alphaInit)
-    mu_z = U/(omega*R) * np.sin(alphaInit)
 
     phiRes = 361
     phi = np.linspace(0,2*np.pi,phiRes)
@@ -336,6 +333,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     Q = 1/(2*np.pi)*np.trapz(np.trapz(dQ,r),phi)
     P = Q * omega
 
+    # resolves loading vectors to vertical and horizantal directions so that a change of base can be applied to the balde geometry account for the pitching motion in the namelist file - 1/18/21
     dFz = dT*np.cos(-theta_expanded) / Nb
     dFx = dQ*np.sin(-theta_expanded)/ (Nb * r * R)
     # dFr = rho*np.pi*R**2*(omega*R)**2*(1/2*solDist*r**2*(-CL*np.expand_dims(np.sin(beta_exp),axis = 1)+CD*np.sin(np.expand_dims(mu_x*np.cos(phi),axis = 1)/ut)))
@@ -343,7 +341,6 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
     #   if the rotor is rotating CW the force distributions are flipped along the longitudinal axis of the rotor disk.
     if UserIn['rotation'] == 2:
-
         dFz = np.flip(dFz,axis = 0)
         dFx = np.flip(dFx, axis=0)
         AoA = np.flip(AoA, axis=0)
@@ -352,7 +349,6 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         if UserIn['inflowMod'] !=1:
             lam = np.flip(lam, axis=0)
         th[2] = -th[2]
-
 
     #   hub force
     H = Nb/(2*np.pi)*np.trapz(np.trapz((dFr*np.expand_dims(np.cos(phi),axis = 1)+dFx*np.expand_dims(np.sin(phi),axis = 1)),r),phi)
