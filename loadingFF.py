@@ -237,9 +237,9 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
         # #   assume that the airfoil is symmetric and therefore the CL can be estimated by the product of the
         # # lift-curve slope and the angle of attack
-        # CL = XsecPolarExp['Lift Slope'] * AoA
+        CL = XsecPolarExp['Lift Slope'] * AoA
         # #   CD is assumed to be 10% of CL
-        # CD = 0.1 * CL
+        CD = 0.1 * CL
 
         #   reruns the indices of stalled blade sections
         azInd, rInd = np.where(AoA > XsecPolarExp['alphaMax'])
