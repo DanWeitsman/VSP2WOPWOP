@@ -8,12 +8,6 @@ supports any number of DegenGeom files operating at any number of loading condit
 comma-delimitted lists below (dataFileNames, Vx, W, omega). A folder that corresponds to each DegenGeom file,
 containing the patch and namelist files for each loading condition, will be generated in the user specified directory.
 '''
-# %%
-'''Package import and directory setup'''
-
-# Directory where the DegenGeom and airfoil polars are located, by default this is set to the location of the
-# test case folder.
-# dirDataFile = os.path.abspath(os.path.join(os.getcwd(), 'TestCase', 'BoeingModel360'))
 
 # %%
 ''''Patch file write directory setup'''
