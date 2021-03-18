@@ -18,7 +18,7 @@ import numpy as np
 
 
 # %%
-def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter_geom,nXsecs):
+def nml_write(UserIn, dirSaveFile, nOmega,iter_geom,nXsecs ,mat_read):
 
     # The position of the observers can be maintained constant or varied for each geometry variant by
     # populating the list of any dimension of the observer grid in the input file with multiple comma
@@ -58,9 +58,6 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
         octaveFlag =  '.false.'
         spectrumFlag = '.false.'
         SPLdBFLAG = '.false.'
-    #   Configures which broadband noise model to enable
-
-
 
     # Determines the sampling rate, as a power of 2, based on the desired sampling rate and the duration of the run
     # specified in the input module.
@@ -71,11 +68,6 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
     indSelect = np.squeeze(
         [iter for iter, n in enumerate(abs(1 - ntIdeal / nt[ind])) if n == np.min(abs(1 - ntIdeal / nt[ind]))])
     nt = nt[ind[indSelect]]
-
-    if UserIn['rotation'] ==1:
-        zAxisValue = 1
-    else:
-        zAxisValue = -1
 
 
     # %%
@@ -143,7 +135,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                 {
                     'Title': "'Observer motion'",
                     'TranslationType': "'KnownFunction'",
-                    'VH': [nVx, 0, 0],
+                    'VH': [UserIn['Vx'], 0, 0],
                 }
         }
     elif UserIn['obsType'] == 2:
@@ -176,7 +168,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                 {
                     'Title': "'Observer motion'",
                     'TranslationType': "'KnownFunction'",
-                    'VH': [nVx, 0, 0],
+                    'VH': [UserIn['Vx'], 0, 0],
                 }
         }
 
@@ -207,7 +199,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                 {
                     'Title': "'Observer motion'",
                     'TranslationType': "'KnownFunction'",
-                    'VH': [nVx, 0, 0],
+                    'VH': [UserIn['Vx'], 0, 0],
                 }
         }
 
@@ -215,7 +207,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
         'containerin':
             {
                 'Title': "'Aircraft'",
-                'nbContainer': 1,
+                'nbContainer': UserIn['Nrotor'],
                 'nbBase': 2,
                 'dTau': (nOmega / 60) ** -1 / 120,
             },
@@ -224,178 +216,135 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
             {
                 'Title': "'Aircraft motion'",
                 'TranslationType': "'KnownFunction'",
-                'VH': [nVx, 0, nVz],
+                'VH': [UserIn['Vx'], 0, UserIn['Vz']],
             },
             {
                 'Title': "'Rotor disk AoA tilt'",
                 'AngleType': "'Timeindependent'",
                 'AxisType': "'Timeindependent'",
                 'AxisValue': [0, 1, 0],
-                'angleValue': - alphaShaft * np.pi / 180,
+                'angleValue': - UserIn['alphaShaft'] * np.pi / 180,
             }
         ]
     }
 
-    if UserIn['BBNoiseFlag'] == 0:
-        rotor = {
-            'containerin':
-                {
-                    'Title': "'Rotor'",
-                    'nbContainer': UserIn['Nb'],
-                    'nbBase': 2,
-                },
-            'cb':
-                [
-                    {
-                        'Title': "'Rotation'",
-                        'rotation': '.true.',
-                        'AngleType': "'KnownFunction'",
-                        'Omega': nOmega / 60 * 2 * np.pi,
-                        'Psi0': 0,
-                        'AxisValue': [0, 0, zAxisValue],
-                    },
-                    {
-                        'Title': "'Rotate to align blades with zero azimuth'",
-                        'AngleType': "'Timeindependent'",
-                        'AxisType': "'Timeindependent'",
-                        'AxisValue': [0, 0, 1],
-                        'angleValue': -np.pi / 2,
-                    }
-                ]
-        }
+    nml = [environmentin, environmentconstants, observerin, aircraft]
 
-    else:
-        rotor = {
-            'containerin':
-                {
-                    'Title': "'Rotor'",
-                    'nbContainer': UserIn['Nb'],
-                    'nbBase': 2,
-                    'PeggNoiseFlag': '.false.',
-                    'BPMNoiseFlag' : '.true.',
-                },
-            'cb':
-                [
-                    {
-                        'Title': "'Rotation'",
-                        'rotation': '.true.',
-                        'AngleType': "'KnownFunction'",
-                        'Omega': nOmega / 60 * 2 * np.pi,
-                        'Psi0': 0,
-                        'AxisValue': [0, 0, zAxisValue],
-                    },
-                    {
-                        'Title': "'Rotate to align blades with zero azimuth'",
-                        'AngleType': "'Timeindependent'",
-                        'AxisType': "'Timeindependent'",
-                        'AxisValue': [0, 0, 1],
-                        'angleValue': -np.pi / 2,
-                    }
-
-                ],
-            'BPMin':
-            [
-                {
-                    'BPMNoiseFile' : "'BPM.dat'",
-                    'nSect': nXsecs,
-                    'uniformBlade': 0,
-                    'BLtrip':1,
-                    'sectChordFlag':"'FileValue'",
-                    'sectLengthFlag':"'FileValue'",
-                    'TEThicknessFlag':"'FileValue'",
-                    'TEflowAngleFlag':"'FileValue'",
-                    'TipLCSFlag':"'UserValue'",
-                    'TipLCS' : loadParams['ClaDist'][-1],
-                    'SectAOAFlag':"'FileValue'",
-                    'UFlag':"'FileValue'",
-                    'LBLVSnoise':'.true.',
-                    'TBLTEnoise':'.true.',
-                    'bluntNoise':'.true.',
-                    'bladeTipNoise':'.true.',
-                    'roundBladeTip' :'.false.'
-        }
-            ]
-        }
-
-    nml = [environmentin, environmentconstants, observerin, aircraft, rotor]
-
-    # Loop over the blade count and appends the container of each blade to the nml list.
-    for Nb in range(0, UserIn['Nb']):
-        if UserIn['trim'] == 3:
-
-            if UserIn['rotation'] == 1:
-                A0 = loadParams['th'][0]
-                A1 = -(loadParams['th'][1]*np.cos(2*np.pi/UserIn['Nb']*Nb)+loadParams['th'][2]*np.sin(2*np.pi/UserIn['Nb']*Nb))
-                A2 = -(loadParams['th'][2]*np.cos(2*np.pi/UserIn['Nb']*Nb)-loadParams['th'][1]*np.sin(2*np.pi/UserIn['Nb']*Nb))
-            else:
-                A0 = -loadParams['th'][0]
-                A1 = loadParams['th'][1]*np.cos(2*np.pi/UserIn['Nb']*Nb)+loadParams['th'][2]*np.sin(2*np.pi/UserIn['Nb']*Nb)
-                A2 = loadParams['th'][2]*np.cos(2*np.pi/UserIn['Nb']*Nb)-loadParams['th'][1]*np.sin(2*np.pi/UserIn['Nb']*Nb)
-
-            # if Nb ==
-            blade_nml = {
+    for rot in range(UserIn['Nrotor']):
+        if UserIn['BBNoiseFlag'] == 0:
+            rotor = {
                 'containerin':
                     {
-                        'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
-                        'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
-                        'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
-                        'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb,
-                        'nbBase': 2,
+                        'Title': "'Rotor"+str(rot+1)+"'",
+                        'nbContainer': UserIn['Nb'],
+                        'nbBase': 3,
                     },
                 'cb':
                     [
                         {
-                            'Title': "'Constant Rotation'",
-                            'AngleType': "'Timeindependent'",
-                            'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 0, zAxisValue],
-                            'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
+                            'Title': "'Rotation'",
+                            'rotation': '.true.',
+                            'AngleType': "'KnownFunction'",
+                            'Omega': np.squeeze(mat_read['op'+ str(rot+1)]['rpm'][()]) / 60 * 2 * np.pi,
+                            'Psi0': 0,
+                            'AxisValue': [0, 0, UserIn['rotation'][rot]],
                         },
                         {
-                            'Title': "'Pitch'",
-                            'AngleType': "'Periodic'",
-                            'A0': A0,
-                            'A1': A1,
-                            'B1': A2,
-                            'AxisValue': [0, 1, 0],
+                            'Title': "'Rotate to align blades with zero azimuth'",
+                            'AngleType': "'Timeindependent'",
+                            'AxisType': "'Timeindependent'",
+                            'AxisValue': [0, 0, 1],
+                            'angleValue': -np.pi / 2,
+                        },
+                        {
+                            'Title': "'Rotor translation'",
+                            'TranslationType': "'KnownFunction'",
+                            'Y0': UserIn['rotorLoc'][rot],
                         }
                     ]
             }
+
         else:
-            if UserIn['rotation'] == 1:
-                A0 = loadParams['th'][0]
-            else:
-                A0 = -loadParams['th'][0]
-
-            blade_nml = {
+            rotor = {
                 'containerin':
                     {
-                        'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
-                        'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
-                        'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
-                        'nbBase': 2,
+                        'Title': "'Rotor"+str(rot+1)+"'",
+                        'nbContainer': UserIn['Nb'],
+                        'nbBase': 3,
+                        'PeggNoiseFlag': '.false.',
+                        'BPMNoiseFlag' : '.true.',
                     },
                 'cb':
                     [
                         {
-                            'Title': "'Constant Rotation'",
-                            'AngleType': "'Timeindependent'",
-                            'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 0, zAxisValue],
-                            'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
+                            'Title': "'Rotation'",
+                            'rotation': '.true.',
+                            'AngleType': "'KnownFunction'",
+                            'Omega': np.squeeze(mat_read['op'+ str(rot+1)]['rpm'][()]) / 60 * 2 * np.pi,
+                            'Psi0': 0,
+                            'AxisValue': [0, 0, UserIn['rotation'][rot]],
                         },
                         {
-                            'Title': "'Pitch'",
+                            'Title': "'Rotate to align blades with zero azimuth'",
                             'AngleType': "'Timeindependent'",
                             'AxisType': "'Timeindependent'",
-                            'AxisValue': [0, 1, 0],
-                            'angleValue': A0,
+                            'AxisValue': [0, 0, 1],
+                            'angleValue': -np.pi / 2,
+                        },
+                        {
+                            'Title': "'Rotor translation'",
+                            'TranslationType': "'KnownFunction'",
+                            'Y0': UserIn['rotorLoc'][rot],
                         }
 
-                    ]
+                    ],
+                'BPMin':
+                [
+                    {
+                        'BPMNoiseFile' : "'BPM.dat'",
+                        'nSect': nXsecs,
+                        'uniformBlade': 0,
+                        'BLtrip':1,
+                        'sectChordFlag':"'FileValue'",
+                        'sectLengthFlag':"'FileValue'",
+                        'TEThicknessFlag':"'FileValue'",
+                        'TEflowAngleFlag':"'FileValue'",
+                        'TipLCSFlag':"'UserValue'",
+                        # 'TipLCS' : loadParams['ClaDist'][-1],
+                        'SectAOAFlag':"'FileValue'",
+                        'UFlag':"'FileValue'",
+                        'LBLVSnoise':'.true.',
+                        'TBLTEnoise':'.true.',
+                        'bluntNoise':'.true.',
+                        'bladeTipNoise':'.true.',
+                        'roundBladeTip' :'.false.'
+            }
+                ]
+            }
+        nml.append(rotor)
+        # Loop over the blade count and appends the container of each blade to the nml list.
+        for Nb in range(UserIn['Nb']):
+            blade_nml = {
+                'containerin':
+                    {
+                        'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
+                        'patchGeometryFile': "'op"+str(rot+1) + "_geom.dat'",
+                        'patchLoadingFile': "'op"+str(rot+1) + "_load.dat'",
+                        'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb,
+                        'nbBase': 1,
+                    },
+                'cb':
+                    {
+                        'Title': "'Constant Rotation'",
+                        'AngleType': "'Timeindependent'",
+                        'AxisType': "'Timeindependent'",
+                        'AxisValue': [0, 0, UserIn['rotation'][rot]],
+                        'angleValue': 2 * np.pi / UserIn['Nb'] * Nb,
+                    }
             }
 
-        nml.append(blade_nml)
+            nml.append(blade_nml)
+
         # blade_load = {
         #     'containerin':
         #         {

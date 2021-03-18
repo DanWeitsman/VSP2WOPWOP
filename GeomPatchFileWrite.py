@@ -15,8 +15,6 @@ def GeomPatchFileWrite(geomFileName, geomParams,dirSaveFile):
     import os
     #%%
 
-
-    fileName = geomFileName
     magic_number = 42                                               # 4-byte signed
     version_number = [1,0]                                          # Version number 1.0
     units = 'Pa'                                                    #32-byte
@@ -34,7 +32,7 @@ def GeomPatchFileWrite(geomFileName, geomParams,dirSaveFile):
 
     #%%
 
-    with open(os.path.abspath(os.path.expanduser(dirSaveFile+os.path.sep + fileName + '.dat')),'bw') as f_bin:
+    with open(os.path.abspath(os.path.expanduser(dirSaveFile+os.path.sep + geomFileName + '.dat')),'bw') as f_bin:
 
         f_bin.write(struct.pack('<i', magic_number))
         f_bin.write(struct.pack('<i', version_number[0]))

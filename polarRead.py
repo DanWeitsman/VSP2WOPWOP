@@ -7,16 +7,15 @@
 #   angle of attack interval specified in the input file. These quantities are assembled into a dictionary which is returned to the user.
 
 #%%
-import os
-import numpy as np
-import bisect
-import time
-#%%
-def polarRead(UserIn,iii):
 
-    dirDataFile = UserIn['dirDataFile']
-    airfoilPolarFileName = UserIn['airfoilPolarFileName'][iii]
-    # airfoilName = UserIn['airfoilName']
+#%%
+def polarRead(UserIn,airfoilPolarFileName):
+    import os
+    import numpy as np
+    import bisect
+    import time
+#%%
+
     aStart =  UserIn['aStart']
     aLength = UserIn['aLength']
     XsecPolar = {}
@@ -29,7 +28,7 @@ def polarRead(UserIn,iii):
 
     #%%
     for i, file in enumerate(airfoilPolarFileName):
-        with open(os.path.expanduser(dirDataFile+os.path.sep+file)) as f:
+        with open(os.path.join(os.getcwd(),file)) as f:
             data = f.read()
         data = data.split("\n")
         dataParse = [x.split(" ")[1:] for x in data[12:-1]]

@@ -5,7 +5,7 @@ Author: Daniel Weitsman
 
 This function writes out the cases.nam file
 '''
-def caseFile_write(globalFolderName, caseFileName, dirSaveFile):
+def caseFile_write(globalFolderName, caseFileName):
     #%% imports necessary modules
     import os
     #%%

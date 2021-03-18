@@ -69,13 +69,7 @@ def PeriodicLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs, omega,dir
         f_bin.write(struct.pack('<i', jMax))
 
         for i,key in enumerate(keys):
-
             f_bin.write(struct.pack('<f', key))
-
-            # if i == nkey:
-            #     for ii, df in enumerate(loads):
-            #         f_bin.write(struct.pack('<' + str(np.size(df[0])) + 'f', *df[0]))
-            # else:
             for ii, df in enumerate(loads):
                 f_bin.write(struct.pack('<'+str(np.shape(df)[1])+'f', *df[i]))
 

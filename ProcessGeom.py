@@ -33,21 +33,13 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     #   reflects blade over y-z plane if the blade is rotating CW
     if rotation == 2:
         surfNodes[:,0] = -surfNodes[:,0]
-        LENodes[:,0] = -LENodes[:,0]
-        TENodes[:,0] = -TENodes[:,0]
         ScaledNodeCenteredSurfNorms[:,0] = -ScaledNodeCenteredSurfNorms[:,0]
 
     #   computes the chord distribution along the blade span
     chordDist = np.linalg.norm(abs(LENodes - TENodes), axis=1)
 
-    # precone = np.arctan(LENodes[:, 2][-1]/LENodes[:, 1][-1])
-    # preconez = LENodes[:, 1]*np.tan(precone)
     sweep = np.arctan(-(LENodes - TENodes)[:,1]/(LENodes - TENodes)[:,0])
-    #   computes the twist distribution along the blade span [rad] (this quantitiy varies based on the orientation of the blade in OpenVSP)
-    # twistDist =np.arctan(-LENodes[:,2]/LENodes[:,0])
     twistDist = np.arctan(-(LENodes - TENodes)[:, 2] / (LENodes - TENodes)[:, 0])
-    # stickNodes = np.float64(comp1Data['SURFACE_FACE'][1:, :])
-    # plateNodes = np.float64(comp1Data['PLATE_NODE'][1:, :3])
 
     # blade radius and root cutout
     R = LENodes[:,1][-1]
@@ -78,7 +70,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     #   Coordinates of the lifting line
     liftLineCoord = LENodes - (LENodes - TENodes) * loadPos
     liftLineNorm = np.transpose((np.sin(twistDist),np.zeros(len(twistDist)),np.cos(twistDist)))
-    # liftLineNorm = np.transpose((np.zeros(len(twistDist)), np.zeros(len(twistDist)), np.ones(len(twistDist))))
+
     geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,'sweep':sweep,
                   'solidity':sol,'surfNodes':surfNodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r,'TE_thick':TE_thick}
 
