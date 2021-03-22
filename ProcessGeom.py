@@ -31,7 +31,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
 
 
     #   reflects blade over y-z plane if the blade is rotating CW
-    if rotation == 2:
+    if rotation == -1:
         surfNodes[:,0] = -surfNodes[:,0]
         ScaledNodeCenteredSurfNorms[:,0] = -ScaledNodeCenteredSurfNorms[:,0]
 

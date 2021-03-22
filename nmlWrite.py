@@ -245,7 +245,7 @@ def nml_write(UserIn, dirSaveFile, nOmega,iter_geom,nXsecs ,mat_read):
                             'Title': "'Rotation'",
                             'rotation': '.true.',
                             'AngleType': "'KnownFunction'",
-                            'Omega': np.squeeze(mat_read['op'+ str(2-rot)]['rpm'][()]) / 60 * 2 * np.pi,
+                            'Omega': np.squeeze(mat_read['op'+ str(rot+1)]['rpm'][()]) / 60 * 2 * np.pi,
                             'Psi0': 0,
                             'AxisValue': [0, 0, UserIn['rotation'][rot]],
                         },
@@ -280,7 +280,7 @@ def nml_write(UserIn, dirSaveFile, nOmega,iter_geom,nXsecs ,mat_read):
                             'Title': "'Rotation'",
                             'rotation': '.true.',
                             'AngleType': "'KnownFunction'",
-                            'Omega': np.squeeze(mat_read['op'+ str(2-rot)]['rpm'][()]) / 60 * 2 * np.pi,
+                            'Omega': np.squeeze(mat_read['op'+ str(rot+1)]['rpm'][()]) / 60 * 2 * np.pi,
                             'Psi0': 0,
                             'AxisValue': [0, 0, UserIn['rotation'][rot]],
                         },
@@ -328,8 +328,8 @@ def nml_write(UserIn, dirSaveFile, nOmega,iter_geom,nXsecs ,mat_read):
                 'containerin':
                     {
                         'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
-                        'patchGeometryFile': "'op"+str(2-rot) + "_geom.dat'",
-                        'patchLoadingFile': "'op"+str(2-rot) + "_load.dat'",
+                        'patchGeometryFile': "'op"+str(rot+1) + "_geom.dat'",
+                        'patchLoadingFile': "'op"+str(rot+1) + "_load.dat'",
                         'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb,
                         'nbBase': 1,
                     },
