@@ -235,6 +235,8 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         coefficient for the stalled blade sections
         '''
 
+#   todo add bisect functionality to seek correct CL and CD
+
         # #   assume that the airfoil is symmetric and therefore the CL can be estimated by the product of the
         # # lift-curve slope and the angle of attack
         CL = XsecPolarExp['Lift Slope'] * AoA

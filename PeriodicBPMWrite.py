@@ -15,7 +15,7 @@ def PeriodicBPMWrite(geomParams,loadParams,nRev,omega,dirSaveFile):
     import numpy as np
 
     #%% TEflowAngle hardcoded to 1 degree
-    TEflowAngle = np.zeros(len(geomParams['chordDist']))*(np.pi/180)
+    TEflowAngle = np.ones(len(geomParams['chordDist']))*(np.pi/180)
 
     #%%
 

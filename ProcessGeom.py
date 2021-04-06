@@ -25,7 +25,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     LENodes = np.float64(dataSorted['Component 1']['STICK_NODE'][1:, :3])
     TENodes = np.float64(dataSorted['Component 1']['STICK_NODE'][1:, 3:6])
 
-    TE_thick = surfNodes[1::pntsPerXsec,0]-surfNodes[(pntsPerXsec-2)::pntsPerXsec,0]
+    TE_thick = abs(surfNodes[2::pntsPerXsec,2]-surfNodes[(pntsPerXsec-3)::pntsPerXsec,2])
 
     #   computes the node centered surface normals that are scaled by the area of each surface element
     ScaledNodeCenteredSurfNorms = NodeCenteredNorms(surfNodes,pntsPerXsec,nXsecs)
@@ -87,14 +87,17 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
 #     ax.pbaspect = [.09, 1, .05]
 #     ax.set(xlabel = 'x',ylabel = 'y',zlabel = 'z')
 #     # ax.scatter3D(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],c = 'red',linewidths = 1)
-#     ax.scatter3D(LENodes[:,0], LENodes[:,1], LENodes[:,2],c = 'green',linewidths = 1)
-#     ax.scatter3D(TENodes[:,0], TENodes[:,1], TENodes[:,2],c = 'blue',linewidths = 1)
+#     # ax.scatter3D(LENodes[:,0], LENodes[:,1], LENodes[:,2],c = 'green',linewidths = 1)
+#     # ax.scatter3D(TENodes[:,0], TENodes[:,1], TENodes[:,2],c = 'blue',linewidths = 1)
 #     ax.scatter3D(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2], c='yellow', linewidths=.2)
-#     ax.scatter3D(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2], c='red', linewidths=.2)
+#     ax.scatter3D(surfNodes[1::pntsPerXsec,0], surfNodes[1::pntsPerXsec,1], surfNodes[1::pntsPerXsec,2], c='g', linewidths=.2)
+#     ax.scatter3D(surfNodes[(pntsPerXsec-2)::pntsPerXsec,0], surfNodes[(pntsPerXsec-2)::pntsPerXsec,1], surfNodes[(pntsPerXsec-2)::pntsPerXsec,2], c='b', linewidths=.2)
 #
-#     # ax.scatter3D(surfNodes[1::pntsPerXsec,0], surfNodes[1::pntsPerXsec,1], surfNodes[1::pntsPerXsec,2], c='red', linewidths=1)
-#     # ax.scatter3D(surfNodes[(pntsPerXsec-2)::pntsPerXsec,0], surfNodes[(pntsPerXsec-2)::pntsPerXsec,1], surfNodes[(pntsPerXsec-2)::pntsPerXsec,2], c='red', linewidths=1)
-#
-#     plt.show()
-#     # # ax.quiver(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],ScaledNodeCenteredSurfNorms[:,0]*0.005,ScaledNodeCenteredSurfNorms[:,1]*0.005,ScaledNodeCenteredSurfNorms[:,2]*0.005)
-#     # ax.quiver(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2],liftLineNorm[:,0]*0.005,liftLineNorm[:,1]*0.005,liftLineNorm[:,2]*0.005)
+# #     # ax.scatter3D(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2], c='red', linewidths=.2)
+# #
+# #     # ax.scatter3D(surfNodes[1::pntsPerXsec,0], surfNodes[1::pntsPerXsec,1], surfNodes[1::pntsPerXsec,2], c='red', linewidths=1)
+# #     # ax.scatter3D(surfNodes[(pntsPerXsec-2)::pntsPerXsec,0], surfNodes[(pntsPerXsec-2)::pntsPerXsec,1], surfNodes[(pntsPerXsec-2)::pntsPerXsec,2], c='red', linewidths=1)
+# #
+#      plt.show()
+    # # ax.quiver(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],ScaledNodeCenteredSurfNorms[:,0]*0.005,ScaledNodeCenteredSurfNorms[:,1]*0.005,ScaledNodeCenteredSurfNorms[:,2]*0.005)
+    # ax.quiver(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2],liftLineNorm[:,0]*0.005,liftLineNorm[:,1]*0.005,liftLineNorm[:,2]*0.005)

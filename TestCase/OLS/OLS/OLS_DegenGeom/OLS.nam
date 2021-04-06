@@ -1,0 +1,176 @@
+&environmentin
+nbSourceContainers = 1
+nbObserverContainers = 1
+spectrumFlag = .true.
+SPLdBFLAG = .true.
+SPLdBAFlag = .false.
+OASPLdBAFlag = .false.
+OASPLdBFlag = .false.
+broadbandFlag = .true.
+thicknessNoiseFlag = .true.
+loadingNoiseFlag = .true.
+acousticPressureFlag = .true.
+totalNoiseFlag = .true.
+debugLevel = 1
+ASCIIOutputFlag = .true.
+sigmaflag = .false.
+loadingSigmaFlag = .true.
+pressureSigmaFlag = .true.
+normalSigmaFlag = .true.
+observerSigmaflag = .true.
+loadingNoisesigmaFlag = .true.
+thicknessNoiseSigmaFlag = .true.
+totalNoiseSigmaFlag = .true.
+accelerationSigmaFlag = .true.
+MdotrSigmaFlag = .true.
+velocitySigmaFlag = .true.
+/
+
+&environmentconstants
+rho = 1.225
+c = 340.2939
+/
+
+&observerin
+title = 'Observers'
+!attachedto = 'Aircraft'
+nt = 512
+tmin = 0.0
+tmax = 0.02666666666666667
+highpassfrequency = 10
+lowpassfrequency = 20000
+radius = 3.2
+nbtheta = 1
+nbpsi = 4
+thetamin = 0.0
+thetamax = 0.0
+psimin = -0.7853981633974483
+psimax = 0.0
+octaveFlag = .true.
+octaveNumber = 3
+octaveApproxFlag = .false.
+nbBase = 1
+/
+
+&cb
+Title = 'Observer motion'
+TranslationType = 'KnownFunction'
+VH = 37.02464, 0, 0
+/
+
+&containerin
+Title = 'Aircraft'
+nbContainer = 1
+nbBase = 2
+dTau = 0.00022222222222222223
+/
+
+&cb
+Title = 'Aircraft motion'
+TranslationType = 'KnownFunction'
+VH = 37.02464, 0, 0
+/
+
+&cb
+Title = 'Rotor disk AoA tilt'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 1, 0
+angleValue = 0.03490658503988659
+/
+
+&containerin
+Title = 'Rotor'
+nbContainer = 2
+nbBase = 2
+PeggNoiseFlag = .false.
+BPMNoiseFlag = .true.
+/
+
+&cb
+Title = 'Rotation'
+rotation = .true.
+AngleType = 'KnownFunction'
+Omega = 235.61944901923448
+Psi0 = 0
+AxisValue = 0, 0, -1
+/
+
+&cb
+Title = 'Rotate to align blades with zero azimuth'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 0, 1
+angleValue = -1.5707963267948966
+/
+
+&BPMin
+BPMNoiseFile = 'BPM.dat'
+nSect = 50
+uniformBlade = 0
+BLtrip = 1
+sectChordFlag = 'FileValue'
+sectLengthFlag = 'FileValue'
+TEThicknessFlag = 'FileValue'
+TEflowAngleFlag = 'FileValue'
+TipLCSFlag = 'UserValue'
+TipLCS = 7.946403747741671
+SectAOAFlag = 'FileValue'
+UFlag = 'FileValue'
+LBLVSnoise = .true.
+TBLTEnoise = .true.
+bluntNoise = .true.
+bladeTipNoise = .true.
+roundBladeTip = .false.
+/
+
+&containerin
+Title = 'Blade 1'
+patchGeometryFile = 'Geom.dat'
+patchLoadingFile = 'Load.dat'
+periodicKeyOffset = 0.0
+nbBase = 2
+/
+
+&cb
+Title = 'Constant Rotation'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 0, -1
+angleValue = 0.0
+/
+
+&cb
+Title = 'Pitch'
+AngleType = 'Periodic'
+A0 = -0.05731043497397381
+A1 = 2.404695303988541e-09
+B1 = -0.023702712229721448
+AxisValue = 0, 1, 0
+/
+
+&containerin
+Title = 'Blade 2'
+patchGeometryFile = 'Geom.dat'
+patchLoadingFile = 'Load.dat'
+periodicKeyOffset = 3.141592653589793
+nbBase = 2
+/
+
+&cb
+Title = 'Constant Rotation'
+AngleType = 'Timeindependent'
+AxisType = 'Timeindependent'
+AxisValue = 0, 0, -1
+angleValue = 3.141592653589793
+/
+
+&cb
+Title = 'Pitch'
+AngleType = 'Periodic'
+A0 = -0.05731043497397381
+A1 = -2.4046953068912863e-09
+B1 = 0.023702712229721448
+AxisValue = 0, 1, 0
+/
+

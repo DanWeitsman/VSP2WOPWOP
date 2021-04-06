@@ -1,0 +1,4 @@
+&casename
+globalFolderName = './OLS_DegenGeom/'
+caseNameFile = 'OLS.nam'
+/
