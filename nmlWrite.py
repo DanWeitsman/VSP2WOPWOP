@@ -370,6 +370,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                         'Title': "'" + 'Blade ' + str(Nb + 1) + "'",
                         'patchGeometryFile': "'" + UserIn['geomFileName'] + '.dat' + "'",
                         'patchLoadingFile': "'" + UserIn['loadingFileName'] + '.dat' + "'",
+                        'periodicKeyOffset': 2 * np.pi / UserIn['Nb'] * Nb,
                         'nbBase': 2,
                     },
                 'cb':
