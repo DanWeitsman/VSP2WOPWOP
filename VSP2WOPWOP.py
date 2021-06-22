@@ -80,17 +80,10 @@ def main():
             GeomPatchFileWrite('op'+ str(i+1) +'_geom', geomParams, dirSaveFile)
 
             if args.load_type:
-<<<<<<< ebb4bc3063fd76430a03c4f1bbc9351bb2b4556d
                 loadParams = {'dFx':mat_read['op'+ str(i+1)]['inplane'][args.azimuth,:],'dFy':np.zeros(np.shape(mat_read['op'+ str(i+1)]['inplane'][args.azimuth,:])),'dFz':mat_read['op'+ str(i+1)]['outplane'][args.azimuth,:],'th':[0,0,0]}
                 ConstantLoadingPatchFileWrite('op'+ str(i+1) +'_load', loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
                 loadParams = {'dFx':mat_read['op'+ str(i+1)]['inplane'],'dFy':np.zeros(np.shape(mat_read['op'+ str(i+1)]['inplane'])),'dFz':mat_read['op'+ str(i+1)]['outplane'],'th':[0,0,0],'phi': np.linspace(0,2*np.pi,np.shape(mat_read['op'+ str(i+1)]['inplane'])[0])}
-=======
-                loadParams = {'dFx':UserIn['rho'] * np.pi * geomParams['R'] ** 2 * (mat_read['op'+ str(i+1)]['rpm'][()]/60*(2*np.pi) * geomParams['R']) ** 2 *mat_read['op'+ str(i+1)]['inplane'][args.azimuth,:]*-UserIn['rotation'][i],'dFy':np.zeros(np.shape(mat_read['op'+ str(i+1)]['inplane'][args.azimuth,:])),'dFz':UserIn['rho'] * np.pi * geomParams['R'] ** 2 * (mat_read['op'+ str(i+1)]['rpm'][()]/60*(2*np.pi) * geomParams['R']) ** 2 *mat_read['op'+ str(i+1)]['outplane'][args.azimuth,:],'th':[0,0,0]}
-                ConstantLoadingPatchFileWrite('op'+ str(i+1) +'_load', loadParams, geomParams['nXsecs'], dirSaveFile)
-            else:
-                loadParams = {'dFx':UserIn['rho'] * np.pi * geomParams['R'] ** 2 * (mat_read['op'+ str(i+1)]['rpm'][()]/60*(2*np.pi) * geomParams['R']) ** 2 *mat_read['op'+ str(i+1)]['inplane'][:]*-UserIn['rotation'][i],'dFy':np.zeros(np.shape(mat_read['op'+ str(i+1)]['inplane'])),'dFz':UserIn['rho'] * np.pi * geomParams['R'] ** 2 * (mat_read['op'+ str(i+1)]['rpm'][()]/60*(2*np.pi) * geomParams['R']) ** 2 *mat_read['op'+ str(i+1)]['outplane'],'th':[0,0,0],'phi': np.linspace(0,2*np.pi,np.shape(mat_read['op'+ str(i+1)]['inplane'])[0])}
->>>>>>> minor edits
                 PeriodicLoadingPatchFileWrite('op'+ str(i+1) +'_load', loadParams, geomParams['nXsecs'], np.squeeze(mat_read['op'+ str(i+1)]['rpm'][()]) ,dirSaveFile)
 
         # if UserIn['BBNoiseFlag'] == 1:
