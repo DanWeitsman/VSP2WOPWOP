@@ -89,7 +89,7 @@ def nml_write(UserIn, dirSaveFile, nOmega,iter_geom,nXsecs ,mat_read):
                 'totalNoiseFlag': '.true.',
                 'debugLevel': 1,
                 'ASCIIOutputFlag': '.true.',
-                'sigmaflag': '.true.',
+                'sigmaflag': '.false.',
                 'loadingSigmaFlag': '.true.',
                 'pressureSigmaFlag': '.true.',
                 'normalSigmaFlag': '.true.',
