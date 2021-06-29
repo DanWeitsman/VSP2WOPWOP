@@ -53,10 +53,11 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         :param omega: rotational rate [rad/s]
         :return:
         '''
-
+        # todo fix fixed pitch calc (dCT) when using the pitt-peters inflow model 
         mu = U / (omega * R)
         CT =  W/(rho * np.pi * R ** 2 * (omega * R) ** 2)
-        lamTPP_init = inflowModSelect(UserIn['inflowMod'], mu*np.tan(alphaInit), mu, CT)
+        lamTPP_init = inflowModSelect(2, mu*np.tan(alphaInit), mu, CT)
+        dCT = CT*np.ones(np.shape(lamTPP_init))
 
         err = 1
         while np.any(err > 0.0005):
@@ -112,8 +113,8 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
             err = np.abs((lamTTP_temp - lamTPP_init) / lamTTP_temp)
             lamTPP_init = lamTTP_temp
 
-        Mx = 1/(2*np.pi)*np.trapz(np.trapz(r*Nb*dCT/Nb*np.expand_dims(np.sin(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
-        My = -1/(2*np.pi)*np.trapz(np.trapz(r*Nb*dCT/Nb*np.expand_dims(np.cos(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
+        Mx = 1/(2*np.pi)*np.trapz(np.trapz(r*dCT*np.expand_dims(np.sin(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
+        My = -1/(2*np.pi)*np.trapz(np.trapz(r*dCT*np.expand_dims(np.cos(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
 
         return CT,dCT,Mx,My,lamTTP_temp,theta_expanded,ut,up,CL,CD,AoA
 
@@ -207,8 +208,8 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         '''
 
         CT = 1/(2*np.pi)*np.trapz(np.trapz(dCT,r),phi)
-        CMX = 1/(2 * np.pi) * np.trapz(np.trapz(r * Nb * dCT / Nb * np.expand_dims(np.sin(phi), axis=1), r), phi)
-        CMY = -1/(2 * np.pi) * np.trapz(np.trapz(r * Nb * dCT / Nb * np.expand_dims(np.cos(phi), axis=1), r), phi)
+        CMX = 1/(2 * np.pi) * np.trapz(np.trapz(r * dCT  * np.expand_dims(np.sin(phi), axis=1), r), phi)
+        CMY = -1/(2 * np.pi) * np.trapz(np.trapz(r * dCT * np.expand_dims(np.cos(phi), axis=1), r), phi)
 
         lam = constant_inflow(lam, mu, CT)
         wake_skew = np.arctan(mu*np.cos(alphaInit)/lam)
@@ -234,8 +235,6 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         :param CD:  drag coefficient, set equal to its value at the angle of attack corresponding to themaximum lift
         coefficient for the stalled blade sections
         '''
-
-#   todo add bisect functionality to seek correct CL and CD
 
         # #   assume that the airfoil is symmetric and therefore the CL can be estimated by the product of the
         # # lift-curve slope and the angle of attack
@@ -303,7 +302,6 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         omega = trim_sol.x
         th = np.zeros(3)
         T,CT,dCT,lam,ut,up,CL,CD,AoA,mu = fixed_pitch_trim(omega)
-
 
     elif UserIn['trim'] == 2:
         trimTargs = W/(rho*np.pi*R**2*(omega*R)**2)

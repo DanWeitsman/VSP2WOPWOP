@@ -24,7 +24,8 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
         '''
 
         trim_out = rpm_trim(omega)
-        res = np.abs((T - trim_out[0]*rho*np.pi*R**2*(omega*R)**2) / T)
+        res = np.abs((T - trim_out[0]*rho*np.pi*R**2*(omega*R)**2)/T)
+        print(res)
         return res
 
     def coll_residuals(th0):
@@ -56,16 +57,16 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
         """
         CT_init = T / (rho * np.pi * R ** 2 * (omega * R) ** 2)
         lam_init = np.sqrt(CT_init / 2)
+        th = th0+twistDist
         err = 1
         while np.any(err > 0.0005):
-            lam = TipLoss(lam_init, twistDist)
-            AoA = twistDist - lam / r
+            lam = TipLoss(lam_init, th)
+            AoA = th - lam / r
             dCL, dCD = PolarLookup(AoA)
             dCT = 0.5 * solDist * dCL * r ** 2
             CT = np.trapz(dCT, r)
             err = np.abs((lam - lam_init) / lam)
             lam_init = lam
-
         return CT, dCT, dCL, dCD, lam, AoA
 
     def coll_trim(th):
@@ -162,7 +163,7 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     #   Target thrust coefficient
     targCT = T / (rho * Adisk * (omega * R) ** 2)
     #   Converts initial guess for the collective pitch setting from degrees to radians
-    th0 = UserIn['thetaInit'] * (np.pi / 180)
+    th0 = UserIn['thetaInit'] * np.pi / 180
     #   Initial guess for the radial inflow distribution
     lamInit = np.ones(len(r))*np.sqrt(targCT / 2)
     #   Axial climb/descent inflow ratio
@@ -209,6 +210,7 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
         trim_sol = least_squares(rpm_residuals, omega, method='lm')
         CT, dCT, dCL, dCD, lam, AoA = rpm_trim(trim_sol.x)
         omega = trim_sol.x
+        th = np.array([th0, 0, 0])
     else:
         trim_sol = least_squares(coll_residuals, th0, method='lm')
         CT, dCT, dCL, dCD, lam, AoA = coll_trim(trim_sol.x+twistDist)
