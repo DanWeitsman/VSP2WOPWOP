@@ -55,7 +55,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     rdim = np.linspace(e, R, len(chordDist))
     #   Non-dimensional radial vector
     r = np.linspace(e / R, 1, len(chordDist))
-
+    dr = R / pntsPerXsec
     sectLen = np.insert(np.diff(rdim), 0, np.diff(rdim)[0])
 
      # Local solidity computed between cross-sections
@@ -72,7 +72,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     liftLineNorm = np.transpose((np.sin(twistDist),np.zeros(len(twistDist)),np.cos(twistDist)))
 
     geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,'sweep':sweep,
-                  'solidity':sol,'surfNodes':surfNodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r,'TE_thick':TE_thick}
+                  'solidity':sol,'surfNodes':surfNodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r,'TE_thick':TE_thick,'dr':dr}
 
 
     return geomParams

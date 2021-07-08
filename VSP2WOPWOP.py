@@ -79,11 +79,12 @@ def main():
             geomParams = ProcessGeom(dataSorted, indHeader, UserIn['loadPos'], UserIn['Nb'], UserIn['rotation'][i])
             GeomPatchFileWrite('op'+ str(i+1) +'_geom', geomParams, dirSaveFile)
 
+
             if args.load_type:
-                loadParams = {'dFx':mat_read['op'+ str(i+1)]['inplane'][args.azimuth,:],'dFy':np.zeros(np.shape(mat_read['op'+ str(i+1)]['inplane'][args.azimuth,:])),'dFz':mat_read['op'+ str(i+1)]['outplane'][args.azimuth,:],'th':[0,0,0]}
+                loadParams = {'dFx':mat_read['op'+ str(i+1)]['inplane'][args.azimuth,:]/geomParams['dr']*UserIn['Nb'],'dFy':np.zeros(np.shape(mat_read['op'+ str(i+1)]['inplane'][args.azimuth,:])),'dFz':mat_read['op'+ str(i+1)]['outplane'][args.azimuth,:]/geomParams['dr']*UserIn['Nb'],'th':[0,0,0]}
                 ConstantLoadingPatchFileWrite('op'+ str(i+1) +'_load', loadParams, geomParams['nXsecs'], dirSaveFile)
             else:
-                loadParams = {'dFx':mat_read['op'+ str(i+1)]['inplane'],'dFy':np.zeros(np.shape(mat_read['op'+ str(i+1)]['inplane'])),'dFz':mat_read['op'+ str(i+1)]['outplane'],'th':[0,0,0],'phi': np.linspace(0,2*np.pi,np.shape(mat_read['op'+ str(i+1)]['inplane'])[0])}
+                loadParams = {'dFx':mat_read['op'+ str(i+1)]['inplane'][:,1:]/geomParams['dr']*UserIn['Nb'],'dFy':np.zeros(np.shape(mat_read['op'+ str(i+1)]['inplane'][:,1:])),'dFz':mat_read['op'+ str(i+1)]['outplane'][:,1:]/geomParams['dr']*UserIn['Nb'],'th':[0,0,0],'phi': np.linspace(0,2*np.pi,np.shape(mat_read['op'+ str(i+1)]['inplane'])[0])}
                 PeriodicLoadingPatchFileWrite('op'+ str(i+1) +'_load', loadParams, geomParams['nXsecs'], np.squeeze(mat_read['op'+ str(i+1)]['rpm'][()]) ,dirSaveFile)
 
         # if UserIn['BBNoiseFlag'] == 1:

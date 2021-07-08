@@ -1,8 +1,9 @@
 import os
-import f90nml
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py
+import f90nml
+
 
 def apply_to_namelist(functions, cases_directory='', cases='cases.nam'):
     """
