@@ -4,11 +4,8 @@
 
 #   This function writes out the binary BPM broadband data file for a non-uniform blade with periodic loading data.
 
-
 #%%
-
-
-def PeriodicBPMWrite(geomParams,loadParams,nRev,omega,dirSaveFile):
+def PeriodicBPMWrite(geomParams,loadParams,nRev,dirSaveFile):
     #%% imports necessary modules
     import os
     import struct
@@ -31,7 +28,7 @@ def PeriodicBPMWrite(geomParams,loadParams,nRev,omega,dirSaveFile):
     UFlag = 1                                # Set equal to '1' if the blade section freestream speed is included,'0' otherwise
     timeType = 2                             # Set equal to '1' if the data is constant, 2 if periodic, 3 if aperoodic.
 
-    period = (omega/60) ** -1                #  Period of revolution
+    period = (loadParams['omega']/60) ** -1                #  Period of revolution
     Nsteps = loadParams['phiRes']         #  Azimuthal loading resolution
     time = np.linspace(0,nRev*period,nRev*Nsteps)
     rev_count = 0

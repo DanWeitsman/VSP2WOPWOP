@@ -7,7 +7,7 @@
 
 
 #%%
-def PeriodicLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs, omega,dirSaveFile):
+def PeriodicLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs,dirSaveFile):
     #%% imports necessary modules
     import numpy as np
     import struct
@@ -30,7 +30,7 @@ def PeriodicLoadingPatchFileWrite(loadingFileName, loadParams, nXsecs, omega,dir
     dataZones = [1,-2]               # number of zones with data, zone designation (negative to skip thickness calc).
 
     zoneName = "LiftingLine"
-    period = (omega/60) ** -1        # period [sec]
+    period = (loadParams['omega']/60) ** -1        # period [sec]
     nkey = len(loadParams['phi'])    # number of keys specified in radians
     iMax = 1                         # number of chordwise elements
     jMax = nXsecs                    # number of spanwise elements

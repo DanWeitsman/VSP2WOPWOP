@@ -13,7 +13,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     from NodeCenteredNorms import NodeCenteredNorms
 
     #%%
-    #   number of spanwise airfoil sections
+    #   number of spanwise airfoil sections-1
     nXsecs = int(indHeader[0][1][1])
     #   number of points per section
     pntsPerXsec = int(indHeader[0][1][2])
@@ -24,6 +24,10 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     #   extracts LE and TE Nodes
     LENodes = np.float64(dataSorted['Component 1']['STICK_NODE'][1:, :3])
     TENodes = np.float64(dataSorted['Component 1']['STICK_NODE'][1:, 3:6])
+
+    # interpolates location of each blade element
+    LENodes_interp = np.array([np.mean((LENodes[i,:],LENodes[i+1,:]),axis = 0) for i in range(nXsecs-1)])
+    TENodes_interp = np.array([np.mean((TENodes[i,:],TENodes[i+1,:]),axis = 0) for i in range(nXsecs-1)])
 
     TE_thick = abs(surfNodes[2::pntsPerXsec,2]-surfNodes[(pntsPerXsec-3)::pntsPerXsec,2])
 
@@ -72,6 +76,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     #   Coordinates of the lifting line
     liftLineCoord = LENodes - (LENodes - TENodes) * loadPos
     liftLineNorm = np.transpose((np.sin(twistDist),np.zeros(len(twistDist)),np.cos(twistDist)))
+
     # liftLineNorm = np.transpose((np.zeros(len(twistDist)), np.zeros(len(twistDist)), np.ones(len(twistDist))))
     geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,'sweep':sweep,
                   'solidity':sol,'surfNodes':surfNodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r,'TE_thick':TE_thick}
@@ -90,14 +95,17 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
 #     # ax.scatter3D(LENodes[:,0], LENodes[:,1], LENodes[:,2],c = 'green',linewidths = 1)
 #     # ax.scatter3D(TENodes[:,0], TENodes[:,1], TENodes[:,2],c = 'blue',linewidths = 1)
 #     ax.scatter3D(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2], c='yellow', linewidths=.2)
-#     ax.scatter3D(surfNodes[1::pntsPerXsec,0], surfNodes[1::pntsPerXsec,1], surfNodes[1::pntsPerXsec,2], c='g', linewidths=.2)
-#     ax.scatter3D(surfNodes[(pntsPerXsec-2)::pntsPerXsec,0], surfNodes[(pntsPerXsec-2)::pntsPerXsec,1], surfNodes[(pntsPerXsec-2)::pntsPerXsec,2], c='b', linewidths=.2)
+#     ax.scatter3D(LENodes[:,0], LENodes[:,1], LENodes[:,2], c='r', linewidths=.2)
+#     ax.scatter3D(LENodes_interp[:,0], LENodes_interp[:,1], LENodes_interp[:,2], c='b', linewidths=.2)
+#     fig.show()
+#     # ax.scatter3D(surfNodes[1::pntsPerXsec,0], surfNodes[1::pntsPerXsec,1], surfNodes[1::pntsPerXsec,2], c='g', linewidths=.2)
+#     # ax.scatter3D(surfNodes[(pntsPerXsec-2)::pntsPerXsec,0], surfNodes[(pntsPerXsec-2)::pntsPerXsec,1], surfNodes[(pntsPerXsec-2)::pntsPerXsec,2], c='b', linewidths=.2)
 #
 # #     # ax.scatter3D(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2], c='red', linewidths=.2)
 # #
 # #     # ax.scatter3D(surfNodes[1::pntsPerXsec,0], surfNodes[1::pntsPerXsec,1], surfNodes[1::pntsPerXsec,2], c='red', linewidths=1)
 # #     # ax.scatter3D(surfNodes[(pntsPerXsec-2)::pntsPerXsec,0], surfNodes[(pntsPerXsec-2)::pntsPerXsec,1], surfNodes[(pntsPerXsec-2)::pntsPerXsec,2], c='red', linewidths=1)
 # #
-#      plt.show()
-    # # ax.quiver(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],ScaledNodeCenteredSurfNorms[:,0]*0.005,ScaledNodeCenteredSurfNorms[:,1]*0.005,ScaledNodeCenteredSurfNorms[:,2]*0.005)
-    # ax.quiver(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2],liftLineNorm[:,0]*0.005,liftLineNorm[:,1]*0.005,liftLineNorm[:,2]*0.005)
+#
+#     # ax.quiver(surfNodes[:,0], surfNodes[:,1], surfNodes[:,2],ScaledNodeCenteredSurfNorms[:,0]*0.005,ScaledNodeCenteredSurfNorms[:,1]*0.005,ScaledNodeCenteredSurfNorms[:,2]*0.005)
+#     ax.quiver(liftLineCoord[:,0], liftLineCoord[:,1], liftLineCoord[:,2],liftLineNorm[:,0]*0.005,liftLineNorm[:,1]*0.005,liftLineNorm[:,2]*0.005)

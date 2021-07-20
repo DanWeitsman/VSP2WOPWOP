@@ -53,7 +53,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         :param omega: rotational rate [rad/s]
         :return:
         '''
-        # todo fix fixed pitch calc (dCT) when using the pitt-peters inflow model 
+
         mu = U / (omega * R)
         CT =  W/(rho * np.pi * R ** 2 * (omega * R) ** 2)
         lamTPP_init = inflowModSelect(2, mu*np.tan(alphaInit), mu, CT)
@@ -64,7 +64,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
             up = inflowModSelect(UserIn['inflowMod'],lamTPP_init, mu, CT,dCT)
             ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
-            AoA = (geomParams['twistDist']-up/ut)%(2*np.pi)
+            AoA = (th0+geomParams['twistDist']-up/ut)%(2*np.pi)
             CL,CD = aeroParams(AoA)
             dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*AoA*np.sin(up/ut))
             CT = 1 / (2 * np.pi) * np.trapz(np.trapz(dCT, r), phi)
@@ -300,8 +300,9 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         trimTargs = W
         trim_sol = least_squares(fixed_pitch_residuals, omega, method = 'lm',diff_step = 0.5)
         omega = trim_sol.x
-        th = np.zeros(3)
+        th = np.array([th0,0 ,0 ])
         T,CT,dCT,lam,ut,up,CL,CD,AoA,mu = fixed_pitch_trim(omega)
+        theta_expanded = np.empty((np.shape(AoA)))*th0
 
     elif UserIn['trim'] == 2:
         trimTargs = W/(rho*np.pi*R**2*(omega*R)**2)
@@ -364,7 +365,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
     #   assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
     loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'alpha':alphaInit,'mu':mu,'phi':phi,'th':th,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
-                  'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFr,'dFz':dFz,'hubLM':hubLM}
+                  'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFr,'dFz':dFz,'hubLM':hubLM,'omega':omega*60/(2*np.pi)}
     #
     return loadParams
 

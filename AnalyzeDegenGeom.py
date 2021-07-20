@@ -6,24 +6,39 @@
 #   This is an independent function that supports any arbitrary number of components, which do not necessarily need to be rotor blades.
 
 #%%
-
 def AnalyzeDegenGeom(dataFileName):
 
 #%% imports necessary modules
     import os
     import csv
     import numpy as np
+
+    #%%
+    def dictExtractasArray(dataset, startInd, endInd):
+        '''
+        This function extracts and returns a segment of data between two specified indices
+        :param dataset: the data set
+        :param startInd: starting index
+        :param endInd: ending index
+        :return:
+        '''
+        temp = {}
+        for i in range(startInd, endInd):
+            temp[i] = dataset[i]
+        temp = np.array(list(temp.values()))
+        return temp
+
 #%%
     data = {}
-    n = 0
+    i = 0
     # Opens and reads csv data
     with open(os.path.abspath(os.path.join(os.getcwd(),dataFileName)), 'r') as csvfile:
         csvreader = csv.reader(csvfile)
         # Detects and deletes empty rows
         for row in csvreader:
             if len(row) != 0:
-                data[n] = row
-                n = n + 1
+                data[i] = row
+                i+=1
 
     # %%
     # Initializes a list for each degenerate geometry type
@@ -35,19 +50,6 @@ def AnalyzeDegenGeom(dataFileName):
     for i, n in enumerate(data.items()):
         if any(x == n[1][0] for x in DegenGeom):
             indHeader.append(n)
-
-    # %%
-    #   This function extracts and returns a segment of data between two specified indices
-    #   dataset: the data set
-    #   startInd: starting index
-    #   endInd: ending index
-
-    def dictExtractasArray(dataset, startInd, endInd):
-        temp = {}
-        for i in range(startInd, endInd):
-            temp[i] = dataset[i]
-        temp = np.array(list(temp.values()))
-        return temp
 
     # %%
     #   This section of the code extracts the degenerate geometries corresponding to each component, ...

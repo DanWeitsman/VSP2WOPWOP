@@ -8,15 +8,12 @@
 
 
 #%%
-def polarRead(UserIn,iii):
+def polarRead(UserIn,i):
 
     import os
     import numpy as np
     import bisect
 
-    airfoilPolarFileName = UserIn['airfoilPolarFileName'][iii]
-    aStart =  UserIn['aStart']
-    aLength = UserIn['aLength']
     XsecPolar = {}
 
     #%%
@@ -26,7 +23,7 @@ def polarRead(UserIn,iii):
         return minInd,PolarData[minInd,0], PolarData[minInd,1], PolarData[minInd,2],maxInd,PolarData[maxInd,0], PolarData[maxInd,1],PolarData[maxInd,2]
 
     #%%
-    for i, file in enumerate(airfoilPolarFileName):
+    for i, file in enumerate(UserIn['airfoilPolarFileName'][i]):
         with open(os.path.join(os.getcwd(),file)) as f:
             data = f.read()
         data = data.split("\n")
@@ -44,7 +41,7 @@ def polarRead(UserIn,iii):
 
         minInd, alpha0, ClMin, CdMin, maxInd, alpha1, ClMax, CdMax = min_max_CL_search(polar)
 
-        ind = [bisect.bisect_left(polar[:,0],aStart),bisect.bisect_left(polar[:, 0], aStart + aLength)]
+        ind = [bisect.bisect_left(polar[:,0],UserIn['aStart']),bisect.bisect_left(polar[:, 0], UserIn['aStart'] + UserIn['aLength'])]
 
         polar[:,0] = polar[:,0]*np.pi/180
         Cla = (polar[ind[1],1]-polar[ind[0],1])/(polar[ind[1],0]-polar[ind[0],0])
@@ -59,7 +56,7 @@ def polarRead(UserIn,iii):
             color = ['tab:blue','tab:red']
             fig,ax1 = plt.subplots(1,1,figsize = (6.4,4.5))
             #,label=airfoilName+', '+str(round(UserIn['omega'][iii]
-            ax1.plot(polar[:,0]*180/np.pi, polar[:, 1],color = color[0],label=airfoilName+', '+str(round(UserIn['omega'][iii]))+' rpm')
+            ax1.plot(polar[:,0]*180/np.pi, polar[:, 1],color = color[0],label=airfoilName+', '+str(round(UserIn['omega'][i]))+' rpm')
             ax1.plot(polar[ind[0]:ind[1],0]*180/np.pi,y,color='k')
             ax1.tick_params(axis='y', labelcolor=color[0])
             ax1.scatter(alpha0, ClMin,color='g')
@@ -69,7 +66,7 @@ def polarRead(UserIn,iii):
             ax1.set_xlim(-10, 20)
             ax1.set_ylim(-0.5,1.9)
             ax2 = ax1.twinx()
-            ax2.plot(polar[:,0]*180/np.pi, polar[:, 2],color = color[1],label=airfoilName+', '+str(round(UserIn['omega'][iii]))+' rpm')
+            ax2.plot(polar[:,0]*180/np.pi, polar[:, 2],color = color[1],label=airfoilName+', '+str(round(UserIn['omega'][i]))+' rpm')
             ax2.set_ylabel('Drag Coefficient',color = color[1])
             ax2.set_ylim(0,0.125)
             ax2.tick_params(axis='y', labelcolor=color[1])

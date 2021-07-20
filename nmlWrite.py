@@ -317,7 +317,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
     nml = [environmentin, environmentconstants, observerin, aircraft, rotor]
 
     # Loop over the blade count and appends the container of each blade to the nml list.
-    for Nb in range(0, UserIn['Nb']):
+    for Nb in range(UserIn['Nb']):
         if UserIn['trim'] == 3:
 
             if UserIn['rotation'] == 1:

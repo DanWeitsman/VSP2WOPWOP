@@ -9,7 +9,7 @@ def caseFile_write(globalFolderName, caseFileName, dirSaveFile):
     #%% imports necessary modules
     import os
     #%%
-    with open(os.path.expanduser(dirSaveFile + os.path.sep + 'cases.nam'), 'w') as f:
+    with open(os.path.join(dirSaveFile, 'cases.nam'), 'w') as f:
 
         if type(globalFolderName) is list:
             for globFold in globalFolderName:
