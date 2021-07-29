@@ -36,11 +36,12 @@ def ErrorHandles(UserIn):
     param_len = np.array([len(x) for x in params])
     #   tests to see if any of the input parameters were specified to have an intermediate length if in OperMode 1 or 2
     if UserIn['operMode'] == 1 or UserIn['operMode'] == 2:
-        assert not np.any((param_len > 1) == (param_len < np.max(param_len))), "In 'operMode' 1 or 3 the number of values for 'T', 'omega, 'Vx', 'Vz', 'alphaShaft' and 'airfoilPolarFileName' should be equal, ensure that this is the case if more than one value is specified for any of these parameters."
-    #   duplicates list if the length of any of the input parameters is 1.
-        UserIn['T'], UserIn['omega'], UserIn['alphaShaft'], UserIn['Vz'], UserIn['Vx'] = [list(np.full(np.max(param_len), x[0])) if len(x) == 1 else x for x in params]
+        if not np.all(param_len==1):
+            assert not np.any((param_len > 1) == (param_len < np.max(param_len))), "In 'operMode' 1 or 3 the number of values for 'T', 'omega, 'Vx', 'Vz', 'alphaShaft' and 'airfoilPolarFileName' should be equal, ensure that this is the case if more than one value is specified for any of these parameters."
+        #   duplicates list if the length of any of the input parameters is 1.
+            UserIn['T'], UserIn['omega'], UserIn['alphaShaft'], UserIn['Vz'], UserIn['Vx'] = [list(np.full(np.max(param_len), x[0])) if len(x) == 1 else x for x in params]
 
-    if len(UserIn['airfoilPolarFileName'])==1:
-        [UserIn['airfoilPolarFileName'].append(UserIn['airfoilPolarFileName'][0]) for x in range(len(UserIn['omega']))]
-
+            if len(UserIn['airfoilPolarFileName'])==1:
+                [UserIn['airfoilPolarFileName'].append(UserIn['airfoilPolarFileName'][0]) for x in range(len(UserIn['omega']))]
+                
     return param_len

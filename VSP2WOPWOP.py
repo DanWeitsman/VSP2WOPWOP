@@ -1,3 +1,4 @@
+
 '''
 
 VSP2WOPWOP Main Script
@@ -12,6 +13,7 @@ blades, the lift curve characteristics, and the aerodynamic loading/performance 
 
 # %% Adds current command line path to the sys.path list so that the input.py module can be imported from the users
 # current directory
+
 import os
 from sys import path
 

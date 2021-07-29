@@ -24,7 +24,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         '''
         trimOut = fixed_pitch_trim(omega)
         res = trimTargs - trimOut[0]
-        print(res)
+        print(f'Trim residuals: T = {round(res,6)}N')
         return res
 
 
@@ -41,10 +41,11 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         if UserIn['trim'] == 2:
             trimOut = variable_pitch_trim([th,0,0], mu, lamTPP_init)
             res = trimTargs - trimOut[0]
+            print(f'Trim residuals: T = {round(res, 6)}N')
         else:
             trimOut = variable_pitch_trim(th, mu, lamTPP_init)
             res = trimTargs - np.array([trimOut[0], trimOut[2], trimOut[3]])
-        print(res)
+            print(f'Trim residuals: T = {round(res[0], 6)}N, Mx = {round(res[1], 6)}Nm, My = {round(res[2], 6)}Nm')
         return res
 
     def fixed_pitch_trim(omega):

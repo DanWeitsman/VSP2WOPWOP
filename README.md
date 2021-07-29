@@ -109,9 +109,3 @@ I will write a function which generates the necessary patch files for PSU-WOPWOP
 ## Authors
 
 * **Daniel Weitsman** - [dfw5266@psu.edu]
-
-
-## License
-
-## Acknowledgments
-I would like to thank Dr. Eric Greenwood and Rob Rau for their support and technical guidance throughout the development of VSP2WOPWOP. 
