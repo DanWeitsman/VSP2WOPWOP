@@ -38,6 +38,16 @@ operMode = 3
 saveHDF5 = 1
 
 #%%
+#   Set to true in order to compute the blade loads using the wake model in MuRoSim
+MuRoSim = True
+#   Set the number of iterations or timesteps to propagate the wake
+iterations = 3*1024
+#   Set the number of iterations to store in memory. To save the entire computed wake set this quantity equal to 'iterations'.
+wake_history_length= 3*1024
+#   set to true to plot the computed wake
+plotWake = True
+
+#%%
 '''Airfoil Cross Section Configuration'''
 
 # Name of XFoil files containing the airfoil cross section polars. The number of files should correspond to the
@@ -110,6 +120,7 @@ c = 340
 # Inflow model selection (only applies in forward flight), set equal to 1 for constant inflow, 2 for Glauert's
 # linear, or 3 for Drees's , or 4 for the steady Pitt-Peters (applicable when trimming to non-zero hub moments) model.
 inflowMod = 4
+
 
 # %%
 '''Broadband noise analysis configuration '''
@@ -202,7 +213,7 @@ psiMin = -23
 psiMax = 23
 
 # %% Packs user input parameters into a dictionary (no need to edit)
-UserIn = {'operMode': operMode, 'saveHDF5': saveHDF5, 'dataFileName': dataFileNames,
+UserIn = {'operMode': operMode, 'MuRoSim':MuRoSim,'iterations':iterations,'wake_history_length':wake_history_length,'plotWake':plotWake,'saveHDF5': saveHDF5, 'dataFileName': dataFileNames,
           'airfoilPolarFileName': airfoilPolarFileName, 'XsecLocation': XsecLocation,
           'aStart': aStart, 'aLength': aLength, 'check': check,'trim':trim, 'Nb': Nb,'rotation':rotation, 'Vx': Vx, 'Vz': Vz, 'alphaShaft': alphaShaft,
           'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss, 'inflowMod':inflowMod,'rho': rho, 'c': c,

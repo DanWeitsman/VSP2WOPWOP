@@ -322,6 +322,14 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
 
 #%%
+
+    if UserIn['MuRoSim']:
+        from MuRoSim_wrap import MuRoSim_wrap
+        induced_velocities = MuRoSim_wrap(UserIn, geomParams, XsecPolarExp,alphaShaft,omega, U, CT, th, phi,iterations=UserIn['iterations'],wake_history_length=UserIn['wake_history_length'])
+        ut = r + mu * np.cos(alphaInit) * np.expand_dims(np.sin(phi), axis=1)+induced_velocities[:,:,0]
+        up = induced_velocities[:,:,2]
+
+    #%%
     UT = ut*omega*R
     UP = up * omega * R
     U = np.sqrt(UT**2+UP**2)
@@ -363,16 +371,15 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     My = -Nb / (2 * np.pi) * np.trapz(np.trapz(geomParams['rdim'] * dFz * np.expand_dims(np.cos(phi), axis=1), r), phi)
     hubLM = [H,Y,Mx,My]
 
-
     #   assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
     loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'alpha':alphaInit,'mu':mu,'phi':phi,'th':th,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
                   'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFr,'dFz':dFz,'hubLM':hubLM,'omega':omega*60/(2*np.pi)}
     #
     return loadParams
 
-    #
+    # #
     # import matplotlib.pyplot as plt
-    #
+    # #
     # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
     # quant = up/ut
     # levels = np.linspace(np.min(quant),np.max(quant),50)
@@ -380,9 +387,3 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     # ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
     # cbar = fig.colorbar(dist)
     # cbar.ax.set_ylabel('$dFz \: [N]$')
-    #
-    # N = 3
-    # for i in range(N):
-    #     print(th[1]*np.cos(2*np.pi/N*i)+th[2]*np.sin(2*np.pi/N*i))
-    # for i in range(N):
-    #     print(-th[1]*np.sin(2*np.pi/N*i)+th[2]*np.cos(2*np.pi/N*i))

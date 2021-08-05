@@ -43,5 +43,5 @@ def ErrorHandles(UserIn):
 
             if len(UserIn['airfoilPolarFileName'])==1:
                 [UserIn['airfoilPolarFileName'].append(UserIn['airfoilPolarFileName'][0]) for x in range(len(UserIn['omega']))]
-                
+
     return param_len
