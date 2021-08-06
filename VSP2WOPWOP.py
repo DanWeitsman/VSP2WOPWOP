@@ -82,7 +82,8 @@ def main():
 
     #   Iterates over each DegenGeom geometry file
     for iter_geom, dataFileName in enumerate(UserIn['dataFileName']):
-
+        if isinstance(dataFileName, bytes):
+            dataFileName=dataFileName.decode('utf-8')
         #   Parses and returns data contained in the DegenGeom file
         [dataSorted, indHeader] = AnalyzeDegenGeom(dataFileName)
 
