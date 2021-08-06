@@ -7,7 +7,7 @@ Authors: Rob Rau and Daniel Weitsman
 This module utilizes the wake model in MuRoSim to calculate and return the induced velocities about the rotor disk.
 '''
 
-def MuRoSim_wrap(UserIn,geomParams,XsecPolarExp,alphaShaft,omega,U,CT,th,phi,iterations,wake_history_length):
+def MuRoSim_wrap(UserIn,geomParams,XsecPolarExp,alphaShaft,omega,U,CT,phi,theta,iterations,wake_history_length):
     '''
     This function computes and returns the wake velocities about the rotor disk.
     :param UserIn: UserIn dictionary
@@ -23,15 +23,21 @@ def MuRoSim_wrap(UserIn,geomParams,XsecPolarExp,alphaShaft,omega,U,CT,th,phi,ite
 
     print('Running MuRoSim')
     import murosim.libmurosim as libmurosim
-    import matplotlib.pyplot as plt
     import numpy as np
     from time import monotonic
 
 
-    def py_step(ac_state, aircraft, ac_input_state, inflows, wake_history, iteration, dt):
+    def py_step(ac_state, aircraft, ac_input_state, inflows,theta, wake_history, iteration, dt):
         time = iteration * dt
 
         for rotor_idx in range(aircraft.rotors.length()):
+            # for b_idx in range(aircraft.rotors[r_idx].blades.length()):
+            #     ind = (omega *time)%(2 * np.pi) * 180 / np.pi
+            #     # if iteration%45==0:
+            #     #     print(ind)
+            #     #     print(theta[int(ind+360/aircraft.rotors[r_idx].blades.length()*b_idx)%360])
+            #     libmurosim.set_twist(aircraft.rotors[r_idx].blades[b_idx], theta[int(ind+360/aircraft.rotors[r_idx].blades.length()*b_idx)%360])
+
             ac_input_state.rotor_inputs[rotor_idx].cos_aoa = np.cos(
                 ac_input_state.rotor_inputs[rotor_idx].angle_of_attack)
             ac_input_state.rotor_inputs[rotor_idx].sin_aoa = np.sin(
@@ -52,7 +58,10 @@ def MuRoSim_wrap(UserIn,geomParams,XsecPolarExp,alphaShaft,omega,U,CT,th,phi,ite
 
         libmurosim.update_wake(aircraft, ac_state, ac_input_state, wake_history, inflows, iteration, dt)
 
-    dt = (omega * 2 * np.pi / 60) ** -1 / 120
+    dt = (omega/(2*np.pi))**-1/(360*8)
+    print(omega)
+    print(dt*omega*180/np.pi)
+    # dt = 5e-4
     num_rotors = 1
     num_blades = UserIn['Nb']
     angle_of_attack = alphaShaft
@@ -61,11 +70,10 @@ def MuRoSim_wrap(UserIn,geomParams,XsecPolarExp,alphaShaft,omega,U,CT,th,phi,ite
     c = geomParams['chordDist'] / geomParams['R']
     R = geomParams['R']
     r = geomParams['r']
-    twist = geomParams['twistDist'] + th[0]
     alpha_0 = XsecPolarExp['Alpha0'][0]
     C_l_alpha = XsecPolarExp['Lift Slope'][0]
     phiRes = len(phi)
-
+    twist = geomParams['twistDist']+theta[0]
     # Create our outer aircraft geometry container
     aircraft = libmurosim.Aircraft(num_rotors)
 
@@ -93,7 +101,6 @@ def MuRoSim_wrap(UserIn,geomParams,XsecPolarExp,alphaShaft,omega,U,CT,th,phi,ite
                 b_idx * d_azimuth,
                 np.sum(c) / len(c)
             )
-            # todo set twist on each iteration
             # Convert from linear array format to murosim chunk format
             libmurosim.set_r(aircraft.rotors[r_idx].blades[b_idx], r)
             libmurosim.set_twist(aircraft.rotors[r_idx].blades[b_idx], twist)
@@ -136,46 +143,54 @@ def MuRoSim_wrap(UserIn,geomParams,XsecPolarExp,alphaShaft,omega,U,CT,th,phi,ite
             print(now - start_time, ": iteration: ", iteration)
             start_time = now
 
-        py_step(ac_state, aircraft, ac_input_state, inflows, wake_history, iteration, dt)
+        py_step(ac_state, aircraft, ac_input_state, inflows,theta, wake_history, iteration, dt)
 
     print("rotor 0 C_T: ", ac_state.rotor_states[0].C_T)
 
     chunk_size = 8
     coord = np.zeros((phiRes, elements, 3))
-    coord[:, :, 0] = np.expand_dims(np.cos(phi), axis=1) * r
-    coord[:, :, 1] = np.expand_dims(np.sin(phi), axis=1) * r
+    coord[:, :, 0] = np.expand_dims(np.cos(phi), axis=1) * r * np.cos(-alphaShaft)
+    coord[:, :, 1] = np.expand_dims(np.sin(phi), axis=1) * r * np.cos(-angle_of_attack)
+    coord[:, :, 2] = r * np.sin(-angle_of_attack) * np.expand_dims(np.cos(phi), axis=1)
     coord = coord.reshape(int(phiRes * elements / chunk_size), chunk_size, 3)
 
     # This how the induced velocities produced by the wake are computed. Both the
     # input coords and the output velocities are in the global coordinate space
     # both the xyz inputs and velocity outputs are non-dimensionalized
-    induced_velocities = list(map(
-        lambda x, y, z: libmurosim.compute_wake_induced_velocities(wake_history.history[0], list(x), list(y), list(z),
-                                                                   ac_state, omega), coord[:, :, 0], coord[:, :, 1],coord[:, :, 2]))
-    induced_velocities = np.transpose(np.array([[x.v_x, x.v_y, x.v_z] for x in induced_velocities]),
-                                      axes=(0, 2, 1)).reshape((phiRes, elements, 3))
+    induced_velocities = list(map(lambda x, y, z: libmurosim.compute_wake_induced_velocities(wake_history.history[0], list(x), list(y), list(z),ac_state, omega), coord[:, :, 0], coord[:, :, 1],coord[:, :, 2]))
+    induced_velocities = np.transpose(np.array([[x.v_x, x.v_y, x.v_z] for x in induced_velocities]), axes=(0, 2, 1)).reshape((phiRes, elements, 3))
+    coord = coord.reshape((phiRes, elements, 3))
 
     if UserIn['plotWake']:
-        max_dim_1 = -np.inf
-        min_dim_1 = np.inf
+        import matplotlib.pyplot as plt
+        fig1, ax1 = plt.subplots(1,1,figsize = (6.4,8))
+        fig2, ax2 = plt.subplots(1,1,figsize = (6.4,8))
 
-        max_dim_2 = -np.inf
-        min_dim_2 = np.inf
+        max_dim_x = -np.inf
+        min_dim_x = np.inf
+        max_dim_y = -np.inf
+        min_dim_y = np.inf
+        max_dim_z = -np.inf
+        min_dim_z = np.inf
+
 
         # Iterating directly on the collections like this is read only
         for r_idx, rotor in enumerate(ac_state.rotor_states):
             for b_idx, blade in enumerate(rotor.blade_states):
                 x = libmurosim.get_wake_x_component(
                     wake_history.history[0].rotor_wakes[r_idx].vortex_filaments[b_idx])
+                y = libmurosim.get_wake_y_component(
+                    wake_history.history[0].rotor_wakes[r_idx].vortex_filaments[b_idx])
+
                 z = libmurosim.get_wake_z_component(
                     wake_history.history[0].rotor_wakes[r_idx].vortex_filaments[b_idx])
 
-                max_dim_2 = max(max_dim_2, max(z))
-                min_dim_2 = min(min_dim_2, min(z))
-
-                max_dim_1 = max(max_dim_1, max(x))
-                min_dim_1 = min(min_dim_1, min(x))
-                plt.plot(x, z, linewidth=0.5)
+                max_dim_x = max(max_dim_x, max(x))
+                min_dim_x = min(min_dim_x, min(x))
+                max_dim_y = max(max_dim_y, max(y))
+                min_dim_y = min(min_dim_y, min(y))
+                max_dim_z = max(max_dim_z, max(z))
+                min_dim_z = min(min_dim_z, min(z))
 
                 x_r = np.cos(blade.azimuth)
                 x_b = aircraft.rotors[r_idx].origin[0] + x_r * np.cos(
@@ -183,14 +198,31 @@ def MuRoSim_wrap(UserIn,geomParams,XsecPolarExp,alphaShaft,omega,U,CT,th,phi,ite
                 z_b = aircraft.rotors[r_idx].origin[2] + x_r * np.sin(
                     ac_input_state.rotor_inputs[r_idx].angle_of_attack)
 
-                plt.plot([aircraft.rotors[r_idx].origin[0], x_b], [aircraft.rotors[r_idx].origin[2], z_b], "k-",
-                         linewidth=1.5)
-        plt.axis("square")
+                ax1.plot(x, z, linewidth=0.5)
+                ax1.plot([aircraft.rotors[r_idx].origin[0], x_b], [aircraft.rotors[r_idx].origin[2], z_b], "k-",linewidth=1.5)
 
-        span_1 = max_dim_1 - min_dim_1
-        span_2 = max_dim_2 - min_dim_2
-        plt.xlim(left=min_dim_1 - .1 * span_1, right=max_dim_1 + .1 * span_1)
-        plt.ylim(bottom=min_dim_2 - .9 * span_2, top=max_dim_2 + .9 * span_2)
-        plt.show()
 
-    return induced_velocities
+                x_r = blade.azimuth
+                x_b = aircraft.rotors[r_idx].origin[0] + x_r
+                y_b = aircraft.rotors[r_idx].origin[0] + x_r
+
+                ax2.plot(x, y, linewidth=0.5)
+                ax2.plot([aircraft.rotors[r_idx].origin[0], x_b], [aircraft.rotors[r_idx].origin[1], y_b], "k-",linewidth=1.5)
+
+
+        span_1 = max_dim_x - min_dim_x
+        span_2 = max_dim_y - min_dim_y
+        span_3 = max_dim_z - min_dim_z
+
+        ax1.axis("square")
+        ax1.set_xlim(left=min_dim_x - .1 * span_1, right=max_dim_x + .1 * span_1)
+        ax1.set_ylim(bottom=min_dim_z - .9 * span_3, top=max_dim_z + .9 * span_3)
+        fig1.show()
+
+        ax2.axis("square")
+        ax2.set_xlim(left=min_dim_x - .1 * span_1, right=max_dim_x + .1 * span_1)
+        ax2.set_ylim(bottom=min_dim_z - .9 * span_2, top=max_dim_y + .9 * span_2)
+        fig2.show()
+
+
+    return coord , induced_velocities

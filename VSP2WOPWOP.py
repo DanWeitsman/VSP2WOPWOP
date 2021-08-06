@@ -35,7 +35,6 @@ from PeriodicBPMWrite import PeriodicBPMWrite
 from GeomPatchFileWrite import GeomPatchFileWrite
 from ErrorHandles import ErrorHandles
 from writeHDF5 import writeHDF5
-from loadingMuRoSim import loadingMuRoSim
 # %%
 
 def main():
@@ -82,7 +81,6 @@ def main():
 
     #   Iterates over each DegenGeom geometry file
     for iter_geom, dataFileName in enumerate(UserIn['dataFileName']):
-
         #   Parses and returns data contained in the DegenGeom file
         [dataSorted, indHeader] = AnalyzeDegenGeom(dataFileName)
 

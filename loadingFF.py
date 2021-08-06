@@ -325,15 +325,83 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
     if UserIn['MuRoSim']:
         from MuRoSim_wrap import MuRoSim_wrap
-        induced_velocities = MuRoSim_wrap(UserIn, geomParams, XsecPolarExp,alphaShaft,omega, U, CT, th, phi,iterations=UserIn['iterations'],wake_history_length=UserIn['wake_history_length'])
-        ut = r + mu * np.cos(alphaInit) * np.expand_dims(np.sin(phi), axis=1)+induced_velocities[:,:,0]
-        up = induced_velocities[:,:,2]
+        coord,induced_velocities = MuRoSim_wrap(UserIn, geomParams, XsecPolarExp,alphaShaft,omega, U, CT, phi,theta = th,iterations=UserIn['iterations'],wake_history_length=UserIn['wake_history_length'])
+        induced_velocities = induced_velocities*omega
+        ut = r + mu*np.cos(alphaInit) * np.expand_dims(np.sin(phi), axis = 1)+induced_velocities[:,:,0]*np.expand_dims(np.cos(phi),axis =1)+induced_velocities[:,:,1]*np.expand_dims(np.sin(phi),axis =1)
+        print(induced_velocities[90,:,1])
+        up = -induced_velocities[:,:,2]*np.cos(-alphaShaft)
+
+        import matplotlib.pyplot as plt
+        # for i in range(3):
+        #     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        #     quant = induced_velocities[:,:,i]
+        #     levels = np.linspace(np.min(quant),np.max(quant),50)
+        #     dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant),levels = levels)
+        #     ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
+        #     cbar = fig.colorbar(dist)
+        #     cbar.ax.set_ylabel('$\lambda_i}$')
+        #     plt.show()
+
+        # ax = plt.figure().add_subplot(projection='3d')
+        # ax.auto_scale_xyz([-2, 2], [10, 60], [-1, 1])
+        # ax.pbaspect = [.09, 1, .05]
+        # ax.set(xlabel = 'x',ylabel = 'y',zlabel = 'z')
+        # # ax.quiver(coord[:,:,0], coord[:,:,1], coord[:,:,2],induced_velocities[:,:,0],induced_velocities[:,:,1],induced_velocities[:,:,2], linewidths=.2,length=0.1, normalize=True)
+        # ax.quiver(coord[:,:,0], coord[:,:,1], coord[:,:,2],induced_velocities[:,:,0],induced_velocities[:,:,1],induced_velocities[:,:,2], linewidths=.1,length=0.01, normalize=True)
+        # plt.show()
+
+        fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        quant = induced_velocities[:,:,0]*np.expand_dims(np.cos(phi),axis =1)+induced_velocities[:,:,1]*np.expand_dims(np.sin(phi),axis =1)
+        levels = np.linspace(np.min(quant), np.max(quant), 50)
+        dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+        ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        cbar = fig.colorbar(dist)
+        cbar.ax.set_ylabel('$\lambda_{i_x}$')
+        plt.show()
+
+
+        fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        quant = up
+        levels = np.linspace(np.min(quant), np.max(quant), 50)
+        dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+        ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        cbar = fig.colorbar(dist)
+        cbar.ax.set_ylabel('$\lambda_{i_z}$')
+        plt.show()
+
+        fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        quant = ut
+        levels = np.linspace(np.min(quant), np.max(quant), 50)
+        dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+        ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        cbar = fig.colorbar(dist)
+        cbar.ax.set_ylabel('$ut$')
+        plt.show()
 
     #%%
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    quant = ut
+    levels = np.linspace(np.min(quant), np.max(quant), 50)
+    dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+    ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+    cbar = fig.colorbar(dist)
+    cbar.ax.set_ylabel('$ut$')
+    plt.show()
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    quant = up
+    levels = np.linspace(np.min(quant), np.max(quant), 50)
+    dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+    ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+    cbar = fig.colorbar(dist)
+    cbar.ax.set_ylabel('$up$')
+    plt.show()
+
     UT = ut*omega*R
     UP = up * omega * R
     U = np.sqrt(UT**2+UP**2)
 
+    dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))
     dT = rho*np.pi*R**2*(omega*R)**2*dCT
     T = 1/(2*np.pi)*np.trapz(np.trapz(dT,r),phi)
 
@@ -371,6 +439,8 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     My = -Nb / (2 * np.pi) * np.trapz(np.trapz(geomParams['rdim'] * dFz * np.expand_dims(np.cos(phi), axis=1), r), phi)
     hubLM = [H,Y,Mx,My]
 
+    print(CT)
+
     #   assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
     loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'alpha':alphaInit,'mu':mu,'phi':phi,'th':th,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,
                   'UP':UP,'UT':UT,'U':U,'dFx':dFx,'dFy':dFr,'dFz':dFz,'hubLM':hubLM,'omega':omega*60/(2*np.pi)}
@@ -381,9 +451,10 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     # import matplotlib.pyplot as plt
     # #
     # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    # quant = up/ut
+    # quant = lam
     # levels = np.linspace(np.min(quant),np.max(quant),50)
     # dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant),levels = levels)
     # ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
     # cbar = fig.colorbar(dist)
     # cbar.ax.set_ylabel('$dFz \: [N]$')
+    # plt.show()

@@ -214,7 +214,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                 'Title': "'Aircraft'",
                 'nbContainer': 1,
                 'nbBase': 2,
-                'dTau': (nOmega / 60) ** -1 / 120,
+                'dTau': (nOmega/60)**-1/360,
             },
         'cb':
         [

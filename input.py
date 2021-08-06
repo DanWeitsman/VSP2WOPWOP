@@ -41,9 +41,9 @@ saveHDF5 = 1
 #   Set to true in order to compute the blade loads using the wake model in MuRoSim
 MuRoSim = True
 #   Set the number of iterations or timesteps to propagate the wake
-iterations = 3*1024
+iterations = 1024*3
 #   Set the number of iterations to store in memory. To save the entire computed wake set this quantity equal to 'iterations'.
-wake_history_length= 3*1024
+wake_history_length= 1024*3
 #   set to true to plot the computed wake
 plotWake = True
 
