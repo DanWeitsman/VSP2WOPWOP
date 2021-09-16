@@ -321,26 +321,63 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
 
+
 #%%
 
     if UserIn['MuRoSim']:
         from MuRoSim_wrap import MuRoSim_wrap
-        coord,induced_velocities = MuRoSim_wrap(UserIn, geomParams, XsecPolarExp,alphaShaft,omega, U, CT, phi,theta = th,iterations=UserIn['iterations'],wake_history_length=UserIn['wake_history_length'])
-        induced_velocities = induced_velocities*omega
-        ut = r + mu*np.cos(alphaInit) * np.expand_dims(np.sin(phi), axis = 1)+induced_velocities[:,:,0]*np.expand_dims(np.cos(phi),axis =1)+induced_velocities[:,:,1]*np.expand_dims(np.sin(phi),axis =1)
-        print(induced_velocities[90,:,1])
-        up = -induced_velocities[:,:,2]*np.cos(-alphaShaft)
+        dpsi = 1
+        Nrev_save = 4
+        wake_history_length = phiRes * dpsi * Nrev_save
+
+        dt = (omega / (2 * np.pi)) ** -1 / (360 * dpsi)
+        coord,induced_velocities,dC_L,dC_D,inflow = MuRoSim_wrap(UserIn, geomParams, XsecPolarExp,alphaShaft,omega, U, CT, phi,theta = theta_expanded,iterations=UserIn['iterations'],wake_history_length = wake_history_length,dt=dt)
+
 
         import matplotlib.pyplot as plt
-        # for i in range(3):
-        #     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-        #     quant = induced_velocities[:,:,i]
-        #     levels = np.linspace(np.min(quant),np.max(quant),50)
-        #     dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant),levels = levels)
-        #     ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
-        #     cbar = fig.colorbar(dist)
-        #     cbar.ax.set_ylabel('$\lambda_i}$')
-        #     plt.show()
+        # for rev in range(Nrev_save):
+        #     # for i in range(3):
+        #         fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        #         quant = induced_velocities[361*rev:361*(rev+1),:,2]
+        #         if i ==2:
+        #             levels = np.linspace(-.75, .75, 50)
+        #         else:
+        #             levels = np.linspace(-.75, .75,50)
+        #         dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant),levels = levels)
+        #         ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
+        #         cbar = fig.colorbar(dist)
+        #         cbar.ax.set_ylabel(f'$\lambda_{i}$')
+        #         plt.show()
+
+        rev_select = 0
+
+        # induced_velocities = induced_velocities*omega
+
+        ut_mrs = induced_velocities[361*rev_select:361*(rev_select+1),:,0]*np.expand_dims(np.cos(phi),axis =1)+induced_velocities[361*rev_select:361*(rev_select+1),:,1]*np.expand_dims(np.sin(phi),axis =1)
+        ut_t = ut+ut_mrs
+
+        up_mrs = -induced_velocities[361*rev_select:361*(rev_select+1),:,2]*np.cos(alphaShaft)
+        up_t = up+up_mrs
+
+        print(np.mean(ut_mrs))
+        print(np.sqrt(np.mean(ut_mrs**2)))
+        print(f'ut_mrs: {(ut_mrs)[::30,int(0.75*len(r))]}')
+        print(np.mean(up_mrs))
+        print(np.sqrt(np.mean(up_mrs**2)))
+        print(f'up_mrs: {(up_mrs)[::30,int(0.75*len(r))]}')
+
+        AoA_mrs = (theta_expanded - np.arctan(up_t/ut_t))%(2*np.pi)
+        # AoA_mrs[np.where(AoA_mrs>np.pi)] = AoA_mrs[np.where(AoA_mrs>np.pi)]
+
+        # AoA_ind = np.where(AoA_mrs > XsecPolarExp['alphaMax'])
+        # AoA_mrs[AoA_ind] = XsecPolarExp['alphaMax'][AoA_ind]
+        CL_mrs, CD_mrs = aeroParams(AoA_mrs)
+
+        print((np.arctan(up / ut)*180/np.pi)[::30,int(0.75*len(r))])
+        print((np.arctan(up_t / ut_t)*180/np.pi)[::30,int(0.75*len(r))])
+
+        print(AoA_mrs[::30,int(0.75*len(r))]*180/np.pi)
+        print(AoA[::30,int(0.75*len(r))]*180/np.pi)
 
         # ax = plt.figure().add_subplot(projection='3d')
         # ax.auto_scale_xyz([-2, 2], [10, 60], [-1, 1])
@@ -349,72 +386,167 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         # # ax.quiver(coord[:,:,0], coord[:,:,1], coord[:,:,2],induced_velocities[:,:,0],induced_velocities[:,:,1],induced_velocities[:,:,2], linewidths=.2,length=0.1, normalize=True)
         # ax.quiver(coord[:,:,0], coord[:,:,1], coord[:,:,2],induced_velocities[:,:,0],induced_velocities[:,:,1],induced_velocities[:,:,2], linewidths=.1,length=0.01, normalize=True)
         # plt.show()
+        # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        # quant = lam
+        # levels = np.linspace(np.min(quant), np.max(quant), 50)
+        # dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+        # ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        # cbar = fig.colorbar(dist)
+        # cbar.ax.set_ylabel('$\lambda$')
+        # plt.show()
 
+        # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        # quant = up
+        # levels = np.linspace(np.min(quant), np.max(quant), 50)
+        # dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+        # ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        # cbar = fig.colorbar(dist)
+        # cbar.ax.set_ylabel('${up}_{BET}$')
+        # plt.show()
+        # #
+        # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        # quant = up_mrs-np.mean(up_mrs)
+        # levels = np.linspace(-.15, .15, 50)
+        # dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+        # ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        # cbar = fig.colorbar(dist)
+        # cbar.ax.set_ylabel('${up}_{MRS}$')
+        # plt.show()
+        #
         fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-        quant = induced_velocities[:,:,0]*np.expand_dims(np.cos(phi),axis =1)+induced_velocities[:,:,1]*np.expand_dims(np.sin(phi),axis =1)
-        levels = np.linspace(np.min(quant), np.max(quant), 50)
+        quant = up_t
+        levels = np.linspace(-.2, 0.2, 50)
         dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
         ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
-        cbar = fig.colorbar(dist)
-        cbar.ax.set_ylabel('$\lambda_{i_x}$')
+        cbar = fig.colorbar(dist,pad=.1)
+        cbar.ax.set_ylabel('${up}_{MRS}$')
         plt.show()
-
-
+        #
         fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
         quant = up
         levels = np.linspace(np.min(quant), np.max(quant), 50)
         dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
         ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
-        cbar = fig.colorbar(dist)
-        cbar.ax.set_ylabel('$\lambda_{i_z}$')
+        cbar = fig.colorbar(dist,pad=.1)
+        cbar.ax.set_ylabel('${up}_{BET}$')
         plt.show()
-
+        # #
         fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
         quant = ut
-        levels = np.linspace(np.min(quant), np.max(quant), 50)
+        levels = np.linspace(np.min(ut), 1.25, 50)
         dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
         ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
-        cbar = fig.colorbar(dist)
-        cbar.ax.set_ylabel('$ut$')
+        cbar = fig.colorbar(dist,pad=.1)
+        cbar.ax.set_ylabel('${ut}_{BET}$')
+        plt.show()
+        # # #
+        fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        quant = ut_t
+        levels = np.linspace(np.min(ut), 1.25, 50)
+        dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+        ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        cbar = fig.colorbar(dist,pad=.1)
+        cbar.ax.set_ylabel('${ut}_{MRS}$')
         plt.show()
 
+        dCT_mrs = 1 / 2 * solDist * r ** 2 * (CL_mrs * np.cos(up_mrs / ut_mrs) - CD_mrs * np.sin(up_mrs / ut_mrs))
+        dCT_mrs_2 = np.trapz(dCT_mrs, r)
+        CT_mrs = 1 / (2 * np.pi) * np.trapz(dCT_mrs_2, phi)
+        dT_mrs = rho * np.pi * R ** 2 * (omega * R) ** 2 * dCT_mrs
+        T_mrs = 1 / (2 * np.pi) * np.trapz(np.trapz(dT_mrs, r), phi)
+
+        dCQ_mrs = 0.5 * solDist * r ** 3 * (CL_mrs * np.sin(up_mrs / ut_mrs) + CD_mrs * np.cos(up_mrs / ut_mrs))
+        dCQ_mrs_2 = np.trapz(dCQ_mrs, r)
+        CQ_mrs = 1 / (2 * np.pi) * np.trapz(dCQ_mrs_2, phi)
+        dQ_mrs = rho * np.pi * R ** 3 * (omega * R) ** 2 * dCQ_mrs
+        Q_mrs = 1 / (2 * np.pi) * np.trapz(np.trapz(dQ_mrs, r), phi)
+
     #%%
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    quant = ut
-    levels = np.linspace(np.min(quant), np.max(quant), 50)
-    dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
-    ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
-    cbar = fig.colorbar(dist)
-    cbar.ax.set_ylabel('$ut$')
-    plt.show()
-    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    quant = up
-    levels = np.linspace(np.min(quant), np.max(quant), 50)
-    dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
-    ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
-    cbar = fig.colorbar(dist)
-    cbar.ax.set_ylabel('$up$')
-    plt.show()
 
     UT = ut*omega*R
     UP = up * omega * R
     U = np.sqrt(UT**2+UP**2)
+    # AoA = theta_expanded-up/ut
 
     dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))
+    dCT_2 = np.trapz(dCT, r)
     dT = rho*np.pi*R**2*(omega*R)**2*dCT
     T = 1/(2*np.pi)*np.trapz(np.trapz(dT,r),phi)
 
     dCQ = 0.5*solDist*r**3*(CL*np.sin(up/ut)+CD*np.cos(up/ut))
+    dCQ_2 = np.trapz(dCQ, r)
     CQ = 1/(2*np.pi)*np.trapz(np.trapz(dCQ,r),phi)
     dQ = rho*np.pi*R**3*(omega*R)**2*dCQ
     Q = 1/(2*np.pi)*np.trapz(np.trapz(dQ,r),phi)
     P = Q * omega
 
+    # print(dCT_mrs_2[::int(len(dCT_mrs_2) / 36)]-dCT_2[::int(len(dCT_2) / 36)])
+    # print(dCQ_mrs_2[::int(len(dCQ_mrs_2) / 36)]-dCT_2[::int(len(dCQ_2) / 36)])
+
     # resolves loading vectors to vertical and horizontal directions so that a change of base can be applied to the
     # blade geometry account for the pitching motion in the namelist file - 1/18/21
-    dFz =  dT/Nb*np.cos(-theta_expanded)-dQ/(Nb*r*R)*np.sin(-theta_expanded)
-    dFx = dT/Nb*np.sin(-theta_expanded)+dQ/(Nb*r*R)*np.cos(-theta_expanded)
+    if UserIn['MuRoSim']:
+        dFz = dT_mrs / Nb * np.cos(-theta_expanded) - dQ_mrs / (Nb * r * R) * np.sin(-theta_expanded)
+        dFx = dT_mrs / Nb * np.sin(-theta_expanded) + dQ_mrs / (Nb * r * R) * np.cos(-theta_expanded)
+    else:
+        dFz = dT / Nb * np.cos(-theta_expanded) - dQ / (Nb * r * R) * np.sin(-theta_expanded)
+        dFx = dT / Nb * np.sin(-theta_expanded) + dQ / (Nb * r * R) * np.cos(-theta_expanded)
+    dt = (omega / (2 * np.pi)) ** -1 / (360)
+
+    dFz_dt = np.diff(dFz,axis = 0)/dt
+    dFx_dt = np.diff(dFx,axis = 0)/dt
+    dF_dt = np.diff(np.sqrt(dFx**2+dFz**2),axis = 0)/dt
+
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    # quant = dF_dt
+    # levels = np.linspace(-2.5e4,2.5e4, 50)
+    # dist = ax.contourf(phi[:-1], geomParams['rdim'], np.transpose(quant), levels=levels)
+    # ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+    # cbar = fig.colorbar(dist, pad=.1)
+    # cbar.ax.set_ylabel('$\.f \ [N/s]$')
+    # plt.show()
+
+
+    if UserIn['MuRoSim']:
+
+
+        fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        quant = AoA_mrs*180/np.pi
+        levels = np.linspace(0, 25, 50)
+        dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+        ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        cbar = fig.colorbar(dist,pad = .1)
+        cbar.ax.set_ylabel(r'$\alpha_{MRS} \ [\circ]$')
+        plt.show()
+
+        fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        quant = AoA*180/np.pi
+        levels = np.linspace(0, 25, 50)
+        dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant), levels=levels)
+        ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        cbar = fig.colorbar(dist,pad = .1)
+        cbar.ax.set_ylabel(r'$\alpha_{BET} \ [\circ]$')
+        plt.show()
+        #
+        fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        quant = dFz_dt
+        levels = np.linspace(-1e7, 1e7, 50)
+        dist = ax.contourf(phi[:-1], geomParams['rdim'], np.transpose(quant), levels=levels)
+        ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        cbar = fig.colorbar(dist,pad = .1)
+        cbar.ax.set_ylabel('$\.f_z \ [N/s]$')
+        plt.show()
+
+        fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+        quant = dF_dt
+        levels = np.linspace(-1e7, 1e7, 50)
+        dist = ax.contourf(phi[:-1], geomParams['rdim'], np.transpose(quant), levels=levels)
+        ax.set_ylim(geomParams['rdim'][0], geomParams['rdim'][-1])
+        cbar = fig.colorbar(dist,pad = .1)
+        cbar.ax.set_ylabel('$\.f \ [N/s]$')
+        plt.show()
+
     # dFr = rho*np.pi*R**2*(omega*R)**2*(1/2*solDist*r**2*(-CL*np.expand_dims(np.sin(beta_exp),axis = 1)+CD*np.sin(np.expand_dims(mu_x*np.cos(phi),axis = 1)/ut)))
     dFr = np.zeros((np.shape(dFz)))
 
@@ -437,9 +569,16 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     Mx = Nb / (2 * np.pi) * np.trapz(np.trapz(geomParams['rdim'] * dFz * np.expand_dims(np.sin(phi), axis=1), r), phi)
     #   pitch moment
     My = -Nb / (2 * np.pi) * np.trapz(np.trapz(geomParams['rdim'] * dFz * np.expand_dims(np.cos(phi), axis=1), r), phi)
-    hubLM = [H,Y,Mx,My]
+    hubLM = np.array([H,Y,Mx,My])
 
-    print(CT)
+    print(CT_mrs)
+    print(T_mrs)
+    print(CQ_mrs)
+    print(Q_mrs)
+    print(hubLM)
+    print(hubLM[:2]/rho*np.pi*R**2*(omega*R)**2)
+    print(hubLM[2:]/rho*np.pi*R**3*(omega*R)**2)
+
 
     #   assembles a dictionary with the computed parameters that is returned to the user and is referenced in other segments of the program
     loadParams = {'residuals':trim_sol.fun,'phiRes':phiRes,'ClaDist':a,'AoA':AoA,'alpha':alphaInit,'mu':mu,'phi':phi,'th':th,'CT':CT,'T':T,'CQ':CQ,'Q':Q,'P':P,

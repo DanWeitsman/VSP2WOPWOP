@@ -241,12 +241,14 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     # applied to the blade geometry and loading vector in the namelist file. If the collective pitch CB is
     # unnecessary, then dFz = dT/Nb.
     dFz = dT/Nb*np.cos(-th[0])-dQ/(Nb*r*R)*np.sin(-th[0])
-
+    # dFz = dT / Nb
+    # dFz=np.zeros(len(r))
     # Rotates the inplane force component by the collective pitch setting, so that a single change of base (CB) can be
     # applied to the blade geometry and loading vector in the namelist file. If the collective pitch CB is
     # unnecessary, then dFx =dQ/(Nb*r*R).
     dFx = dT/Nb*np.sin(-th[0])+dQ/(Nb*r*R)*np.cos(-th[0])
-
+    # dFx = dQ/(Nb*r*R)
+    # dFx = np.zeros(len(r))
     #   Figure of merit, induced power factor = 1.15
     FM = CP / (1.15 * CP + sol / 8 * CD)
 
