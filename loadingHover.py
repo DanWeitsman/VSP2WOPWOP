@@ -13,6 +13,8 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     import numpy as np
     from scipy.optimize import least_squares
     import bisect
+    from scipy.fft import fft, ifft
+    from scipy.interpolate import interp1d
 
     def rpm_residuals(omega):
         '''
@@ -106,6 +108,7 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
                 # froot = 0.5*Nb*(r/((1 - r)*lam/r))
                 f = 0.5 * Nb * ((1 - r) / lambdaInit)
                 F = (2 / np.pi) * np.arccos(np.e ** (-f))
+                F[np.where(F == 0)] = 1e-10
                 lam = np.sqrt(1/4*(solDist*XsecPolarExp['Lift Slope']/(8*F)-lam_c)**2+solDist*XsecPolarExp['Lift Slope']*ThetaDist*r/(8*F))-(solDist*XsecPolarExp['Lift Slope']/(16*F)-lam_c/2)
                 err = np.abs((lam - lambdaInit) / lam)
                 err[np.where(np.isnan(err) == 1)] = 0
@@ -115,7 +118,7 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
             F = 1
             lam = np.sqrt(1/4*(solDist*XsecPolarExp['Lift Slope']/(8*F)-lam_c)**2+solDist*XsecPolarExp['Lift Slope']*ThetaDist*r/(8*F))-(solDist*XsecPolarExp['Lift Slope']/(16*F)-lam_c/2)
 
-        lam[np.where(np.isnan(lam) == 1)] = 0
+        # lam[np.where(np.isnan(lam) == 1)] = 1
         # lam[0] = lam[1]
         # lam[-1] = lam[-2]
         return lam
@@ -133,16 +136,45 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
         """
         dCL = np.zeros(len(AoA))
         dCD = np.zeros(len(AoA))
-        for i, alpha in enumerate(AoA):
-            if alpha > XsecPolar[polarInd[i]]['alphaMax']:
-                dCL[i] = np.interp(alpha ,xp = [XsecPolar[polarInd[i]]['alphaMax'],XsecPolar[polarInd[i]]['Alpha0']%(2*np.pi)],fp = [XsecPolar[polarInd[i]]['ClMax'],XsecPolar[polarInd[i]]['ClMin']])
-                dCD[i] = XsecPolar[polarInd[i]]['CdMax']
-            else:
-                 AoA_ind = bisect.bisect(XsecPolar[polarInd[i]]['Polar'][:, 0], alpha)
-                 dCL[i] = np.interp(alpha ,xp = [XsecPolar[polarInd[i]]['Polar'][AoA_ind-1,0],XsecPolar[polarInd[i]]['Polar'][AoA_ind,0]],fp = [XsecPolar[polarInd[i]]['Polar'][AoA_ind-1,1],XsecPolar[polarInd[i]]['Polar'][AoA_ind,1]])
-                 dCD[i] = np.interp(alpha ,xp = [XsecPolar[polarInd[i]]['Polar'][AoA_ind-1,0],XsecPolar[polarInd[i]]['Polar'][AoA_ind,0]],fp = [XsecPolar[polarInd[i]]['Polar'][AoA_ind-1,2],XsecPolar[polarInd[i]]['Polar'][AoA_ind,2]])
+        # dCL2 = np.zeros(len(AoA))
+        # dCD2 = np.zeros(len(AoA))
+
+        for k,v in XsecPolar.items():
+
+            ind = np.where(np.array(polarInd) == k)
+
+            if np.any(AoA[ind]>v['alphaMax']) or np.any(AoA[ind]< v['Alpha0']):
+                ind2 = np.squeeze(np.where((AoA[ind]< v['Alpha0']) | (AoA[ind]>v['alphaMax'])))
+                dCL[ind2] = np.interp(AoA[ind2]%(2*np.pi) ,xp = [v['alphaMax'],2*np.pi],fp = [v['ClMax'],v['ClMin']])
+                dCD[ind2] = v['CdMax']
+                ind = np.delete(ind, ind2)
+
+            dCL[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,1])
+            dCD[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,2])
+
+            # x1_ind = np.squeeze(np.where(v['Polar'][:, 0] > AoA[ind][-3]))[0]
+            # x1_ind = [np.squeeze(np.where(v['Polar'][:, 0] > x))[0] for x in AoA[ind]]
+            # x0_ind = [np.squeeze(np.where(v['Polar'][:, 0] < x))[-1] for x in AoA[ind]]
+            #
+            # # x0_ind = np.squeeze(np.where(v['Polar'][:, 0] < AoA[ind][-3]))[-1]
+            # dCL[ind] = (v['Polar'][x0_ind,1]*(v['Polar'][x1_ind,0]-AoA[ind])+v['Polar'][x1_ind,1]*(AoA[ind]-v['Polar'][x0_ind,0]))/(v['Polar'][x1_ind,0]-v['Polar'][x0_ind,0])
+            # dCD[ind] = (v['Polar'][x0_ind,2]*(v['Polar'][x1_ind,0]-AoA[ind])+v['Polar'][x1_ind,2]*(AoA[ind]-v['Polar'][x0_ind,0]))/(v['Polar'][x1_ind,0]-v['Polar'][x0_ind,0])
+            # dCL[ind] = AoA[ind]*2*np.pi
+            # dCD[ind] =  0.1*dCL[ind]
+
         return dCL, dCD
 
+    def fsmooth(quant):
+        '''
+        Frequency domain smoothing filter that retains only the 1/rev frequency components.
+        :param quant: Quantitiy to filter should be of size [phi x r]
+        :return:
+        '''
+        Xm = fft(quant, axis=0)
+        Xm[10:-9] = 0
+        quant_smooth = np.real(ifft(Xm, axis=0))
+
+        return quant_smooth
     # %%
     #   This block of code defines parameters that are used throughout the remainder of the module
     Nb = UserIn['Nb']
@@ -217,6 +249,39 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
         th = np.array([np.squeeze(trim_sol.x), 0, 0])
 
 #%%
+
+    th1c = 0*np.pi/180
+    th1s = 0*np.pi/180
+    phiRes = 361
+    phi = np.linspace(0,2*np.pi,phiRes)
+    theta_expanded = geomParams['twistDist'] + th[0] + np.expand_dims(th1c * np.cos(phi), axis=1) + np.expand_dims(th1s * np.sin(phi), axis=1)
+    dCT2, dCL2, dCD2, lam2, AoA2 =   np.array([coll_trim(theta)[1:] for theta in theta_expanded]).transpose((1,0,-1))
+    dCL2, dCD2 = [fsmooth(x) for x in [dCL2,dCD2]]
+    dCT2 = 0.5 * solDist * (dCL2 * np.cos(lam2 / r) - dCD2 * np.sin(lam2 / r)) * r ** 2
+    dT2 = dCT2 * rho * Adisk * (omega * R) ** 2
+    dFz2 = dT2 / Nb
+    dCP2 = 0.5 * solDist * (lam2 / r * dCL2 + dCD2) * r ** 3
+    dQ2 = dCP2 * rho * Adisk * (omega * R) ** 2 * R
+    dFx2 = dQ2 / (Nb * r * R)
+
+    if UserIn['rotation'] == 2:
+        dFz2 = np.flip(dFz2,axis = 0)
+        dFx2 = np.flip(dFx2, axis=0)
+    # # up = lam
+    # # ut = r
+    # # AoA2 = theta_expanded - up/ut
+    # # CL,CD = np.array([PolarLookup(alpha) for alpha in AoA2]).transpose((1,0,2))
+    # # dT = rho*np.pi*R**2*(omega*R)**2*(1 / 2 * solDist * r ** 2 * (CL * np.cos(up / ut) - CD * np.sin(up / ut)))
+    # # dQ = rho*np.pi*R**3*(omega*R)**2*(0.5*solDist*r**3*(CL*np.sin(up/ut)+CD*np.cos(up/ut)))
+    # # dFz2 = dT / Nb
+    # # dFx2 = dQ/(Nb*r*R)
+    #
+    # if UserIn['rotation'] == 2:
+    #     dFz2 = np.flip(dFz2, axis=0)
+    #     dFx2 = np.flip(dFx2, axis=0)
+
+    #%%
+
     U =np.sqrt((omega*geomParams['rdim'])**2+(omega*R*lam)**2)
     #   Integrated lift and drag coefficients
     CL = np.trapz(dCL, r)
@@ -240,13 +305,13 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     # Rotates the normal force component by the collective pitch setting, so that a single change of base (CB) can be
     # applied to the blade geometry and loading vector in the namelist file. If the collective pitch CB is
     # unnecessary, then dFz = dT/Nb.
-    dFz = dT/Nb*np.cos(-th[0])-dQ/(Nb*r*R)*np.sin(-th[0])
-
+    # dFz = dT/Nb*np.cos(-th[0])-dQ/(Nb*r*R)*np.sin(-th[0])
+    dFz = dT/Nb
     # Rotates the inplane force component by the collective pitch setting, so that a single change of base (CB) can be
     # applied to the blade geometry and loading vector in the namelist file. If the collective pitch CB is
     # unnecessary, then dFx =dQ/(Nb*r*R).
-    dFx = dT/Nb*np.sin(-th[0])+dQ/(Nb*r*R)*np.cos(-th[0])
-
+    # dFx = dT/Nb*np.sin(-th[0])+dQ/(Nb*r*R)*np.cos(-th[0])
+    dFx = dQ/(Nb*r*R)
     #   Figure of merit, induced power factor = 1.15
     FM = CP / (1.15 * CP + sol / 8 * CD)
 
@@ -259,17 +324,55 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     if UserIn['rotation'] == 2:
         dFx = -dFx
 
+    dFz = dFz2
+    # dFz = np.zeros(np.shape(dFz2))
+    dFx = dFx2
+    dFy = np.zeros(np.shape(dFz2))
+
     #%%
     # Assembles all computed load parameters into a dictionary
     loadParams = {'coll_residuals':trim_sol.fun,'th': th, 'beta': [0, 0, 0], 'CT': CT, 'T': T, 'dCT': dCT, 'dT': dT, 'CP': CP, 'P': P,
                   'Q': Q, 'dCP': dCP, 'dQ': dQ, 'dCL': dCL, 'dCD': dCD, 'CL': CL, 'CD': CD, 'FM': FM, 'AoA': AoA,'ClaDist':XsecPolarExp['Lift Slope'], 'lambda': lam,
-                  'dFx': dFx, 'dFy': dFy, 'dFz': dFz, 'omega': omega,'U':U}
+                  'dFx': dFx, 'dFy': dFy, 'dFz': dFz, 'omega':omega*60/(2*np.pi),'U':U,'dFz2':dFz2,'dFx2':dFx2,'phi':phi}
     return loadParams
 
 #
 # %% # figdir = os.path.abspath(os.path.join(input.dirDataFile,'Figures/CL.png')) # with cbook.get_sample_data(figdir) as
 #
-# #
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    # quant = np.diff(out[1],axis = 0)
+    # # levels = np.linspace(-.005, .005, 50)
+    # levels = np.linspace(np.min(quant),np.max(quant),50)
+    # dist = ax.contourf(phi[:-1], geomParams['rdim'], quant.transpose(),levels = levels)
+    # ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
+    # cbar = fig.colorbar(dist)
+    # cbar.ax.set_ylabel('$dFx \: [N]$')
+#
+# #%%
+#     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+#     quant = dFz2
+#     # levels = np.linspace(-.005, .005, 50)
+#     levels = np.linspace(np.min(quant),np.max(quant),50)
+#     dist = ax.contourf(phi, geomParams['rdim'], quant.transpose(),levels = levels)
+#     ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
+#     cbar = fig.colorbar(dist)
+#     cbar.ax.set_ylabel('$dFx \: [N]$')
+# #%%
+#     fig, ax = plt.subplots(1,1)
+#     ax.plot(phi[:-1],np.diff(dCL2,axis = 0)[:,40])
+#     ax.plot(phi[:-1],np.diff(dCL2_smooth,axis = 0)[:,40])
+#     fig, ax = plt.subplots(1,1)
+#     ax.plot(phi,dCL2[:,40])
+#     ax.plot(phi,dCL2_smooth[:,40])
+
+#
+# #%%
+#     fig, ax = plt.subplots(1,1)
+#     ax.plot(phi[:-1],np.diff(dFz2,axis = 0)[:,40])
+#     fig, ax = plt.subplots(1,1)
+#     ax.plot(phi,dFz2[:,40])
+# # #
 #     import matplotlib.pyplot as plt
 #     fig = plt.figure(figsize=[6.4, 4.5], )
 #     ax = fig.gca()

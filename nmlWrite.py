@@ -74,6 +74,10 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
     else:
         zAxisValue = -1
 
+    if UserIn['sigmaflag']:
+        sigmaflag = '.true.'
+    else:
+        sigmaflag = '.false.'
 
     # %%
     # Configuration of each namelist.
@@ -94,7 +98,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                 'totalNoiseFlag': '.true.',
                 'debugLevel': 1,
                 'ASCIIOutputFlag': '.true.',
-                'sigmaflag': '.false.',
+                'sigmaflag': sigmaflag,
                 'loadingSigmaFlag': '.true.',
                 'pressureSigmaFlag': '.true.',
                 'normalSigmaFlag': '.true.',
@@ -105,6 +109,8 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                 'accelerationSigmaFlag': '.true.',
                 'MdotrSigmaFlag': '.true.',
                 'velocitySigmaFlag': '.true.',
+                'machSigmaFlag':'.true.',
+                'momentumSigmaFlag':'.true.'
             }
     }
 
@@ -195,6 +201,30 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'thetamax': UserIn['thetamax'] * (np.pi / 180),
                     'psimin': UserIn['psimin'] * (np.pi / 180),
                     'psimax': UserIn['psimax'] * (np.pi / 180),
+                    'octaveFlag' : octaveFlag,
+                    'octaveNumber': 3,
+                    'octaveApproxFlag': '.false.',
+                    'nbBase': 1,
+                },
+            'cb':
+                {
+                    'Title': "'Observer motion'",
+                    'TranslationType': "'KnownFunction'",
+                    'VH': [nVx, 0, 0],
+                }
+        }
+    elif UserIn['obsType'] == 4:
+        observerin = {
+            'observerin':
+                {
+                    'title': "'Observers'",
+                    '!attachedto': "'Aircraft'",
+                    'nt': nt,
+                    'tmin': 0.0,
+                    'tmax': (nOmega / 60) ** -1 * UserIn['nRev'],
+                    'highpassfrequency': 10,
+                    'lowpassfrequency': 20000,
+                    'fileName':"'obs_grid.ascii'",
                     'octaveFlag' : octaveFlag,
                     'octaveNumber': 3,
                     'octaveApproxFlag': '.false.',
@@ -302,7 +332,8 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                     'TEThicknessFlag':"'FileValue'",
                     'TEflowAngleFlag':"'FileValue'",
                     'TipLCSFlag':"'UserValue'",
-                    'TipLCS' : loadParams['ClaDist'][-1],
+                    'TipLCS': 1,
+                    # 'TipLCS' : loadParams['ClaDist'][-1],
                     'SectAOAFlag':"'FileValue'",
                     'UFlag':"'FileValue'",
                     'LBLVSnoise':'.true.',
@@ -387,7 +418,7 @@ def nml_write(UserIn, loadParams, dirSaveFile, nVx, nVz, nOmega, alphaShaft,iter
                             'AngleType': "'Timeindependent'",
                             'AxisType': "'Timeindependent'",
                             'AxisValue': [0, 1, 0],
-                            'angleValue': A0,
+                            'angleValue': 0,
                         }
 
                     ]

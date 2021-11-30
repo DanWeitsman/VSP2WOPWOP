@@ -30,12 +30,12 @@ dataFileNames = ["Lynx_DegenGeom.csv"]
 # blade geometry (dataFileNames). When set equal to 2 a case would be generated for each thrust and rotational rate
 # pair for all the blade geometries. When set equal to 3 an operational condition sweep would be performed,
 # whereby a case would be generated for every combination of T, omega, Vx, and Vz for each blade geometry.
-operMode = 3
+operMode = 1
 
 # Set equal to one in order to save the main dictionary, which contains all the computed geometric and loading
 # parameters for each case as an HDF5 file. This file can be read using the following command: h5py.File("file path",
 # 'MainDict.h5')), 'r')
-saveHDF5 = 1
+saveHDF5 = True
 
 #%%
 '''Airfoil Cross Section Configuration'''
@@ -55,7 +55,7 @@ aStart = 2
 aLength = 3
 
 # Set equal to one for the airfoil polars to be plotted, along with the interval that the lift curve slope is evaluated.
-check = 0
+check = 1
 
 # %%
 ''' Operating condition configuration '''

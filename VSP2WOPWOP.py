@@ -35,12 +35,15 @@ from PeriodicBPMWrite import PeriodicBPMWrite
 from GeomPatchFileWrite import GeomPatchFileWrite
 from ErrorHandles import ErrorHandles
 from writeHDF5 import writeHDF5
-
+from obsFileWrite import obsFileWrite
 # %%
 
 def main():
 
     def fwrite(UserIn, geomParams, XsecPolar, dirSaveFile,T, omega, Vx,Vz,alphaShaft,iter_geom):
+
+        if UserIn['obsType'] == 4:
+            obsFileWrite(UserIn,dirSaveFile)
 
         #   Writes out the blade geometry and lifting line compact geometry patch files
         GeomPatchFileWrite(UserIn['geomFileName'], geomParams, dirSaveFile)
@@ -49,7 +52,9 @@ def main():
         # the corresponding constant or periodic functional data file, respectively.
         if Vx == 0:
             loadParams = loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz)
-            ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
+            # ConstantLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
+            PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
+
         else:
             loadParams = loadingFF(UserIn, geomParams, XsecPolar, T, omega, Vx, Vz, alphaShaft)
             PeriodicLoadingPatchFileWrite(UserIn['loadingFileName'], loadParams, geomParams['nXsecs'], dirSaveFile)
