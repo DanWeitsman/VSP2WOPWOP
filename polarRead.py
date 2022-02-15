@@ -41,6 +41,8 @@ def polarRead(UserIn,i):
 
         minInd, alpha0, ClMin, CdMin, maxInd, alpha1, ClMax, CdMax = min_max_CL_search(polar)
 
+
+
         ind = [bisect.bisect_left(polar[:,0],UserIn['aStart']),bisect.bisect_left(polar[:, 0], UserIn['aStart'] + UserIn['aLength'])]
 
         polar[:,0] = polar[:,0]*np.pi/180
