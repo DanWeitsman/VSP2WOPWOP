@@ -25,8 +25,7 @@ from AnalyzeDegenGeom import AnalyzeDegenGeom
 from ProcessGeom import ProcessGeom
 from polarRead import polarRead
 from loadingHover import loadingHover
-from loadingFF import loadingFF
-from ConstantLoadingPatchFileWrite import ConstantLoadingPatchFileWrite
+from loadingFF_v2 import loadingFF
 from PeriodicLoadingPatchFileWrite import PeriodicLoadingPatchFileWrite
 from nmlWrite import nml_write
 from CaseFileWrite import caseFile_write

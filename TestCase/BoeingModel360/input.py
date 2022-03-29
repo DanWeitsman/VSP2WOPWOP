@@ -24,7 +24,7 @@ loadingFileName = "Load"
 # %%
 
 # Names of DegenGeom files add as many geometry cases as you wish separated by commas.
-dataFileNames = ["Lynx_DegenGeom.csv"]
+dataFileNames = ["Boeing360_DegenGeom.csv"]
 
 # Operational mode: when set equal to 1 each thrust (T) and rotational rate (omega) pair corresponds to a different
 # blade geometry (dataFileNames). When set equal to 2 a case would be generated for each thrust and rotational rate
@@ -55,7 +55,7 @@ aStart = 2
 aLength = 3
 
 # Set equal to one for the airfoil polars to be plotted, along with the interval that the lift curve slope is evaluated.
-check = 1
+check = 0
 
 # %%
 ''' Operating condition configuration '''
@@ -126,6 +126,7 @@ nmlWrite = 1
 #   Name of the namelist file that will be the same for all cases.
 NmlFileName = 'Model360.nam'
 
+sigmaflag = False
 #%%
 '''Observer namelist configuration'''
 #   Duration of the case, expressed as shaft revolutions
@@ -206,7 +207,7 @@ UserIn = {'operMode': operMode, 'saveHDF5': saveHDF5, 'dataFileName': dataFileNa
           'airfoilPolarFileName': airfoilPolarFileName, 'XsecLocation': XsecLocation,
           'aStart': aStart, 'aLength': aLength, 'check': check,'trim':trim, 'Nb': Nb,'rotation':rotation, 'Vx': Vx, 'Vz': Vz, 'alphaShaft': alphaShaft,
           'omega': omega, 'T': T, 'thetaInit': thetaInit, 'loadPos': loadPos, 'tipLoss': tipLoss, 'inflowMod':inflowMod,'rho': rho, 'c': c,
-          'nmlWrite': nmlWrite, 'outputFolderName': outputFolderName,
+          'nmlWrite': nmlWrite, 'outputFolderName': outputFolderName,'sigmaflag':sigmaflag,
           'geomFileName': geomFileName, 'loadingFileName': loadingFileName,
           'BBNoiseFlag': BBNoiseFlag, 'NmlFileName': NmlFileName, 'nRev': nRev, 'nt': nt, 'obsType': obsType, 'xLoc': xLoc,
           'yLoc': yLoc, 'zLoc': zLoc, 'nbx': nbx, 'nby': nby, 'nbz': nbz, 'xMin': xMin, 'yMin': yMin, 'zMin': zMin,

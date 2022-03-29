@@ -6,7 +6,7 @@ SPLdBFLAG = .true.
 SPLdBAFlag = .false.
 OASPLdBAFlag = .false.
 OASPLdBFlag = .false.
-broadbandFlag = .true.
+broadbandFlag = .false.
 thicknessNoiseFlag = .true.
 loadingNoiseFlag = .true.
 acousticPressureFlag = .true.
@@ -24,6 +24,8 @@ totalNoiseSigmaFlag = .true.
 accelerationSigmaFlag = .true.
 MdotrSigmaFlag = .true.
 velocitySigmaFlag = .true.
+machSigmaFlag = .true.
+momentumSigmaFlag = .true.
 /
 
 &environmentconstants
@@ -49,7 +51,7 @@ nbz = 3
 zMin = -1.4888485708273682
 zMax = 1.4888485708273682
 nbBase = 1
-octaveFlag = .true.
+octaveFlag = .false.
 octaveNumber = 3
 octaveApproxFlag = .false.
 /
@@ -85,8 +87,6 @@ angleValue = 0.0
 Title = 'Rotor'
 nbContainer = 4
 nbBase = 2
-PeggNoiseFlag = .false.
-BPMNoiseFlag = .true.
 /
 
 &cb
@@ -106,30 +106,11 @@ AxisValue = 0, 0, 1
 angleValue = -1.5707963267948966
 /
 
-&BPMin
-BPMNoiseFile = 'BPM.dat'
-nSect = 50
-uniformBlade = 0
-BLtrip = 1
-sectChordFlag = 'FileValue'
-sectLengthFlag = 'FileValue'
-TEThicknessFlag = 'FileValue'
-TEflowAngleFlag = 'FileValue'
-TipLCSFlag = 'UserValue'
-TipLCS = 7.914457010073772
-SectAOAFlag = 'FileValue'
-UFlag = 'FileValue'
-LBLVSnoise = .true.
-TBLTEnoise = .true.
-bluntNoise = .true.
-bladeTipNoise = .true.
-roundBladeTip = .false.
-/
-
 &containerin
 Title = 'Blade 1'
 patchGeometryFile = 'Geom.dat'
 patchLoadingFile = 'Load.dat'
+periodicKeyOffset = 0.0
 nbBase = 2
 /
 
@@ -146,13 +127,14 @@ Title = 'Pitch'
 AngleType = 'Timeindependent'
 AxisType = 'Timeindependent'
 AxisValue = 0, 1, 0
-angleValue = 0.1184602283304208
+angleValue = 0
 /
 
 &containerin
 Title = 'Blade 2'
 patchGeometryFile = 'Geom.dat'
 patchLoadingFile = 'Load.dat'
+periodicKeyOffset = 1.5707963267948966
 nbBase = 2
 /
 
@@ -169,13 +151,14 @@ Title = 'Pitch'
 AngleType = 'Timeindependent'
 AxisType = 'Timeindependent'
 AxisValue = 0, 1, 0
-angleValue = 0.1184602283304208
+angleValue = 0
 /
 
 &containerin
 Title = 'Blade 3'
 patchGeometryFile = 'Geom.dat'
 patchLoadingFile = 'Load.dat'
+periodicKeyOffset = 3.141592653589793
 nbBase = 2
 /
 
@@ -192,13 +175,14 @@ Title = 'Pitch'
 AngleType = 'Timeindependent'
 AxisType = 'Timeindependent'
 AxisValue = 0, 1, 0
-angleValue = 0.1184602283304208
+angleValue = 0
 /
 
 &containerin
 Title = 'Blade 4'
 patchGeometryFile = 'Geom.dat'
 patchLoadingFile = 'Load.dat'
+periodicKeyOffset = 4.71238898038469
 nbBase = 2
 /
 
@@ -215,6 +199,6 @@ Title = 'Pitch'
 AngleType = 'Timeindependent'
 AxisType = 'Timeindependent'
 AxisValue = 0, 1, 0
-angleValue = 0.1184602283304208
+angleValue = 0
 /
 
