@@ -12,6 +12,7 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
 
     import numpy as np
     from scipy.optimize import least_squares
+    import scipy.interpolate as interp
     import bisect
     from scipy.fft import fft, ifft
     # import warnings
@@ -270,8 +271,15 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
                 ind = np.delete(ind, ind2)
 
             dCL[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,1])
-            # dCL[ind] = 2*np.pi*AoA[ind]
             dCD[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,2])
+
+            # dCL_spl = interp.splrep(x = v['Polar'][:,0], y = v['Polar'][:,1],k = 3 )
+            # dCD_spl = interp.splrep(x = v['Polar'][:,0], y = v['Polar'][:,2],k = 3 )
+            # dCL[ind] = interp.splev(AoA[ind],dCL_spl)
+            # dCD[ind] = interp.splev(AoA[ind],dCD_spl)
+
+            # dCL[ind] = 2*np.pi*AoA[ind]
+            # dCD[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,2])
 
         return dCL, dCD
 
@@ -323,13 +331,17 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     #   This block of code defines parameters that are used throughout the remainder of the module
     Nb = UserIn['Nb']
     R = geomParams['R']
-    chordDist = geomParams['chordDist']
-    twistDist = geomParams['twistDist']
-    solDist = geomParams['solDist']
+    
+    r = (geomParams['r'][1:]+geomParams['r'][:-1])/2
+    twistDist = (geomParams['twistDist'][:-1]+geomParams['twistDist'][1:])/2
+
+
+    solDist = (geomParams['solDist'][:-1]+geomParams['solDist'][1:])/2
+    chordDist = (geomParams['chordDist'][:-1]+geomParams['chordDist'][1:])/2
+
     XsecLocation = UserIn['XsecLocation']
     rho = UserIn['rho']
     tipLoss = UserIn['tipLoss']
-    r = geomParams['r']
     Adisk = geomParams['diskArea']
     sol = geomParams['solidity']
     #   converts rotational rate from degrees to radians
@@ -401,11 +413,11 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     # lamInit =lam
     # lam = np.ones(np.shape(dCT))*np.sqrt(CT/2)
     th1c = 0*np.pi/180
-    th1s = 0*np.pi/180
+    th1s = 4*np.pi/180
     phiRes = 361
     alphaInit = 0
-    phi = np.linspace(0,2*np.pi,phiRes)
-    theta_expanded = geomParams['twistDist'] + th[0] + np.expand_dims(th1c * np.cos(phi), axis=1) + np.expand_dims(th1s * np.sin(phi), axis=1)
+    phi = np.arange(361)*np.pi/180
+    theta_expanded = twistDist + th[0] + np.expand_dims(th1c * np.cos(phi), axis=1) + np.expand_dims(th1s * np.sin(phi), axis=1)
     dCT2, dCL2, dCD2, lam2, AoA2 =   np.array([coll_trim3(theta)[1:] for theta in theta_expanded]).transpose((1,0,-1))
     # CT2, dCT2, dCL2, dCD2, lam2, AoA2  = coll_trim2(theta_expanded)
     dCL2, dCD2 = [fsmooth(x) for x in [dCL2,dCD2]]
@@ -447,8 +459,7 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
     #     dFx2 = np.flip(dFx2, axis=0)
 
     #%%
-
-    U =np.sqrt((omega*geomParams['rdim'])**2+(omega*R*lam)**2)
+    U =np.sqrt((omega*r*R)**2+(omega*R*lam)**2)
     #   Integrated lift and drag coefficients
     CL = np.trapz(dCL, r)
     CD = np.trapz(dCD, r)
@@ -517,21 +528,28 @@ def loadingHover(UserIn, geomParams, XsecPolar, T, omega, Vz):
 # # #
 # # # #%%
 #     import matplotlib.pyplot as plt
-#     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-#     quant = AoA2
-#     # levels = np.linspace(.01, .08, 50)
-#     levels = np.linspace(np.min(quant),np.max(quant),50)
-#     dist = ax.contourf(phi, geomParams['rdim'], quant.transpose(),levels = levels)
-#     ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
-#     cbar = fig.colorbar(dist)
-#     cbar.ax.set_ylabel('$\lambda$')
-# #%%
+# # #     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+# # #     quant = AoA2
+# # #     # levels = np.linspace(.01, .08, 50)
+# # #     levels = np.linspace(np.min(quant),np.max(quant),50)
+# # #     dist = ax.contourf(phi, geomParams['rdim'], quant.transpose(),levels = levels)
+# # #     ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
+# # #     cbar = fig.colorbar(dist)
+# # #     cbar.ax.set_ylabel('$\lambda$')
+# # # #%%
 #     fig, ax = plt.subplots(1,1)
-#     ax.plot(phi[:-1],np.diff(dCL2,axis = 0)[:,40])
-#     ax.plot(phi[:-1],np.diff(dCL2_smooth,axis = 0)[:,40])
-#     fig, ax = plt.subplots(1,1)
-#     ax.plot(phi,dCL2[:,40])
-#     ax.plot(phi,dCL2_smooth[:,40])
+#     # ax.plot(phi,dCL2[:,40])
+#     # ax.plot(phi,dCL2_smooth[:,40])
+
+
+#     ax.plot(phi[:-1],np.diff(dFz2,axis = 0)[:,40])
+#     # ax.plot(phi[:-1],np.diff(dCL2_smooth,axis = 0)[:,40])
+
+#     plt.show()
+    # ax.plot(phi[:-1],np.diff(dCL2_smooth,axis = 0)[:,40])
+    # fig, ax = plt.subplots(1,1)
+    # ax.plot(phi,dCL2[:,40])
+    # ax.plot(phi,dCL2_smooth[:,40])
 
 #
 # #%%

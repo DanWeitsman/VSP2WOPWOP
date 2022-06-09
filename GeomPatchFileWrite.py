@@ -29,7 +29,7 @@ def GeomPatchFileWrite(geomFileName, geomParams, dirSaveFile):
     iblank = 0                                                      # iblank values are included (1) or not included (0)
     zoneName = ['Blade','Lifting Line']                             # Zone names
     iMax = [geomParams['pntsPerXsec'], 1]                           # number of chordwise elements
-    jMax = [geomParams['nXsecs'],geomParams['nXsecs']]              # number of spanwise elements
+    jMax = [geomParams['nXsecs'],geomParams['nXsecs']-1]              # number of spanwise elements
 
     #%%
 

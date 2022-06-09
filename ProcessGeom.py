@@ -75,7 +75,10 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
 
     #   Coordinates of the lifting line
     liftLineCoord = LENodes - (LENodes - TENodes) * loadPos
-    liftLineNorm = np.transpose((np.sin(twistDist),np.zeros(len(twistDist)),np.cos(twistDist)))
+    liftLineCoord = (liftLineCoord[:-1]+liftLineCoord[1:])/2
+    twistDist_2 = (twistDist[:-1]+twistDist[1:])/2
+    liftLineNorm = np.transpose((np.sin(twistDist_2),np.zeros(len(twistDist_2)),np.cos(twistDist_2)))
+    liftLineNorm = np.transpose((np.zeros(np.shape(twistDist_2)),np.zeros(np.shape(twistDist_2)),np.ones(np.shape(twistDist_2))))
 
     # liftLineNorm = np.transpose((np.zeros(len(twistDist)), np.zeros(len(twistDist)), np.ones(len(twistDist))))
     geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,'sweep':sweep,
