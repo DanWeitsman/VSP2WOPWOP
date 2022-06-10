@@ -237,20 +237,31 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         coefficient for the stalled blade sections
         '''
 
-        # #   assume that the airfoil is symmetric and therefore the CL can be estimated by the product of the
-        # # lift-curve slope and the angle of attack
-        CL = XsecPolarExp['Lift Slope'] * AoA
-        # #   CD is assumed to be 10% of CL
-        CD = 0.1 * CL
+        dCL = np.zeros(len(AoA))
+        dCD = np.zeros(len(AoA))
 
-        #   reruns the indices of stalled blade sections
-        azInd, rInd = np.where(AoA > XsecPolarExp['alphaMax'])
-        #   sets the CD of these sections equal to the CD @ CLmax
-        CD[azInd, rInd] = XsecPolarExp['CdMax'][azInd, rInd]
-        # CL[azInd, rInd] = XsecPolarExp['ClMin'][azInd, rInd]
-        #   linearly interpolates CL between CLmin and CL
-        CL[azInd, rInd] = XsecPolarExp['ClMax'][azInd, rInd]+(AoA[azInd, rInd]-XsecPolarExp['alphaMax'][azInd, rInd])*(XsecPolarExp['ClMin'][azInd, rInd]-XsecPolarExp['ClMax'][azInd, rInd])/(XsecPolarExp['Alpha0'][azInd, rInd]+2*np.pi-XsecPolarExp['alphaMax'][azInd, rInd])
+        for k,v in XsecPolar.items():
+            ind = np.squeeze(np.where(np.array(polarInd) == k))
+
+            if np.any(AoA[ind]>v['alphaMax']) or np.any(AoA[ind] < v['Alpha0']):
+
+                ind2 = np.where((AoA[ind]< v['Alpha0']) | (AoA[ind]>v['alphaMax']))
+                dCL[ind2] = np.interp(AoA[ind2]%(2*np.pi) ,xp = [v['alphaMax'],2*np.pi],fp = [v['ClMax'],v['ClMin']])
+
+                if np.any(AoA[ind2]%(2*np.pi)>-v['alphaMax']%(2*np.pi)):
+                    ind3 = np.squeeze(np.where(AoA[ind2]%(2*np.pi)>-v['alphaMax']%(2*np.pi)))
+                    dCD[ind3] = np.interp(AoA[ind2][ind3]%(2*np.pi) ,xp = [-v['alphaMax']%(2*np.pi),2*np.pi],fp = [v['CdMax'],v['CdMin']])
+                    ind2 = np.delete(ind2, ind3)
+                else:
+                    dCD[ind2] = v['CdMax']
+
+                ind = np.delete(ind, ind2)
+
+            dCL[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,1])
+            # dCL[ind] = 2*np.pi*AoA[ind]
+            dCD[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,2])
         return CL, CD
+
 
 #%%
     omega = omega/60*2*np.pi
