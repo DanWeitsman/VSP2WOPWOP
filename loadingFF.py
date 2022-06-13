@@ -103,9 +103,9 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
             ut = r + mu*np.cos(alphaInit) * np.expand_dims(np.sin(phi), axis = 1)
             up = lamTPP_init
 
-            AoA = (theta_expanded-up/ut)%(2*np.pi)
+            AoA = theta_expanded-up/ut
 
-            CL,CD = aeroParams(AoA)
+            CL,CD = np.array([aeroParams(x) for x in AoA]).transpose(1,0,2)
 
             dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))
             CT = 1/(2*np.pi)*np.trapz(np.trapz(dCT,r),phi)
@@ -260,10 +260,11 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
             dCL[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,1])
             # dCL[ind] = 2*np.pi*AoA[ind]
             dCD[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,2])
-        return CL, CD
+        return dCL, dCD
 
 
 #%%
+
     omega = omega/60*2*np.pi
     rho = UserIn['rho']
     Nb = UserIn['Nb']
@@ -271,6 +272,8 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     r = geomParams['r']
     solDist = geomParams['solDist']
     XsecLocation = UserIn['XsecLocation']
+    CT = W/(rho*np.pi*R**2*(omega*R)**2)
+
 
     alphaShaft = alphaShaft*(np.pi/180)
     thFP = np.arctan(Vz / Vx)
@@ -304,6 +307,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
                 else:
                     XsecPolarExp[param][int(ind[i]):] = XsecPolar[Xsec][param]
     else:
+        polarInd = list(XsecPolar.keys()) * len(r)
         for i,key in enumerate(list(XsecPolar[list(XsecPolar.keys())[0]].keys())[1:]):
             XsecPolarExp[key] = np.ones((phiRes,len(r)))*XsecPolar[list(XsecPolar.keys())[0]][key]
 
@@ -317,14 +321,14 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         theta_expanded = np.empty((np.shape(AoA)))*th0
 
     elif UserIn['trim'] == 2:
-        trimTargs = W/(rho*np.pi*R**2*(omega*R)**2)
+        trimTargs = CT
         lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs)
         trim_sol = least_squares(variable_pitch_residuals, th0, args=[mu, lamTPP_init], method='lm')
         th = np.array([np.squeeze(trim_sol.x),0 ,0 ])
         CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
     else:
-        trimTargs = [W/(rho*np.pi*R**2*(omega*R)**2),0,0]
+        trimTargs = [CT,0,0]
         th = np.array([th0,np.pi/180,np.pi/180])
         lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs[0])
         trim_sol = least_squares(variable_pitch_residuals, th ,args = [mu, lamTPP_init],method = 'lm')
@@ -385,7 +389,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     # import matplotlib.pyplot as plt
     #
     # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    # quant = up/ut
+    # quant = AoA*180/np.pi
     # levels = np.linspace(np.min(quant),np.max(quant),50)
     # dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant),levels = levels)
     # ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
