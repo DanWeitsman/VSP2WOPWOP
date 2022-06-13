@@ -65,8 +65,8 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
             up = inflowModSelect(UserIn['inflowMod'],lamTPP_init, mu, CT,dCT)
             ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
-            AoA = (th0+geomParams['twistDist']-up/ut)%(2*np.pi)
-            CL,CD = aeroParams(AoA)
+            AoA = th0+geomParams['twistDist']-up/ut
+            CL,CD = np.array([aeroParams(x) for x in AoA]).transpose(1,0,2)
             dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*AoA*np.sin(up/ut))
             CT = 1 / (2 * np.pi) * np.trapz(np.trapz(dCT, r), phi)
             err = np.abs((up - lamTPP_init) / up)
