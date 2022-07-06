@@ -237,9 +237,9 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         coefficient for the stalled blade sections
         '''
 
-        dCL = np.zeros(len(AoA))
-        dCD = np.zeros(len(AoA))
-
+        dCL = np.zeros(np.shape(AoA.transpose()))
+        dCD = np.zeros(np.shape(AoA.transpose()))
+        
         for k,v in XsecPolar.items():
             ind = np.squeeze(np.where(np.array(polarInd) == k))
 
@@ -260,7 +260,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
             dCL[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,1])
             # dCL[ind] = 2*np.pi*AoA[ind]
             dCD[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,2])
-        return CL, CD
+        return dCL, dCD
 
 
 #%%
@@ -306,6 +306,9 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     else:
         for i,key in enumerate(list(XsecPolar[list(XsecPolar.keys())[0]].keys())[1:]):
             XsecPolarExp[key] = np.ones((phiRes,len(r)))*XsecPolar[list(XsecPolar.keys())[0]][key]
+            polarInd = np.full(len(r),list(XsecPolar.keys())[0])
+    # polarInd = np.repeat(np.expand_dims(polarInd,axis = 0),361,axis = 0)
+
 
 #%%
     if UserIn['trim']==1:
