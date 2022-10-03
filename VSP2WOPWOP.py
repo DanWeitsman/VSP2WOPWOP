@@ -16,10 +16,6 @@ blades, the lift curve characteristics, and the aerodynamic loading/performance 
 
 import os
 from sys import path
-
-path.insert(0, os.getcwd())
-from input import UserIn
-
 from shutil import rmtree
 from AnalyzeDegenGeom import AnalyzeDegenGeom
 from ProcessGeom import ProcessGeom
@@ -35,6 +31,9 @@ from PeriodicBPMWrite import PeriodicBPMWrite
 from GeomPatchFileWrite import GeomPatchFileWrite
 from ErrorHandles import ErrorHandles
 from writeHDF5 import writeHDF5
+path.insert(0, os.getcwd())
+from input import UserIn
+
 
 # %%
 

@@ -12,6 +12,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     import bisect
     import numpy as np
     from scipy.optimize import least_squares
+    from scipy.interpolate import interp1d
 
     def fixed_pitch_residuals(omega):
         '''
@@ -39,13 +40,14 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         '''
 
         if UserIn['trim'] == 2:
+            print(th*180/np.pi)
             trimOut = variable_pitch_trim([th,0,0], mu, lamTPP_init)
             res = trimTargs - trimOut[0]
-            print(f'Trim residuals: T = {round(res, 6)}N')
+            print(f'Trim residuals: dCT = {round(res, 6)}')
         else:
             trimOut = variable_pitch_trim(th, mu, lamTPP_init)
             res = trimTargs - np.array([trimOut[0], trimOut[2], trimOut[3]])
-            print(f'Trim residuals: T = {round(res[0], 6)}N, Mx = {round(res[1], 6)}Nm, My = {round(res[2], 6)}Nm')
+            print(f'Trim residuals: dCT = {round(res[0], 6)}, CMx = {round(res[1], 6)}, CMy = {round(res[2], 6)}')
         return res
 
     def fixed_pitch_trim(omega):
@@ -65,7 +67,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
             up = inflowModSelect(UserIn['inflowMod'],lamTPP_init, mu, CT,dCT)
             ut = r + mu * np.expand_dims(np.sin(phi), axis=1)
-            AoA = (th0+geomParams['twistDist']-up/ut)%(2*np.pi)
+            AoA = th0+geomParams['twistDist']-up/ut
             CL,CD = aeroParams(AoA)
             dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*AoA*np.sin(up/ut))
             CT = 1 / (2 * np.pi) * np.trapz(np.trapz(dCT, r), phi)
@@ -101,14 +103,19 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
             theta_expanded = geomParams['twistDist']+th[0]+np.expand_dims(th[1]*np.cos(phi),axis=1)+np.expand_dims(th[2]*np.sin(phi),axis = 1)
             ut = r + mu*np.cos(alphaInit) * np.expand_dims(np.sin(phi), axis = 1)
-            up = lamTPP_init
 
-            AoA = (theta_expanded-up/ut)%(2*np.pi)
+            up = mu*np.sin(alphaInit)+lamTPP_init
+            AoA = theta_expanded-np.arctan2(up,ut)
 
-            CL,CD = aeroParams(AoA)
+            # CL,CD = aeroParams(AoA)
+            CL = np.pi*2*AoA
+            # CD = 0.1*CL
 
-            dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))
+            dCT = 0.5*solDist*r**2*CL
             CT = 1/(2*np.pi)*np.trapz(np.trapz(dCT,r),phi)
+
+            # dCT = 1/2*solDist*r**2*(CL*np.cos(up/ut)-CD*np.sin(up/ut))
+            # CT = 1/(2*np.pi)*np.trapz(np.trapz(dCT,r),phi)
 
             lamTTP_temp = inflowModSelect(UserIn['inflowMod'], lamTPP_init, mu, CT, dCT)
             err = np.abs((lamTTP_temp - lamTPP_init) / lamTTP_temp)
@@ -117,7 +124,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         Mx = 1/(2*np.pi)*np.trapz(np.trapz(r*dCT*np.expand_dims(np.sin(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
         My = -1/(2*np.pi)*np.trapz(np.trapz(r*dCT*np.expand_dims(np.cos(phi),axis = 1),r),phi)*rho*(omega*R)**2*np.pi*R**3
 
-        return CT,dCT,Mx,My,lamTTP_temp,theta_expanded,ut,up,CL,CD,AoA
+        return CT,dCT,Mx,My,lamTTP_temp,theta_expanded,ut,up,CL,AoA
 
     def inflowModSelect(model, lam, mu,CT, *args):
         '''
@@ -149,9 +156,9 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         :return: converged inflow ratio
         '''
         errFP = 1
-        mu = mu * np.cos(alphaInit)
-        while np.any(errFP > 0.0005):
-            lam_temp = mu * np.tan(alphaInit) + CT / (2 * np.sqrt(mu ** 2 + lam ** 2))
+        # mu = mu * np.cos(alphaInit)
+        while np.any(errFP > 1e-5):
+            lam_temp =  CT / (2 * np.sqrt(mu * np.cos(alphaInit) ** 2 + (lam +mu*np.sin(alphaInit))** 2))
             errFP = np.abs((lam_temp - lam) / lam_temp)
             lam = lam_temp
         return lam
@@ -167,9 +174,9 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         :return: converged inflow ratio
         '''
         err = 1
-        mu = mu*np.cos(alphaInit)
+        # mu = mu*np.cos(alphaInit)
         while np.any(err > 0.0005):
-            lam_temp = CT / (2 * np.sqrt(mu ** 2 + lam ** 2))*(1+1.2*r*np.expand_dims(np.cos(phi),axis = 1))
+            lam_temp = CT / (2 * np.sqrt(mu*np.cos(alphaInit) ** 2 + lam ** 2))*(1+1.2*r*np.expand_dims(np.cos(phi),axis = 1))
             err = np.abs((lam_temp - lam) / lam_temp)
             lam = lam_temp
         return lam
@@ -194,7 +201,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
             lam = lam_temp
         return lam
 
-    def pitt_peters_inflow(lam, mu, dCT):
+    def pitt_peters_inflow(lam, mu,CT,dCT):
         '''
         This function computes the inflow distribution based on the steady component of the Pitt-Peters model. This
         formulation was originally presented in, Pitt, Dale M., and David A. Peters. "Theoretical prediction of
@@ -208,60 +215,74 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
         :param dCT: radial and azimuthal distribution of the thrust coefficient
         '''
 
-        CT = 1/(2*np.pi)*np.trapz(np.trapz(dCT,r),phi)
         CMX = 1/(2 * np.pi) * np.trapz(np.trapz(r * dCT  * np.expand_dims(np.sin(phi), axis=1), r), phi)
-        CMY = -1/(2 * np.pi) * np.trapz(np.trapz(r * dCT * np.expand_dims(np.cos(phi), axis=1), r), phi)
+        CMY = -1/(2 * np.pi) * np.trapz(np.trapz(r * dCT * np.expand_dims(np.cos(phi), axis=1), r), pphisi)
 
-        lam = constant_inflow(lam, mu, CT)
+        lam = constant_inflow(np.sqrt(CT/2), mu, CT)
         wake_skew = np.arctan(mu*np.cos(alphaInit)/lam)
         vt = np.sqrt((mu*np.cos(alphaInit))**2+lam**2)
         vm = ((mu*np.cos(alphaInit))**2+lam*(lam+CT/(2*np.sqrt(mu**2 + lam**2))))/vt
 
-        L = np.array([[0.5*vt,0,15*np.pi/(64*vm)*np.tan(wake_skew/2)],[0,-4/(vm*(1+np.cos(wake_skew))),0],[15*np.pi/(64*vt)*np.tan(wake_skew/2),0,-4*np.cos(wake_skew)/(vm*(1+np.cos(wake_skew)))]])
+        L = np.array([[0.5/vt,0,15*np.pi/(64*vm)*np.tan(wake_skew/2)],[0,-4/(vm*(1+np.cos(wake_skew))),0],[15*np.pi/(64*vt)*np.tan(wake_skew/2),0,-4*np.cos(wake_skew)/(vm*(1+np.cos(wake_skew)))]])
         lam_0,lam_1c,lam_1s = np.dot(L,[CT,CMX,CMY])
         lam = lam_0 + lam_1c*r*np.expand_dims(np.cos(phi),axis = 1)+ lam_1s*r*np.expand_dims(np.sin(phi),axis = 1)
 
         return lam
 
     def aeroParams(AoA):
-        '''
-        This function returns the lift and drag coefficients corresponding to a radial and azimuthal distribution of the
-        angles of attack. The lift coefficient for stalled blade sections is linearly interpolated between the
-        section's airfoil minimum and maximum lift coefficients. The drag coefficient is assumed to be 10% of the
-        lift coefficient tunless the blade section is stalled. In that case, the sectional drag coefficient is set to
-        the airfoil's drag coefficient at the angle of attack corresponding to the maximum lift coefficient
-        :param AoA: array of size [phiRes x len(r)] filled with the computed angles of attack
-        :return:
-        :param CL: lift coefficient, linearly interpolated for the stalled blade sections
-        :param CD:  drag coefficient, set equal to its value at the angle of attack corresponding to themaximum lift
-        coefficient for the stalled blade sections
-        '''
-
-        dCL = np.zeros(np.shape(AoA.transpose()))
-        dCD = np.zeros(np.shape(AoA.transpose()))
+        """
+        This function linearly interpolates the sectional airfoil lift and drag coefficients from the XFoil polar based on the
+        computed angle of attack distribution. It is assumed that the airfoils are not stalled in the region of angle of attack ranging from -alpha_max+alpha0 to alpha_max. 
+        In this region, the lift coefficient variation is reflected and negated so that it varies from -CL_max to CL_max. While the drag coefficient is only reflected.
         
+        For stalled blade sections the coefficient of lift is linearly interpolated from CL_max to -CL_max, while the drag coefficient is set to its value corresponding to the
+        the stall angle of attack (alpha_max).
+
+        :param alpha: angle of attack distribution [rad]
+        return:
+        :param CL:  lift coefficient distribution
+        :param CD:  drag coefficient distribution
+        """
+
+        # allocate empty arrays for CL and CD that have the same dimensions as AoA. 
+        CL = np.empty(AoA.shape)
+        CD = np.empty(AoA.shape)
+
+        # loops through each airfoil section that makes up the blade.
         for k,v in XsecPolar.items():
-            ind = np.squeeze(np.where(np.array(polarInd) == k))
+            
+            # turns polarInd list into a 2d array that has the same dimensions as AoA so that it can be used as an index. 
+            airfoil_key_expanded= np.repeat(np.expand_dims(np.array(polarInd),axis = 0),len(AoA),axis = 0)
+            
+            # determines the prestall region ranging from alpha0 to alphaMax. 
+            interp_range = np.array([np.squeeze(np.where(v['Polar'][:,0]==v['Alpha0'])),np.squeeze(np.where(v['Polar'][:,0]==v['alphaMax']))])
+            # concatenates the negated version of interp_range to account for negative values of the angles of attack. 
+            x = (np.concatenate((-(v['Polar'][interp_range[0]:interp_range[-1],0]-v['Alpha0'])[::-1][:-1],v['Polar'][interp_range[0]:interp_range[-1],0]-v['Alpha0']))+v['Alpha0'])
+            # negates, flips and concatenates the variation in the lift cofficients that correspond to negative values of the angles of attack. 
+            CL_y = np.concatenate((-(v['Polar'][interp_range[0]:interp_range[-1],1])[::-1][:-1],v['Polar'][interp_range[0]:interp_range[-1],1]))
+            # flips and concatenates the variations in the drag cofficients that correspond to negative values of the angles of attack. 
+            CD_y = np.concatenate((v['Polar'][interp_range[0]:interp_range[-1],2][::-1][:-1],v['Polar'][interp_range[0]:interp_range[-1],2]))
 
-            if np.any(AoA[ind]>v['alphaMax']) or np.any(AoA[ind] < v['Alpha0']):
+            # creates the linear interpolation function for the pre-stalled blade sections. 
+            CL_prestall_interp = interp1d(x,CL_y)
+            CD_prestall_interp = interp1d(x,CD_y)
 
-                ind2 = np.where((AoA[ind]< v['Alpha0']) | (AoA[ind]>v['alphaMax']))
-                dCL[ind2] = np.interp(AoA[ind2]%(2*np.pi) ,xp = [v['alphaMax'],2*np.pi],fp = [v['ClMax'],v['ClMin']])
+            # indecies corresponding to the pre-stalled blade sections. Criteria: AoA >= -alpha_max+alpha0 and AoA <= alpha_max
+            prestall_ind = np.array((AoA >= x[0]) & (AoA <= x[-1]) & (k == airfoil_key_expanded))
 
-                if np.any(AoA[ind2]%(2*np.pi)>-v['alphaMax']%(2*np.pi)):
-                    ind3 = np.squeeze(np.where(AoA[ind2]%(2*np.pi)>-v['alphaMax']%(2*np.pi)))
-                    dCD[ind3] = np.interp(AoA[ind2][ind3]%(2*np.pi) ,xp = [-v['alphaMax']%(2*np.pi),2*np.pi],fp = [v['CdMax'],v['CdMin']])
-                    ind2 = np.delete(ind2, ind3)
-                else:
-                    dCD[ind2] = v['CdMax']
+            #   performs the linear interpolation on the blade sections that are not stalled
+            CL[prestall_ind] = CL_prestall_interp(AoA[prestall_ind])
+            CD[prestall_ind] = CD_prestall_interp(AoA[prestall_ind])
 
-                ind = np.delete(ind, ind2)
+            # creates the linear interpolation function for the stalled blade sections, where CL ranges from CL_max to -CL_max from alpha_max to -alpha_max+alpha0. 
+            CL_stall_interp = interp1d(np.array([x[-1],x[0]%(2*np.pi)]),np.array([CL_y[-1],CL_y[0]]))
 
-            dCL[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,1])
-            # dCL[ind] = 2*np.pi*AoA[ind]
-            dCD[ind] = np.interp(AoA[ind],xp = v['Polar'][:,0],fp =v['Polar'][:,2])
-        return dCL, dCD
-
+            #   performs the linear interpolation for CL for the stalled blade sections.
+            CL[(prestall_ind == 0) & (k == airfoil_key_expanded)] = CL_stall_interp(AoA[(prestall_ind == 0) & (k == airfoil_key_expanded)]%(2*np.pi))
+            #   CD is set to the value of CD at alpha_max for the stalled sections.
+            CD[(prestall_ind == 0) & (k == airfoil_key_expanded)] = CD_y[-1]
+            # CD = CD_y[-1]
+        return CL, CD
 
 #%%
     omega = omega/60*2*np.pi
@@ -321,18 +342,17 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
 
     elif UserIn['trim'] == 2:
         trimTargs = W/(rho*np.pi*R**2*(omega*R)**2)
-        lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs)
+        lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs,alphaInit)
         trim_sol = least_squares(variable_pitch_residuals, th0, args=[mu, lamTPP_init], method='lm')
         th = np.array([np.squeeze(trim_sol.x),0 ,0 ])
-        CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
+        CT,dCT,CMX,CMY,lam,th_exp,ut,up,CL,AoA = variable_pitch_trim(th,mu, lamTPP_init)
 
     else:
-        trimTargs = [W/(rho*np.pi*R**2*(omega*R)**2),0,0]
-        th = np.array([th0,np.pi/180,np.pi/180])
-        lamTPP_init =  inflowModSelect(1, mu*np.tan(alphaInit), mu, trimTargs[0])
+        trimTargs = [W/(rho*np.pi*R**2*(omega*R)**2),0*W/(rho*np.pi*R**2*(omega*R)**2*R),0*W/(rho*np.pi*R**2*(omega*R)**2*R)]
+        th = np.array([th0,0*np.pi/180,0*np.pi/180])
         trim_sol = least_squares(variable_pitch_residuals, th ,args = [mu, lamTPP_init],method = 'lm')
         th = trim_sol.x
-        CT,dCT,Mx,My,lam,theta_expanded,ut,up,CL,CD,AoA = variable_pitch_trim(th,mu, lamTPP_init)
+        CT,dCT,CMX,CMY,lam,th_exp,ut,up,CL,AoA,AoA_eff = variable_pitch_trim(th,mu, lamTPP_init)
 
 
 #%%
@@ -384,16 +404,20 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     #
     return loadParams
 
-    #
-    # import matplotlib.pyplot as plt
-    #
-    # fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
-    # quant = up/ut
-    # levels = np.linspace(np.min(quant),np.max(quant),50)
-    # dist = ax.contourf(phi, geomParams['rdim'], np.transpose(quant),levels = levels)
+        
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
+    # AoA[AoA>np.pi] = AoA[AoA>np.pi]-2*np.pi
+    quant = CL
+    # levels = np.linspace(-.75, 1.2, 50)
+    levels = np.linspace(np.min(quant),np.max(quant),50)
+    dist = ax.contourf(np.arange(quant.shape[0]), np.arange(quant.shape[1]), quant.transpose(),levels = levels)
     # ax.set_ylim(geomParams['rdim'][0],geomParams['rdim'][-1])
-    # cbar = fig.colorbar(dist)
-    # cbar.ax.set_ylabel('$dFz \: [N]$')
+    cbar = fig.colorbar(dist)
+    # cbar.ax.set_ylabel(r'$\lambda$')
+    cbar.ax.set_ylabel(r'$\alpha \ [\circ]$')
+    plt.show()
+    
     #
     # N = 3
     # for i in range(N):
