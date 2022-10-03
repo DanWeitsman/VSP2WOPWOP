@@ -25,9 +25,9 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
     LENodes = np.float64(dataSorted['Component 1']['STICK_NODE'][1:, :3])
     TENodes = np.float64(dataSorted['Component 1']['STICK_NODE'][1:, 3:6])
 
-    # interpolates location of each blade element
-    LENodes_interp = np.array([np.mean((LENodes[i,:],LENodes[i+1,:]),axis = 0) for i in range(nXsecs-1)])
-    TENodes_interp = np.array([np.mean((TENodes[i,:],TENodes[i+1,:]),axis = 0) for i in range(nXsecs-1)])
+    # # interpolates location of each blade element
+    # LENodes_interp = np.array([np.mean((LENodes[i,:],LENodes[i+1,:]),axis = 0) for i in range(nXsecs-1)])
+    # TENodes_interp = np.array([np.mean((TENodes[i,:],TENodes[i+1,:]),axis = 0) for i in range(nXsecs-1)])
 
     TE_thick = abs(surfNodes[2::pntsPerXsec,2]-surfNodes[(pntsPerXsec-3)::pntsPerXsec,2])
 
@@ -82,7 +82,7 @@ def ProcessGeom(dataSorted, indHeader, loadPos, Nb, rotation):
 
     # liftLineNorm = np.transpose((np.zeros(len(twistDist)), np.zeros(len(twistDist)), np.ones(len(twistDist))))
     geomParams = {'liftLineCoord':liftLineCoord,'liftLineNorm':liftLineNorm,'R':R,'e':e,'diskArea':A,'sectLen':sectLen,'chordDist':chordDist,'twistDist':twistDist,'solDist':solDist,'sweep':sweep,
-                  'solidity':sol,'surfNodes':surfNodes,'LENodes':LENodes,'TENodes':TENodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r,'TE_thick':TE_thick}
+                  'solidity':sol,'surfNodes':surfNodes,'LENodes':LENodes,'TENodes':TENodes,'surfNorms':ScaledNodeCenteredSurfNorms,'nXsecs':nXsecs,'pntsPerXsec':pntsPerXsec,'rdim':rdim,'r':r,'TE_thick':TE_thick,'LENodes':LENodes,'TENodes':TENodes}
 
 
     return geomParams

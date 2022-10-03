@@ -4,3 +4,11 @@
 *.iml
 
 *.pyc
+
+.venv/
+
+.vscode/
+
+__pycache__/
+
+.DS_Store
