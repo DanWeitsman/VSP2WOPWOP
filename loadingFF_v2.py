@@ -256,7 +256,9 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
             else:
                 up = mu*np.tan(alphaInit)+lam_init
                 AoA = th_exp-np.arctan2(up,ut)
-                CL,CD = PolarLookup2(AoA)
+                CL = 2*np.pi*AoA
+                # CL,CD = PolarLookup2(AoA)
+                # CL = 2*np.pi*AoA
                 # CL,CD = np.array([PolarLookup2(x) for x in AoA]).transpose(1, 0, 2)
                 # if UserIn['UnsteadyAero']:
                 #     AoA_eff = unsteady_aero(AoA)
@@ -1113,7 +1115,7 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(subplot_kw=dict(projection='polar'))
     # AoA[AoA>np.pi] = AoA[AoA>np.pi]-2*np.pi
-    quant = AoA
+    quant = AoA*180/np.pi
     # levels = np.linspace(-.75, 1.2, 50)
     levels = np.linspace(np.min(quant),np.max(quant),50)
     dist = ax.contourf(np.arange(quant.shape[0]), np.arange(quant.shape[1]), quant.transpose(),levels = levels)
@@ -1125,6 +1127,10 @@ def loadingFF(UserIn, geomParams, XsecPolar, W, omega, Vx, Vz, alphaShaft):
     
 
     import matplotlib.pyplot as plt
+    # plt.plot(geomParams['twistDist']*180/np.pi)
+    # plt.plot(geomParams['chordDist'])
+    # plt.show()
+
     fig, ax = plt.subplots(1,1)
     ax.plot(180/np.pi*AoA[:,int(0.75*len(r))])
     ax.plot(180/np.pi*AoA_eff[:,int(0.75*len(r))])
