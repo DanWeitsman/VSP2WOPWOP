@@ -24,7 +24,7 @@ loadingFileName = "Load"
 # %%
 
 # Names of DegenGeom files add as many geometry cases as you wish separated by commas.
-dataFileNames = ["Lynx_DegenGeom.csv"]
+dataFileNames = ["Boeing360_DegenGeom.csv"]
 
 # Operational mode: when set equal to 1 each thrust (T) and rotational rate (omega) pair corresponds to a different
 # blade geometry (dataFileNames). When set equal to 2 a case would be generated for each thrust and rotational rate
