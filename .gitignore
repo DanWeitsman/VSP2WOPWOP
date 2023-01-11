@@ -7,6 +7,6 @@
 
 *.DS_Store
 
-.venv/
-
 .vscode/
+
+.venv/
